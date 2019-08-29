@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.mongodb;
+package mongodb;
 
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
@@ -15,7 +15,9 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.bson.Document;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -60,10 +62,18 @@ public class MongoDBCleansingData {
     }
     
     public List<String> getKeyList(){
-        List keys = new ArrayList<>();
-        this.coll.find(exists("name"))
-                        .forEach((Block<MSyaryoObject>) t -> keys.add(t.getName()));
-        System.out.println("get key size="+keys.size());
+        long start = System.currentTimeMillis();
+        System.out.println("get key start!");
+        MongoDBData cl = MongoDBData.create();
+        
+        System.out.println(this.db.getName()+","+this.coll.getNamespace().getCollectionName());
+        
+        cl.set(this.db.getName(), this.coll.getNamespace().getCollectionName());
+        List keys = cl.getKeyList();
+        long stop = System.currentTimeMillis();
+        
+        System.out.println("get key time="+(stop-start)+"ms");
+        cl.close();
         return keys;
     }
     

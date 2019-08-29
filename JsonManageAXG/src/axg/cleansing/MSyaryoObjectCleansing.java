@@ -5,8 +5,8 @@
  */
 package axg.cleansing;
 
-import axg.mongodb.MongoDBCleansingData;
-import axg.mongodb.MongoDBData;
+import mongodb.MongoDBCleansingData;
+import mongodb.MongoDBData;
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
 import file.MapToJSON;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class MongoDBCleansing {
+public class MSyaryoObjectCleansing {
 
     //Index
     static Map<String, Map<String, List<String>>> index;
@@ -53,6 +53,7 @@ public class MongoDBCleansing {
         
         mongo.close();
         mongo2.close();
+        
     }
     
     public void test(){

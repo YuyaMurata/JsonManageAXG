@@ -5,9 +5,9 @@
  */
 package axg.form.item;
 
-import axg.form.SyaryoObjectFormatting;
+import axg.form.MSyaryoObjectFormatting;
 import axg.obj.MSyaryoObject;
-import google.map.MapPathData;
+import map.MapPathData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class FormKomtrax {
                             newMap.get(d).set(0, dup.toString());
                         }
                     } else {
-                        newMap.put(SyaryoObjectFormatting.dup(d, newMap), value);
+                        newMap.put(MSyaryoObjectFormatting.dup(d, newMap), value);
                     }
                     tmp = str;
                 }

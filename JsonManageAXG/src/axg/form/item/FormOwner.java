@@ -5,7 +5,7 @@
  */
 package axg.form.item;
 
-import axg.form.SyaryoObjectFormatting;
+import axg.form.MSyaryoObjectFormatting;
 import axg.form.rule.DataRejectRule;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +50,7 @@ public class FormOwner {
                 .filter(id -> !id.equals("")) //IDが存在する
                 .collect(Collectors.toList());
         //System.out.println(owners);
-        owners = SyaryoObjectFormatting.exSeqDuplicate(owners);
+        owners = MSyaryoObjectFormatting.exSeqDuplicate(owners);
 
         if (owners.isEmpty()) {
             //System.out.println("使用顧客が存在しない車両(後で削除)");

@@ -5,9 +5,8 @@
  */
 package axg.shuffle;
 
-import axg.form.SyaryoObjectFormatting;
-import axg.mongodb.MongoDBCleansingData;
-import axg.mongodb.MongoDBData;
+import mongodb.MongoDBCleansingData;
+import mongodb.MongoDBData;
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
 import file.MapToJSON;
@@ -18,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import mongodb.MongoDBCreateIndexes;
 
 /**
  *
@@ -77,30 +77,37 @@ public class MSyaryoObjectShuffle {
     }
 
     public static void shuffle(String db, String collection, Map<String, Map<String, List<String>>> index, Map<String, Map<String, List<String>>> layout) {
-        MongoDBCleansingData mongo = MongoDBCleansingData.create();
-        mongo.set(db, collection+"_Clean", MSyaryoObject.class);
+        MongoDBCleansingData cleanDB = MongoDBCleansingData.create();
+        cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
 
         //Header
-        MHeaderObject headerobj = mongo.getHeader();
+        MHeaderObject headerobj = cleanDB.getHeader();
         System.out.println(headerobj.map);
 
-        //
-        //System.out.println(index);
-        //SyaryoObjectFormatting sobjf = new SyaryoObjectFormatting();
-
-        MongoDBCleansingData mongo2 = MongoDBCleansingData.create();
-        mongo2.set("db", collection+"_Shuffle", MSyaryoObject.class);
-        mongo2.clear();
-        mongo2.coll.insertOne(recreateHeaderObj(layout));
+        long start = System.currentTimeMillis();
         
-        List<String> sids = mongo.getKeyList();
-        sids.parallelStream().forEach(sid -> {
-            MSyaryoObject obj = mongo.getObj(sid); //"PC200-10- -452437"
-            Map<String, Map<String, List<String>>> map = new LinkedHashMap();
+        MongoDBCleansingData shuffleDB = MongoDBCleansingData.create();
+        shuffleDB.set("db", collection+"_Shuffle", MSyaryoObject.class);
+        shuffleDB.clear();
+        shuffleDB.coll.insertOne(recreateHeaderObj(layout));
+        
+        List<String> sids = cleanDB.getKeyList();
+        sids.parallelStream()
+                .map(sid -> shuffleOne(headerobj, cleanDB.getObj(sid), index))
+                .forEach(shuffleDB.coll::insertOne);
+        
+        long stop = System.currentTimeMillis();
+        System.out.println("ShufflingTime="+(stop-start)+"ms");
 
-            System.out.println(obj.getName());
+        shuffleDB.close();
+        cleanDB.close();
+    }
+    
+    private static MSyaryoObject shuffleOne(MHeaderObject header, MSyaryoObject syaryo, Map<String, Map<String, List<String>>> index){
+            Map<String, Map<String, List<String>>> map = new LinkedHashMap();
+            
+            //System.out.println(obj.getName());
             index.entrySet().stream().forEach(idx -> {
-                //System.out.println("Main:"+idx.getKey());
                 //subkey
                 Map<String, List<String>> subIdx = idx.getValue();
                 subIdx.entrySet().stream().forEach(idx2 -> {
@@ -110,29 +117,20 @@ public class MSyaryoObjectShuffle {
                     }
 
                     //update map
-                    Map<String, List<String>> subMap = idxMapping(map.get(idx.getKey()), idx2.getKey(), idx2.getValue(), headerobj, obj);
+                    Map<String, List<String>> subMap = idxMapping(map.get(idx.getKey()), idx2.getKey(), idx2.getValue(), header, syaryo);
                     map.put(idx.getKey(), subMap);
 
                     //
                     //testPrint(idx2.getKey() + ":" + idx2.getValue(), subMap);
                 });
             });
-
-            MSyaryoObject newobj = new MSyaryoObject();
-            newobj.setName(obj.getName());
-            newobj.setMap(map);
             
-            //check
-            //mongo2.getHeader().print();
-            //SyaryoObjectFormatting.form(newheaderobj, newobj);
-            newobj.recalc();
-            //newobj.print();
-
-            mongo2.coll.insertOne(newobj);
-        });
-
-        mongo2.close();
-        mongo.close();
+            MSyaryoObject obj = new MSyaryoObject();
+            obj.setName(syaryo.getName());
+            obj.setMap(map);
+            obj.recalc();
+            
+            return obj;
     }
 
     public static void testPrint(String idx, Map<String, List<String>> map) {

@@ -27,16 +27,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import mongodb.MongoDBCleansingData;
 
 /**
  *
  * @author zz17390
  */
-public class SyaryoObjectFormatting {
+public class MSyaryoObjectFormatting {
     //本社コード
-    //private static Map<String, String> honsyIndex = new MapToJSON().toMap("settings\\generator\\index\\honsya_index.json");
+    private static Map<String, String> honsyIndex = new MapToJSON().toMap("settings\\generator\\index\\honsya_index.json");
     //生産日情報
-    //private static Map<String, String> productIndex = new MapToJSON().toMap("settings\\generator\\index\\product_index.json");
+    private static Map<String, String> productIndex = new MapToJSON().toMap("settings\\generator\\index\\product_index.json");
     
     private static DecimalFormat df = new DecimalFormat("00");
 
@@ -44,8 +45,33 @@ public class SyaryoObjectFormatting {
     //public static List<String> p = new ArrayList<>();
 
     //public static String currentKey = "";
+    
+    public static void form(String db, String collection){
+        Long start = System.currentTimeMillis();
+        
+        MongoDBCleansingData shuffleDB = MongoDBCleansingData.create();
+        shuffleDB.set(db, collection+"_Clean", MSyaryoObject.class);
+        MongoDBCleansingData formDB = MongoDBCleansingData.create();
+        formDB.set(db, collection+"_Form", MSyaryoObject.class);
+        
+        MHeaderObject header = shuffleDB.getHeader();
+        formDB.coll.insertOne(header);
+        
+        shuffleDB.getKeyList().stream().forEach(sid ->{
+            MSyaryoObject obj = formDB.getObj(sid);
+            formOne(header, obj);
+            obj.recalc();
+            formDB.coll.insertOne(obj);
+        });
+        
+        long stop = System.currentTimeMillis();
+        System.out.println("FormattingTime="+(stop-start)+"ms");
 
-    public static void form(MHeaderObject header, MSyaryoObject syaryo) {
+        shuffleDB.close();
+        formDB.close();
+    }
+
+    private static void formOne(MHeaderObject header, MSyaryoObject syaryo) {
         //整形時のデータ削除ルールを設定
         DataRejectRule rule = new DataRejectRule();
 
@@ -66,7 +92,7 @@ public class SyaryoObjectFormatting {
         rule.addNew(syaryo.getDataKeyOne("新車"));
         
         //中古車の整形  // U Nが残っているためそれを利用した処理に変更
-        syaryo.setData("中古車", FormUsed.form(syaryo.getData("中古車"), header.getIndex("中古車"), rule.getNew(), rule.getKUEC()));
+        syaryo.setData("中古車", FormUsed.form(syaryo.getData("中古車"), header.getIndex("中古車"), rule.getNew()));
         
         //受注
         syaryo.setData("受注", FormOrder.form(syaryo.getData("受注"), header.getIndex("受注"), rule));

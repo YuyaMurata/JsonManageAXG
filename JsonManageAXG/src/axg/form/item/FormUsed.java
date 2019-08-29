@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class FormUsed {
-    public static Map form(Map<String, List<String>> used, List indexList, String newd, List kuec) {
+    public static Map form(Map<String, List<String>> used, List indexList, String newd) {
         if (used == null) {
             //System.out.println("Not found Used");
             return null;
@@ -39,9 +39,9 @@ public class FormUsed {
         //修正しない
         if (used.size() == 1) {
             //KUEC売却後、使用ユーザー存在しない
-            if (kuec.size() > 0 || (Integer.valueOf(used.keySet().stream().findFirst().get().split("#")[0]) <= Integer.valueOf(newd))) {
-                return null;
-            }
+            //if (kuec.size() > 0 || (Integer.valueOf(used.keySet().stream().findFirst().get().split("#")[0]) <= Integer.valueOf(newd))) {
+            //    return null;
+            //}
 
             List<String> list = used.values().stream().findFirst().get();
             if (list.get(hyomen).contains("+") || list.get(hyomen).contains("_")) {
@@ -59,9 +59,9 @@ public class FormUsed {
             String d = date.split("#")[0].replace("/", "");
 
             //KUECを除外
-            if (kuec.contains(d)) {
+            /*if (kuec.contains(d)) {
                 continue;
-            }
+            }*/
 
             //新車より前に存在する中古車情報を削除
             if (Integer.valueOf(d) <= Integer.valueOf(newd)) {
