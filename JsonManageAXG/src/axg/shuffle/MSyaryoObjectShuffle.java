@@ -87,7 +87,7 @@ public class MSyaryoObjectShuffle {
         long start = System.currentTimeMillis();
         
         MongoDBCleansingData shuffleDB = MongoDBCleansingData.create();
-        shuffleDB.set("db", collection+"_Shuffle", MSyaryoObject.class);
+        shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
         shuffleDB.clear();
         shuffleDB.coll.insertOne(recreateHeaderObj(layout));
         

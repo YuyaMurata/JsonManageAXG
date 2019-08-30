@@ -19,7 +19,7 @@ public class TestMongoExec {
     public static void main(String[] args) {
         //MongoDB Cleansing
         //Map header = new MapToJSON().toMap("axg\\mongoobj_syaryo_src.json");
-        //MongoDBCleansing.clean("json", "komatsuDB_PC200", Arrays.asList(new String[]{"8", "8N1", "10"}), header);
+        //MSyaryoObjectCleansing.clean("json", "komatsuDB_PC200", Arrays.asList(new String[]{"8", "8N1", "10"}), header);
         
         //MongoDB Shuffling
         Map sheader = new MapToJSON().toMap("axg\\shuffle_mongo_syaryo.json");
