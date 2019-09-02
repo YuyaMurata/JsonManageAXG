@@ -30,50 +30,10 @@ public class MSyaryoObjectShuffle {
     private static DecimalFormat df = new DecimalFormat("00");
 
     public static void main(String[] args) {
-        //元データのレイアウト
-        //createHeaderMapFile();
-
-        //テンプレート生成
-        //createLayoutHeader(index);
-        
         //シャッフル
-        shuffle("json", "komatsuDB_PC200", new MapToJSON().toMap("axg\\shuffle_mongo_syaryo.json"), new MapToJSON().toMap("axg\\layout_mongo_syaryo.json"));
-    }
-
-    //シャッフル用ファイルを作成するための元ファイル作成
-    public static void createHeaderMapFile() {
-        MongoDBData mongo = MongoDBData.create();
-        mongo.set("json", "komatsuDB_PC200");
-
-        List<String> hin = mongo.getHeader();
-        Map<String, Map<String, List<String>>> head = new HashMap<>();
-        Boolean flg = true;
-        for (String s : hin) {
-            if (s.equals("id ")) {
-                continue;
-            }
-
-            System.out.println(s);
-
-            String k = s.split("\\.")[0];
-
-            if (head.get(k) == null) {
-                head.put(k, new HashMap<>());
-                head.get(k).put(k + ".subKey", new ArrayList<>());
-                flg = false;
-            }
-
-            if (flg) {
-                head.get(k).get(k + ".subKey").add(s);
-            } else {
-                flg = true;
-            }
-        }
-
-        new MapToJSON().toJSON("mongo_syaryo.json", head);
-
-        System.out.println(hin);
-        mongo.close();
+        Map index = new MapToJSON().toMap("axg\\shuffle_mongo_syaryo.json");
+        Map layout = new MapToJSON().toMap("axg\\layout_mongo_syaryo.json");
+        shuffle("json", "komatsuDB_PC200", index, layout);
     }
 
     public static void shuffle(String db, String collection, Map<String, Map<String, List<String>>> index, Map<String, Map<String, List<String>>> layout) {
@@ -210,36 +170,7 @@ public class MSyaryoObjectShuffle {
 
         return new MHeaderObject(header);
     }
-
-    public static void createLayoutHeader(Map<String, Map<String, List<String>>> shuffleIndex) {
-        Map<String, Map<String, List<String>>> map = new LinkedHashMap();
-
-        shuffleIndex.entrySet().stream()
-                .forEach(e -> {
-                    e.getValue().entrySet().stream()
-                            .filter(e2 -> !e2.getValue().contains(""))
-                            .limit(1)
-                            .forEach(e2 -> {
-                                String key = e.getKey();
-                                String subKey = idxToShuffleIdx(key, e2.getKey());
-                                List<String> subList = e2.getValue().stream().map(e2v -> idxToShuffleIdx(e.getKey(), e2v)).collect(Collectors.toList());
-
-                                map.put(key, new HashMap<>());
-                                map.get(key).put(subKey, subList);
-                            });
-                });
-
-        new MapToJSON().toJSON("axg\\layout_mongo_syaryo.json", map);
-    }
-
-    private static String idxToShuffleIdx(String key, String idx) {
-        if (idx.contains(".")) {
-            return key + "." + idx.split("\\.")[1];
-        } else {
-            return key + "." + idx;
-        }
-    }
-
+    
     private static String duplicateKey(String key, Map map) {
         int cnt = 0;
         String k = key;
