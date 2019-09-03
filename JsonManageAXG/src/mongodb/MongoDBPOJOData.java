@@ -7,17 +7,15 @@ package mongodb;
 
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
-import com.mongodb.Block;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import org.bson.Document;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -27,12 +25,13 @@ import org.bson.codecs.pojo.PojoCodecProvider;
  *
  * @author ZZ17807
  */
-public class MongoDBCleansingData {
+public class MongoDBPOJOData {
     private MongoClient client;
     private MongoDatabase db;
     public MongoCollection coll;
     
-    private MongoDBCleansingData(){
+    private MongoDBPOJOData(){
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
         initialize();
     }
     
@@ -45,8 +44,8 @@ public class MongoDBCleansingData {
         client = MongoClients.create(settings);
     }
 
-    public static MongoDBCleansingData create() {
-        return new MongoDBCleansingData();
+    public static MongoDBPOJOData create() {
+        return new MongoDBPOJOData();
     }
 
     public void set(String dbn, String col, Class clazz) {

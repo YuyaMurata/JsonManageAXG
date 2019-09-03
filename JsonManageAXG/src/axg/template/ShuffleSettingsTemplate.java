@@ -18,15 +18,13 @@ import mongodb.MongoDBData;
  *
  * @author ZZ17807
  */
-public class MSyaryoShuffleTemplate {
+public class ShuffleSettingsTemplate {
     public static void main(String[] args) {
-        String filename = "";
-        createHeaderMapFile("json", "komatsuDB_PC200", "mongoobj_syaryo_src.json");
-        
+        create("json", "komatsuDB_PC200", "shuffle_mongo_syaryo_template.json");
     }
     
     //シャッフル用ファイルを作成するための元ファイル作成
-    public static void createHeaderMapFile(String db, String collection, String file) {
+    public static void create(String db, String collection, String file) {
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
 

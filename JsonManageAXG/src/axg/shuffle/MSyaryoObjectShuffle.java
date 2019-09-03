@@ -5,7 +5,7 @@
  */
 package axg.shuffle;
 
-import mongodb.MongoDBCleansingData;
+import mongodb.MongoDBPOJOData;
 import mongodb.MongoDBData;
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
@@ -17,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import mongodb.MongoDBCreateIndexes;
 
 /**
  *
@@ -31,22 +30,23 @@ public class MSyaryoObjectShuffle {
 
     public static void main(String[] args) {
         //シャッフル
-        Map index = new MapToJSON().toMap("axg\\shuffle_mongo_syaryo.json");
-        Map layout = new MapToJSON().toMap("axg\\layout_mongo_syaryo.json");
-        shuffle("json", "komatsuDB_PC200", index, layout);
+        shuffle("json", "komatsuDB_PC200", "axg\\shuffle_mongo_syaryo.json", "axg\\layout_mongo_syaryo.json");
     }
 
-    public static void shuffle(String db, String collection, Map<String, Map<String, List<String>>> index, Map<String, Map<String, List<String>>> layout) {
-        MongoDBCleansingData cleanDB = MongoDBCleansingData.create();
+    public static void shuffle(String db, String collection, String shuffleSetting, String layoutSetting) {
+        MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
+        
+        //設定ファイルのヘッダ読み込み
+        Map index = new MapToJSON().toMap(shuffleSetting);
+        Map layout = new MapToJSON().toMap(layoutSetting);
 
         //Header
         MHeaderObject headerobj = cleanDB.getHeader();
-        System.out.println(headerobj.map);
 
         long start = System.currentTimeMillis();
         
-        MongoDBCleansingData shuffleDB = MongoDBCleansingData.create();
+        MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
         shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
         shuffleDB.clear();
         shuffleDB.coll.insertOne(recreateHeaderObj(layout));
@@ -141,8 +141,10 @@ public class MSyaryoObjectShuffle {
 
         //参照先データが存在する
         if (idx.contains(".")) {
+            
             String key = idx.split("\\.")[0];
-            String data = refdata.get(header.map.get(key).indexOf(idx));
+            
+            String data = refdata.get(header.getHeaderIdx(key, idx));
             
             //空白列の除去
             if(data.replace(" ", "").equals(""))

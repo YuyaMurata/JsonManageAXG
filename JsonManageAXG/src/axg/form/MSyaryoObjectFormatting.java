@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import mongodb.MongoDBCleansingData;
+import mongodb.MongoDBPOJOData;
 
 /**
  *
@@ -35,9 +35,9 @@ import mongodb.MongoDBCleansingData;
  */
 public class MSyaryoObjectFormatting {
     //本社コード
-    private static Map<String, String> honsyIndex = new MapToJSON().toMap("settings\\generator\\index\\honsya_index.json");
+    private static Map<String, String> honsyIndex = new MapToJSON().toMap("settings\\index\\honsya_index.json");
     //生産日情報
-    private static Map<String, String> productIndex = new MapToJSON().toMap("settings\\generator\\index\\product_index.json");
+    private static Map<String, String> productIndex = new MapToJSON().toMap("settings\\index\\product_index.json");
     
     private static DecimalFormat df = new DecimalFormat("00");
 
@@ -46,23 +46,25 @@ public class MSyaryoObjectFormatting {
 
     //public static String currentKey = "";
     
+    public static void main(String[] args) {
+        form("json", "komatsuDB_PC200");
+    }
+    
     public static void form(String db, String collection){
         Long start = System.currentTimeMillis();
         
-        MongoDBCleansingData shuffleDB = MongoDBCleansingData.create();
-        shuffleDB.set(db, collection+"_Clean", MSyaryoObject.class);
-        MongoDBCleansingData formDB = MongoDBCleansingData.create();
+        MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
+        shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
+        MongoDBPOJOData formDB = MongoDBPOJOData.create();
         formDB.set(db, collection+"_Form", MSyaryoObject.class);
+        formDB.clear();
         
         MHeaderObject header = shuffleDB.getHeader();
         formDB.coll.insertOne(header);
         
-        shuffleDB.getKeyList().stream().forEach(sid ->{
-            MSyaryoObject obj = formDB.getObj(sid);
-            formOne(header, obj);
-            obj.recalc();
-            formDB.coll.insertOne(obj);
-        });
+        shuffleDB.getKeyList().stream()
+                .map(sid -> formOne(header, shuffleDB.getObj(sid)))
+                .forEach(formDB.coll::insertOne);
         
         long stop = System.currentTimeMillis();
         System.out.println("FormattingTime="+(stop-start)+"ms");
@@ -71,56 +73,61 @@ public class MSyaryoObjectFormatting {
         formDB.close();
     }
 
-    private static void formOne(MHeaderObject header, MSyaryoObject syaryo) {
+    private static MSyaryoObject formOne(MHeaderObject header, MSyaryoObject obj) {
         //整形時のデータ削除ルールを設定
         DataRejectRule rule = new DataRejectRule();
 
         //キーの整形
-        formKey(syaryo);
+        formKey(obj);
 
         //生産の整形
-        syaryo.setData("生産", FormProduct.form(syaryo.getData("生産"), productIndex, syaryo.getName()));
+        obj.setData("生産", FormProduct.form(obj.getData("生産"), productIndex, obj.getName()));
 
         //出荷情報の整形
-        syaryo.setData("出荷", FormDeploy.form(syaryo.getData("出荷"), syaryo.getDataKeyOne("生産"), syaryo.getName()));
+        obj.setData("出荷", FormDeploy.form(obj.getData("出荷"), obj.getDataKeyOne("生産"), obj.getName()));
 
         //顧客の整形  経歴の利用方法の確認
-        syaryo.setData("顧客", FormOwner.form(syaryo.getData("顧客"), header.getIndex("顧客"), honsyIndex, rule));
+        obj.setData("顧客", FormOwner.form(obj.getData("顧客"), header.getHeader("顧客"), honsyIndex, rule));
 
         //新車の整形
-        syaryo.setData("新車", FormNew.form(syaryo.getData("新車"), syaryo.getData("生産"), syaryo.getData("出荷"), header.getIndex("新車")));
-        rule.addNew(syaryo.getDataKeyOne("新車"));
+        obj.setData("新車", FormNew.form(obj.getData("新車"), obj.getData("生産"), obj.getData("出荷"), header.getHeader("新車")));
+        rule.addNew(obj.getDataKeyOne("新車"));
         
         //中古車の整形  // U Nが残っているためそれを利用した処理に変更
-        syaryo.setData("中古車", FormUsed.form(syaryo.getData("中古車"), header.getIndex("中古車"), rule.getNew()));
+        obj.setData("中古車", FormUsed.form(obj.getData("中古車"), header.getHeader("中古車"), rule.getNew()));
         
         //受注
-        syaryo.setData("受注", FormOrder.form(syaryo.getData("受注"), header.getIndex("受注"), rule));
+        obj.setData("受注", FormOrder.form(obj.getData("受注"), header.getHeader("受注"), rule));
 
         List sbnList = null;
-        if (syaryo.getData("受注") != null) {
-            sbnList = new ArrayList(syaryo.getData("受注").keySet());
+        if (obj.getData("受注") != null) {
+            sbnList = new ArrayList(obj.getData("受注").keySet());
         }
         
         //廃車
-        syaryo.setData("廃車", FormDead.form(syaryo.getData("廃車"), rule.currentDate, header.getIndex("廃車")));
+        obj.setData("廃車", FormDead.form(obj.getData("廃車"), rule.currentDate, header.getHeader("廃車")));
         
         //作業
-        syaryo.setData("作業", FormWork.form(syaryo.getData("作業"), sbnList, header.getIndex("作業"), rule.getWORKID()));
+        obj.setData("作業", FormWork.form(obj.getData("作業"), sbnList, header.getHeader("作業"), rule.getWORKID()));
 
         //部品
-        syaryo.setData("部品", FormParts.form(syaryo.getData("部品"), sbnList, header.getIndex("部品"), rule.getPARTSID()));
+        obj.setData("部品", FormParts.form(obj.getData("部品"), sbnList, header.getHeader("部品"), rule.getPARTSID()));
 
         //SMR
-        syaryo.setData("SMR", FormSMR.form(syaryo.getData("SMR"), header.getIndex("SMR"), syaryo.getName().split("-")[3]));
+        obj.setData("SMR", FormSMR.form(obj.getData("SMR"), header.getHeader("SMR"), obj.getName().split("-")[3]));
         
         //AS 解約、満了情報が残っているため修正
-        syaryo.setData("オールサポート", FormAllSurpport.form(syaryo.getData("オールサポート"), header.getIndex("オールサポート")));
+        obj.setData("オールサポート", FormAllSurpport.form(obj.getData("オールサポート"), header.getHeader("オールサポート")));
         
         //Komtrax 紐づいていないことを考慮する
-        FormKomtrax.form(syaryo);
-       
-        removeEmptyObject(syaryo);
+        FormKomtrax.form(obj);
+        
+        //空データは削除
+        removeEmptyObject(obj);
+        
+        obj.recalc();
+        
+        return obj;
     }
 
     //キーをまとめて整形

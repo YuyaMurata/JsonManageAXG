@@ -5,6 +5,7 @@
  */
 package mongodb;
 
+import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
 import com.mongodb.Block;
 import com.mongodb.MongoException;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bson.Document;
 
 /**
@@ -29,6 +32,7 @@ public class MongoDBData {
     public MongoCollection<Document> coll;
 
     private MongoDBData() {
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
         initialize();
     }
 
@@ -62,6 +66,13 @@ public class MongoDBData {
                     .forEach((Block<Document>) t -> keys.addAll(t.values()));
         System.out.println("get key size="+keys.size());
         return keys;
+    }
+    
+    public MHeaderObject getHeaderObj() {
+        Document h = (Document)this.coll.find(exists("header")).first();
+        MHeaderObject hobj = new MHeaderObject((List<String>) h.get("header"));
+        hobj.setHeaderMap();
+        return hobj;
     }
     
     public MSyaryoObject get(String key) {

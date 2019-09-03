@@ -5,11 +5,10 @@
  */
 package axg.cleansing;
 
-import mongodb.MongoDBCleansingData;
+import mongodb.MongoDBPOJOData;
 import mongodb.MongoDBData;
 import axg.obj.MHeaderObject;
 import axg.obj.MSyaryoObject;
-import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,51 +22,40 @@ import java.util.stream.Collectors;
  */
 public class MSyaryoObjectCleansing {
 
-    //Index
-    static Map<String, Map<String, List<String>>> index;
-
-    public static void clean(String db, String collection, List<String> typ, Map<String, Map<String, List<String>>> header) {
-        index = header;
+    //Header
+    static MHeaderObject hobj;
+    
+    public static void main(String[] args) {
+        clean("json", "komatsuDB_PC200", "8,8N1,10");
+    }
+    
+    public static void clean(String db, String collection, String typ) {
+        MongoDBData originDB = MongoDBData.create();
+        originDB.set(db, collection);
         
-        MongoDBData mongo = MongoDBData.create();
-        mongo.set(db, collection);
+        hobj = originDB.getHeaderObj();
         
         //New Mongo Collection
-        MongoDBCleansingData mongo2 = MongoDBCleansingData.create();
-        mongo2.set(db, collection+"_Clean", MSyaryoObject.class);
-        mongo2.clear();
+        MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
+        cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
+        cleanDB.clear();
         
         long start = System.currentTimeMillis();
         
-        MHeaderObject hobj = new MHeaderObject(mongo.getHeader());
-        mongo2.coll.insertOne(hobj);
+        cleanDB.coll.insertOne(hobj);
         
         //車両のクレンジング実行
-        mongo.getKeyList().parallelStream().filter(sid -> typ.contains(sid.split("-")[1]+sid.split("-")[2].replace(" ", "")))//.filter(sid -> sid.contains("-10-")).limit(100)
-                .map(sid -> cleanOne(mongo.get(sid)))
-                .forEach(mongo2.coll::insertOne);
+        originDB.getKeyList().parallelStream()
+                .filter(sid -> Arrays.asList(typ.split(",")).contains(sid.split("-")[1]+sid.split("-")[2].replace(" ", "")))
+                .map(sid -> cleanOne(originDB.get(sid)))
+                .forEach(cleanDB.coll::insertOne);
         
         long stop = System.currentTimeMillis();
         
         System.out.println("CleansingTime="+(stop-start)+"ms");
         
-        mongo.close();
-        mongo2.close();
-        
-    }
-    
-    public void test(){
-        MongoDBCleansingData mongo3 = MongoDBCleansingData.create();
-        mongo3.set("json", "komatsuDB_PC200_Temp", MSyaryoObject.class);
-        MHeaderObject h = mongo3.getHeader();
-        System.out.println(h.getHeader());
-        System.out.println(h.getIsCompleted());
-        
-        mongo3.getKeyList().stream().map(sid -> mongo3.getObj(sid)).forEach(s ->{
-            System.out.println(s.getName());
-            System.out.println(s.getMap());
-            System.out.println(s.getCount());
-        });
+        originDB.close();
+        cleanDB.close();
     }
 
     public static MSyaryoObject cleanOne(MSyaryoObject obj) {
@@ -89,7 +77,6 @@ public class MSyaryoObjectCleansing {
         //System.out.println(obj.getName()+" - "+check);
         
         obj.recalc();
-        //obj.print();
         
         return obj;
     }
@@ -187,9 +174,10 @@ public class MSyaryoObjectCleansing {
             //System.out.print(",,,,");
             return new ArrayList<>();
         }
+        
         List<String> removeSubKey = data.entrySet().stream()
-                .filter(d -> rule.entrySet().stream()
-                    .filter(r -> !r.getValue().contains(d.getValue().get(index.get(key).get(key + ".subKey").indexOf(r.getKey()))))
+                .filter(d -> rule.entrySet().parallelStream()
+                    .filter(r -> !r.getValue().contains(d.getValue().get(hobj.getHeaderIdx(key, r.getKey()))))
                     .findFirst().isPresent())
                 .map(s -> s.getKey())
                 .collect(Collectors.toList());

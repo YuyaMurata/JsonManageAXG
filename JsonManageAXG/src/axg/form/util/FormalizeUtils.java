@@ -16,6 +16,7 @@ import java.util.Date;
 public class FormalizeUtils {
     //startからstopまでの経過日数計算
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+    
     public static Integer dsub(String start, String stop) {
         try {
             Date st = sdf.parse(start);

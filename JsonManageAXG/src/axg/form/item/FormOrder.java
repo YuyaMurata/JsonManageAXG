@@ -74,7 +74,7 @@ public class FormOrder {
                         map.put(sbn, list);
                     } else {
                         //System.out.println("サービス経歴に金額の入ったデータが2つ以上存在");
-                        if (!(map.get(sbn).get(price).equals("") || list.get(price).equals(""))) {
+                        if (!(map.get(sbn).get(price).equals("") || list.get(price).equals(""))) {               
                             if (Double.valueOf(map.get(sbn).get(price)) < Double.valueOf(list.get(price))) {
                                 map.put(sbn, list);
                             }

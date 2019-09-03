@@ -7,7 +7,7 @@ package axg.form.item;
 
 import axg.form.MSyaryoObjectFormatting;
 import axg.obj.MSyaryoObject;
-import map.MapPathData;
+import axg.cleansing.map.MapPathData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

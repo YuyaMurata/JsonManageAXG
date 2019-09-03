@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package map;
+package axg.cleansing.map;
 
 import com.lynden.gmapsfx.javascript.object.LatLong;
 import java.math.BigDecimal;

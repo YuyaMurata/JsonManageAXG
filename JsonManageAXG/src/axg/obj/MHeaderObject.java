@@ -19,7 +19,7 @@ public class MHeaderObject {
     private ObjectId id;
     private List<String> header;
     private Boolean isCompleted;
-    public transient Map<String, List<String>> map = new HashMap<>();
+    private transient Map<String, List<String>> map;
     
     public MHeaderObject(){
     }
@@ -31,7 +31,7 @@ public class MHeaderObject {
     
     public void setHeaderMap(){
         //header Map
-        Boolean flg = true;
+        map = new HashMap<>();
         for(String s : header){
             if(s.equals("id "))
                 continue;
@@ -40,15 +40,13 @@ public class MHeaderObject {
             
             if(map.get(k) == null){
                 map.put(k, new ArrayList<>());
-                flg = false;
             }
             
-            if(flg){
-                map.get(k).add(s);
-            }else{
-                flg = true;
-            }
+            map.get(k).add(s);
         }
+        
+        //車両オブジェクトのヘッダの調整
+        map.values().stream().forEach(l -> l.remove(0));
     }
     
     public ObjectId getId() {
@@ -63,8 +61,12 @@ public class MHeaderObject {
         return header;
     }
     
-    public List<String> getIndex(String key){
+    public List<String> getHeader(String key){
         return this.map.get(key);
+    }
+    
+    public Integer getHeaderIdx(String key, String idxKey){
+        return this.map.get(key).indexOf(idxKey);
     }
     
     public void setHeader(final List header){
