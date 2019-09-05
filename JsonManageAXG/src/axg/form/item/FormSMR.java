@@ -57,9 +57,9 @@ public class FormSMR {
 
             for (String dg : dateGroup) {
                 List<String> list = smr.get(dg);
-                if(list.get(db).contains("KOMTRAX")){
-                    list.set(smridx, String.valueOf(Double.valueOf(list.get(smridx))/60));
-                }
+                //if(list.get(db).contains("KOMTRAX")){
+                //    list.set(smridx, String.valueOf(Double.valueOf(list.get(smridx))/60));
+                //}
                     
                 if (map.get(date) == null) {
                     map.put(date, list);

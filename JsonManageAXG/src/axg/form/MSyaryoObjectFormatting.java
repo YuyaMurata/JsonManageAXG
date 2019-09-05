@@ -56,13 +56,13 @@ public class MSyaryoObjectFormatting {
         MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
         shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
         MongoDBPOJOData formDB = MongoDBPOJOData.create();
-        formDB.set(db, collection+"_Form", MSyaryoObject.class);
+        formDB.set(db, collection+"_Formtest", MSyaryoObject.class);
         formDB.clear();
         
         MHeaderObject header = shuffleDB.getHeader();
         formDB.coll.insertOne(header);
         
-        shuffleDB.getKeyList().stream()
+        shuffleDB.getKeyList().parallelStream()
                 .map(sid -> formOne(header, shuffleDB.getObj(sid)))
                 .forEach(formDB.coll::insertOne);
         
@@ -78,27 +78,35 @@ public class MSyaryoObjectFormatting {
         DataRejectRule rule = new DataRejectRule();
 
         //キーの整形
+        Long start = System.currentTimeMillis();
         formKey(obj);
-
+        Long keyst = System.currentTimeMillis();
+        
         //生産の整形
         obj.setData("生産", FormProduct.form(obj.getData("生産"), productIndex, obj.getName()));
-
+        Long pst = System.currentTimeMillis();
+        
         //出荷情報の整形
         obj.setData("出荷", FormDeploy.form(obj.getData("出荷"), obj.getDataKeyOne("生産"), obj.getName()));
-
+        Long depst = System.currentTimeMillis();
+        
         //顧客の整形  経歴の利用方法の確認
         obj.setData("顧客", FormOwner.form(obj.getData("顧客"), header.getHeader("顧客"), honsyIndex, rule));
-
+        Long owst = System.currentTimeMillis();
+        
         //新車の整形
         obj.setData("新車", FormNew.form(obj.getData("新車"), obj.getData("生産"), obj.getData("出荷"), header.getHeader("新車")));
         rule.addNew(obj.getDataKeyOne("新車"));
+        Long newst = System.currentTimeMillis();
         
         //中古車の整形  // U Nが残っているためそれを利用した処理に変更
         obj.setData("中古車", FormUsed.form(obj.getData("中古車"), header.getHeader("中古車"), rule.getNew()));
+        Long usst = System.currentTimeMillis();
         
         //受注
         obj.setData("受注", FormOrder.form(obj.getData("受注"), header.getHeader("受注"), rule));
-
+        Long odst = System.currentTimeMillis();
+        
         List sbnList = null;
         if (obj.getData("受注") != null) {
             sbnList = new ArrayList(obj.getData("受注").keySet());
@@ -106,26 +114,37 @@ public class MSyaryoObjectFormatting {
         
         //廃車
         obj.setData("廃車", FormDead.form(obj.getData("廃車"), rule.currentDate, header.getHeader("廃車")));
+        Long deadst = System.currentTimeMillis();
         
         //作業
         obj.setData("作業", FormWork.form(obj.getData("作業"), sbnList, header.getHeader("作業"), rule.getWORKID()));
-
+        Long wst = System.currentTimeMillis();
+        
         //部品
         obj.setData("部品", FormParts.form(obj.getData("部品"), sbnList, header.getHeader("部品"), rule.getPARTSID()));
-
+        Long ptst = System.currentTimeMillis();
+        
         //SMR
         obj.setData("SMR", FormSMR.form(obj.getData("SMR"), header.getHeader("SMR"), obj.getName().split("-")[3]));
+        Long smrst = System.currentTimeMillis();
         
         //AS 解約、満了情報が残っているため修正
         obj.setData("オールサポート", FormAllSurpport.form(obj.getData("オールサポート"), header.getHeader("オールサポート")));
+        Long asst = System.currentTimeMillis();
         
         //Komtrax 紐づいていないことを考慮する
         FormKomtrax.form(obj);
+        Long kmst = System.currentTimeMillis();
         
         //空データは削除
         removeEmptyObject(obj);
+        Long empst = System.currentTimeMillis();
         
         obj.recalc();
+        
+        Long stop = System.currentTimeMillis();
+        System.out.println(obj.getName()+":"+(stop-start)+"ms["+(keyst-start)+","+(pst-keyst)+","+(depst-pst)+","+(owst-depst)
+                +","+(newst-owst)+","+(usst-newst)+","+(odst-usst)+","+(deadst-odst)+","+(wst-deadst)+","+(ptst-wst)+","+(smrst-ptst)+","+(asst-smrst)+","+(kmst-asst)+","+(empst-kmst)+"]");
         
         return obj;
     }

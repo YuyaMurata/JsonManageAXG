@@ -15,10 +15,9 @@ import java.util.Date;
  */
 public class FormalizeUtils {
     //startからstopまでの経過日数計算
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-    
     public static Integer dsub(String start, String stop) {
         try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
             Date st = sdf.parse(start);
             Date sp = sdf.parse(stop);
             Long age = (sp.getTime() - st.getTime()) / (1000 * 60 * 60 * 24);
