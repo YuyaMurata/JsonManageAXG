@@ -6,13 +6,11 @@
 package axg.shuffle;
 
 import mongodb.MongoDBPOJOData;
-import mongodb.MongoDBData;
-import axg.obj.MHeaderObject;
-import axg.obj.MSyaryoObject;
+import obj.MHeaderObject;
+import obj.MSyaryoObject;
 import file.MapToJSON;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +28,7 @@ public class MSyaryoObjectShuffle {
 
     public static void main(String[] args) {
         //シャッフル
-        shuffle("json", "komatsuDB_PC200", "axg\\shuffle_mongo_syaryo.json", "axg\\layout_mongo_syaryo.json");
+        shuffle("json", "komatsuDB_PC200", "axg\\shuffle_mongo_syaryo_valid.json", "axg\\layout_mongo_syaryo_valid.json");
     }
 
     public static void shuffle(String db, String collection, String shuffleSetting, String layoutSetting) {

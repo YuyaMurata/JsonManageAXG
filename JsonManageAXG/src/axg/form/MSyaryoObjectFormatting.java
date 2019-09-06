@@ -18,8 +18,8 @@ import axg.form.item.FormSMR;
 import axg.form.item.FormUsed;
 import axg.form.item.FormWork;
 import axg.form.rule.DataRejectRule;
-import axg.obj.MHeaderObject;
-import axg.obj.MSyaryoObject;
+import obj.MHeaderObject;
+import obj.MSyaryoObject;
 import file.MapToJSON;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -56,7 +56,7 @@ public class MSyaryoObjectFormatting {
         MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
         shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
         MongoDBPOJOData formDB = MongoDBPOJOData.create();
-        formDB.set(db, collection+"_Formtest", MSyaryoObject.class);
+        formDB.set(db, collection+"_Form", MSyaryoObject.class);
         formDB.clear();
         
         MHeaderObject header = shuffleDB.getHeader();

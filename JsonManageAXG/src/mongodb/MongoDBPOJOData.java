@@ -5,8 +5,8 @@
  */
 package mongodb;
 
-import axg.obj.MHeaderObject;
-import axg.obj.MSyaryoObject;
+import obj.MHeaderObject;
+import obj.MSyaryoObject;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
