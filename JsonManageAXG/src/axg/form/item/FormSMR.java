@@ -22,7 +22,7 @@ public class FormSMR {
             return null;
         }
         
-        int db = indexList.indexOf("SMR.サービス経歴(KOMPAS)");
+        int db = indexList.indexOf("SMR.DB");
         int smridx = indexList.indexOf("SMR.サービスメータ");
 
         //日付重複除去

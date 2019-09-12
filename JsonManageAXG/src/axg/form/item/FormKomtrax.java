@@ -5,14 +5,14 @@
  */
 package axg.form.item;
 
-import axg.form.MSyaryoObjectFormatting;
 import obj.MSyaryoObject;
-import axg.cleansing.map.MapPathData;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import obj.MHeaderObject;
 
 /**
  *
@@ -21,64 +21,67 @@ import java.util.stream.Collectors;
 public class FormKomtrax {
 
     //KOMTRAXデータの整形 (値の重複除去、日付の整形、小数->整数)
-    public static void form(MSyaryoObject syaryo) {
-        List<String> kmList = syaryo.getMap().keySet().stream().filter(k -> k.contains("KOMTRAX_")).collect(Collectors.toList());
-        if(kmList.isEmpty())
-            return ;
-        
-        String stdate = syaryo.getData("出荷").keySet().stream().findFirst().get();
-        
-        for (String id : kmList) {
-            if (syaryo.getData(id) == null) {
-                continue;
-            }
-            
-            //Formalize Date
-            Map<String, List<String>> newMap = new TreeMap();
-            String tmp = "";
-            for (String date : syaryo.getData(id).keySet()) {
+    public static void form(MSyaryoObject syaryo, MHeaderObject header) {
+        //List<String> kmList = syaryo.getMap().keySet().stream().filter(k -> k.contains("KOMTRAX_")).collect(Collectors.toList());
+        if (syaryo.getData("KOMTRAX_SMR") == null) {
+            return;
+        }
 
-                String d = date.split("#")[0];
-                
-                String str = syaryo.getData(id).get(date).toString();
+        //String stdate = syaryo.getData("出荷").keySet().stream().findFirst().get();
+        formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR"));
+        System.out.println(syaryo.getName());
+    }
 
-                //出荷より前のセンサー情報を消す
-                if (Integer.valueOf(d) < Integer.valueOf(stdate)) {
-                    continue;
-                }
+    private static void formKMSMR(Map<String, List<String>> smr, List<String> index) {
+        TreeMap<Integer, List<String>> map = new TreeMap<>();
 
-                if (!tmp.equals(str)) {
-                    List value = getTransformValue(id, syaryo.getData(id).get(date));
-                    if (id.equals("KOMTRAX_SMR")) {
-                        value.set(0, String.valueOf(Integer.valueOf(value.get(0).toString())/60));
-                        newMap.put(d, value);
-                    } else if (id.equals("KOMTRAX_ACT")) {  //ACT_DATAの構造が変わると使えない
-                        if (newMap.get(d) == null) {
-                            newMap.put(d, value);
-                        } else {
-                            Integer dup = Integer.valueOf(newMap.get(d).get(0)) + Integer.valueOf(value.get(0).toString());
-                            newMap.get(d).set(0, dup.toString());
-                        }
-                    } else {
-                        newMap.put(MSyaryoObjectFormatting.dup(d, newMap), value);
-                    }
-                    tmp = str;
-                }
-            }
-            
-            if(!newMap.isEmpty())
-                syaryo.setData(id, newMap);
-            else
-                syaryo.getMap().remove(id);
+        int dbIdx = index.indexOf("KOMTRAX_SMR.DB");
+        int smrIdx = index.indexOf("KOMTRAX_SMR.SMR_VALUE");
+        int unitIdx = index.indexOf("KOMTRAX_SMR.DAILY_UNIT");
+
+        //KOMTRAX_ACT を取得
+        Map<String, List<String>> actSMR = smr.entrySet().parallelStream()
+                .filter(e -> e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
+                .sorted(Comparator.comparing(e -> Integer.valueOf(e.getKey().split("#")[0]), Comparator.naturalOrder()))
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        Optional<String> actStartDate = actSMR.keySet().stream().findFirst();
+
+        //KOMTRAX_ACTスタート以前のSMRを取得
+        String initSMR = "0";
+        if (actStartDate.isPresent()) {
+            Integer stdate = Integer.valueOf(actStartDate.get().split("#")[0]);
+            smr.entrySet().parallelStream()
+                    .filter(e -> Integer.valueOf(e.getKey().split("#")[0]) <= stdate)
+                    .filter(e -> !e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
+                    .forEach(e -> map.put(Integer.valueOf(e.getKey().split("#")[0]), e.getValue()));
+
+            //KOMTRAX_ACTのSMRを累積SMRに変換
+            initSMR = map.floorEntry(stdate).getValue().get(smrIdx);
         }
         
-        Map<String, List<String>> newMap = transACTSMRData(syaryo.getData("KOMTRAX_ACT"), syaryo.getData("KOMTRAX_SMR"));
-        if(!newMap.isEmpty())
-            syaryo.setData("KOMTRAX_ACT", newMap);
+        //ACT_DATEのSMR変換
+        actToSMR(actSMR, initSMR, smrIdx, unitIdx);
+        actSMR.entrySet().parallelStream()
+                .forEach(e -> map.put(Integer.valueOf(e.getKey().split("#")[0]), e.getValue()));
+
+        //マージしたものをKOMTRAX_SMRデータに上書き
+        Map<String, List<String>> newMap = new TreeMap<>();
+        map.entrySet().parallelStream().forEach(e -> {
+            Integer k = e.getKey();
+            List<String> v = e.getValue();
+
+            Double smrValue = Double.valueOf(v.get(smrIdx)) / 60d;
+            v.set(smrIdx, String.valueOf(smrValue.intValue()));
+
+            newMap.put(k.toString(), v);
+        });
+
+        smr = new TreeMap<>();
+        smr.putAll(newMap);
     }
 
     //KOMTRAXデータを整数値に変換(SMR, FUEL_CONSUME)
-    private static List<String> getTransformValue(String id, List<String> kmvalue) {
+    /*private static List<String> getTransformValue(String id, List<String> kmvalue) {
         if (id.contains("SMR")) {
             kmvalue.set(0, String.valueOf(Double.valueOf(kmvalue.get(0)).intValue()));
         } else if (id.contains("FUEL")) {
@@ -91,60 +94,42 @@ public class FormKomtrax {
         }
 
         return kmvalue;
-    }
-
+    }*/
     //ACT_DATAの累積変換
-    private static Map transACTSMRData(Map<String, List<String>> act, Map<String, List<String>> smr) {
+    private static void actToSMR(Map<String, List<String>> act, String initSMR, int actIdx, int unitIdx) {
         Map<String, Double> map = new TreeMap();
 
-        if (act == null) {
-            return map;
-        }
-
-        act.entrySet().forEach(s -> {
-            map.put(s.getKey(), calcActSMR(s.getValue()));
+        act.entrySet().parallelStream().forEach(e -> {
+            map.put(e.getKey(), calcActSMR(e.getValue(), actIdx, unitIdx));
         });
 
-        //初期SMRをACTに追加
-        if (smr != null) {
-            try{
-            Integer date = Integer.valueOf(map.keySet().stream().findFirst().get());
-            List<String> smrList = smr.keySet().stream().filter(k -> Integer.valueOf(k) <= date).collect(Collectors.toList());
-            if (!smrList.isEmpty()) {
-                String initSMR = smrList.get(smrList.size() - 1);
-                Double vinitSMR = Double.valueOf(smr.get(initSMR).get(0));
-                if (map.get(initSMR) == null) {
-                    map.put(initSMR, vinitSMR);
-                } else {
-                    Double v = map.get(initSMR) + vinitSMR;
-                    map.put(initSMR, v);
-                }
-            }
-            }catch(Exception e){
-                System.err.println(act);
-                e.printStackTrace();
-                System.exit(0);
-            }
-        }
-
-        //累積値に変換
         Double acm = 0d;
-        Map<String, List<String>> actmap = new TreeMap();
-        for (String d : map.keySet()) {
-            acm += map.get(d);
-            List v = new ArrayList();
-            v.add(String.valueOf(acm.intValue()));
-            v.add(String.valueOf(map.get(d).intValue()));
-            actmap.put(d, v);
+        if (initSMR != null) {
+            acm = Double.valueOf(initSMR);
         }
-
-        return actmap;
+        
+        //累積値に変換
+        Map<String, List<String>> newMap = new TreeMap();
+        for (String d : map.keySet()) {
+        try{
+            acm += map.get(d);
+            
+        }catch(NullPointerException e){
+            System.err.println(d+":"+map.get(d));
+            e.printStackTrace();
+            System.exit(0);
+        }
+            List<String> v = act.get(d);
+            v.set(actIdx, String.valueOf(acm.intValue()));
+            newMap.put(d, v);
+        }
+        act.putAll(newMap);
     }
 
-    private static Double calcActSMR(List<String> actList) {
-        Integer value = Integer.valueOf(actList.get(0));
-        Integer unit = Integer.valueOf(actList.get(1));
+    private static Double calcActSMR(List<String> actList, int actIdx, int unitIdx) {
+        Double value = Double.valueOf(actList.get(actIdx));
+        Double unit = Double.valueOf(actList.get(unitIdx));
 
-        return value / unit / 60d;
+        return value / unit;
     }
 }

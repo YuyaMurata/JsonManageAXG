@@ -5,15 +5,20 @@
  */
 package axg.form.util;
 
+import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
  * @author ZZ17807
  */
 public class FormalizeUtils {
+    
     //startからstopまでの経過日数計算
     public static Integer dsub(String start, String stop) {
         try {
@@ -31,5 +36,41 @@ public class FormalizeUtils {
             ex.printStackTrace();
             return null;
         }
+    }
+    
+    //日付が重複する場合に連番を付与　20180809が2つ登場したとき-> 20180809#0001
+    public static String dup(String key, Map map) {
+        DecimalFormat df = new DecimalFormat("0000");
+        
+        int cnt = 0;
+        String k = key;
+        while (map.get(k) != null) {
+            k = key + "#" + df.format(++cnt);
+        }
+        return k;
+    }
+    
+    //重複して並んでいるIDを重複除去 S001,S002,S002,S001 -> S001,S002,S001
+    public static List exSeqDuplicate(List<String> dupList) {
+        List list = new ArrayList();
+        String tmp = "";
+        for (String el : dupList) {
+            if (tmp.equals(el)) {
+                continue;
+            }
+            tmp = el;
+            list.add(tmp);
+        }
+
+        return list;
+    }
+    
+    //日付を整形　2018/08/09 -> 20180809
+    public static String dateFormalize(String date) {
+        //日付の場合は整形
+        if(date.contains("/"))
+            date = date.split("#")[0].split(" ")[0].replace("/", "").substring(0, 8);
+        
+        return date;    
     }
 }

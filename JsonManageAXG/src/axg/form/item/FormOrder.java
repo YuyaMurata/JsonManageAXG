@@ -45,7 +45,7 @@ public class FormOrder {
         //System.out.println("作番:"+sbnList);
         Map<String, List<String>> map = new LinkedHashMap();
 
-        int db = indexList.indexOf("受注.受注(KOMPAS)");
+        int db = indexList.indexOf("受注.DB");
         int price = indexList.indexOf("受注.請求金額");
         int kind = indexList.indexOf("受注.受注区分");
         int fin_date = indexList.indexOf("受注.作業完了日");

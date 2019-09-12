@@ -25,7 +25,7 @@ public class FormWork {
 
         Map<String, List<String>> map = new LinkedHashMap();
 
-        int db = indexList.indexOf("作業.作業(KOMPAS)");
+        int db = indexList.indexOf("作業.DB");
         int cd = indexList.indexOf("作業.作業コード");
         
         for (Object sbn : odrSBN) {

@@ -34,10 +34,11 @@ public class FormAllSurpport {
                     aslist.set(finDate, kykdt);
                 }
             }
-
-            newMap.put(date.split("#")[0], aslist);
+            
+            if(Integer.valueOf(aslist.get(finDate)) > Integer.valueOf(date.split("#")[0]))
+                newMap.put(date.split("#")[0], aslist);
         }
-
+        
         if (newMap.isEmpty()) {
             return null;
         }

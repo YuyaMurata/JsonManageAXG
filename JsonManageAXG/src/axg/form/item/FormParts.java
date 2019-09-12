@@ -27,7 +27,7 @@ public class FormParts {
 
         Map<String, List<String>> map = new LinkedHashMap();
 
-        int db = indexList.indexOf("部品.部品(KOMPAS)");
+        int db = indexList.indexOf("部品.DB");
         int cd = indexList.indexOf("部品.品番");
 
         for (Object sbn : odrSBN) {
