@@ -35,9 +35,9 @@ public class MSyaryoObjectShuffle {
         MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
         
-        //設定ファイルのヘッダ読み込み
-        Map index = new MapToJSON().toMap(shuffleSetting);
-        Map layout = new MapToJSON().toMap(layoutSetting);
+        //設定ファイルの読み込み
+        Map index = new MapToJSON().toMap(shuffleSetting); //シャッフリング用
+        Map layout = new MapToJSON().toMap(layoutSetting); //ヘッダ用
 
         //Header
         MHeaderObject headerobj = cleanDB.getHeader();

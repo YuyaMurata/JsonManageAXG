@@ -28,7 +28,7 @@ public class MSyaryoObjectCleansing {
     static Map<String, Map<String, List<String>>> ruleMap;
     
     public static void main(String[] args) {
-        clean("json", "komatsuDB_PC200", "axg\\clean_mongo_syaryo.json");
+        clean("json", "komatsuDB_PC200", "axg\\cleansing_settings.json");
     }
     
     public static void clean(String db, String collection, String cleanSetting) {
