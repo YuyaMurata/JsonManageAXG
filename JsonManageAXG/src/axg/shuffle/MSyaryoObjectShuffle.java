@@ -22,15 +22,12 @@ import java.util.stream.Collectors;
  */
 public class MSyaryoObjectShuffle {
 
-    //Index
-    //static Map<String, Map<String, List<String>>> index = new MapToJSON().toMap("axg\\shuffle_mongo_syaryo.json");
-    private static DecimalFormat df = new DecimalFormat("00");
-
     public static void main(String[] args) {
         //シャッフル
         shuffle("json", "komatsuDB_PC200", "axg\\shuffle_mongo_syaryo.json", "axg\\layout_mongo_syaryo.json");
     }
 
+    //シャッフリング実行
     public static void shuffle(String db, String collection, String shuffleSetting, String layoutSetting) {
         MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
@@ -44,11 +41,13 @@ public class MSyaryoObjectShuffle {
 
         long start = System.currentTimeMillis();
         
+        //シャッフリング用 Mongoコレクションを生成
         MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
         shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
         shuffleDB.clear();
         shuffleDB.coll.insertOne(recreateHeaderObj(layout));
         
+        //シャッフリング実行
         List<String> sids = cleanDB.getKeyList();
         sids.parallelStream()
                 .map(sid -> shuffleOne(headerobj, cleanDB.getObj(sid), index))
@@ -61,6 +60,7 @@ public class MSyaryoObjectShuffle {
         cleanDB.close();
     }
     
+    //1台のシャッフリング
     private static MSyaryoObject shuffleOne(MHeaderObject header, MSyaryoObject syaryo, Map<String, Map<String, List<String>>> index){
             Map<String, Map<String, List<String>>> map = new LinkedHashMap();
             
@@ -91,6 +91,7 @@ public class MSyaryoObjectShuffle {
             return obj;
     }
 
+    //テスト用
     public static void testPrint(String idx, Map<String, List<String>> map) {
         System.out.println(idx);
 
@@ -103,6 +104,7 @@ public class MSyaryoObjectShuffle {
         System.out.println("");
     }
 
+    //インデックスのマッピング
     private static Map<String, List<String>> idxMapping(Map<String, List<String>> dataMap, String subKey, List<String> idxList, MHeaderObject header, MSyaryoObject ref) {
         if (subKey.contains(".")) {
             //複数レコードでデータを作成
@@ -156,9 +158,8 @@ public class MSyaryoObjectShuffle {
         }
     }
 
+    //ヘッダオブジェクトを指定レイアウトで作成
     public static MHeaderObject recreateHeaderObj(Map<String, Map<String, List<String>>> layout) {
-        //Map<String, Map<String, List<String>>> layout = new MapToJSON().toMap("axg\\layout_mongo_syaryo.json");
-
         List header = new ArrayList();
         header.add("id ");
         layout.values().stream().forEach(l -> {
@@ -171,7 +172,9 @@ public class MSyaryoObjectShuffle {
         return new MHeaderObject(header);
     }
     
+    //重複キーにインデックス番号を付加
     private static String duplicateKey(String key, Map map) {
+        DecimalFormat df = new DecimalFormat("00");
         int cnt = 0;
         String k = key;
         while (map.get(k) != null) {

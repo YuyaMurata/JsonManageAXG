@@ -11,7 +11,6 @@ import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import file.MapToJSON;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +35,10 @@ public class MSyaryoObjectCleansing {
         originDB.set(db, collection);
         
         //設定ファイルのヘッダ読み込み
-        ruleMap = new MapToJSON().toMap(cleanSetting);
-        
+        ruleMap = new MapToJSON().toMap(cleanSetting); 
         hobj = originDB.getHeaderObj();
         
-        //New Mongo Collection
+        //クレンジング用Mongoコレクション作成
         MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
         cleanDB.clear();
@@ -51,7 +49,6 @@ public class MSyaryoObjectCleansing {
         
         //車両のクレンジング実行
         originDB.getKeyList().parallelStream()
-                //.filter(sid -> Arrays.asList(typ.split(",")).contains(sid.split("-")[1]+sid.split("-")[2].replace(" ", "")))
                 .map(sid -> cleanOne(originDB.get(sid)))
                 .filter(obj -> obj != null)
                 .forEach(cleanDB.coll::insertOne);
@@ -64,6 +61,7 @@ public class MSyaryoObjectCleansing {
         cleanDB.close();
     }
 
+    //1台のクレンジング
     public static MSyaryoObject cleanOne(MSyaryoObject obj) {
         Map<String, Integer> check = new HashMap<>();
         
@@ -91,6 +89,7 @@ public class MSyaryoObjectCleansing {
         return obj;
     }
 
+    //データの削除
     private static List<String> removeData(String key, Map<String, List<String>> data, Map<String, List<String>> rule) {
         if (data == null) {
             //System.out.print(",,,,");

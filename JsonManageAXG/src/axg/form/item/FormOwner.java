@@ -18,29 +18,13 @@ import java.util.stream.Collectors;
  */
 public class FormOwner {
 
-    public static Map form(Map<String, List<String>> owner, List indexList, Map<String, String> honsyIndex,  DataRejectRule reject) {
+    public static Map form(Map<String, List<String>> owner, List indexList, DataRejectRule reject) {
         if (owner == null) {
             //System.out.println("Not found owner!");
             return null;
         }
         
-        Integer company = indexList.indexOf("顧客.会社コード");
         Integer ownerID = indexList.indexOf("顧客.納入先コード");
-
-        //本社コード揃え
-        for (String d : owner.keySet()) {
-            List list = owner.get(d);
-            String com = list.get(company).toString();
-            String id = list.get(ownerID).toString();
-
-            if (honsyIndex.get(com + "_" + id) != null) {
-                id = honsyIndex.get(com + "_" + id).split("_")[0];
-            }
-
-            //reject.addKUEC(id, d.split("#")[0]); //KUECを登録
-
-            list.set(ownerID, id);
-        }
 
         //ID重複排除 ##排除
         //System.out.println(owner.values().stream().map(l -> l.get(ownerID)).collect(Collectors.toList()));
