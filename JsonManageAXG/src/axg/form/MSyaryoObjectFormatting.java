@@ -40,15 +40,20 @@ public class MSyaryoObjectFormatting {
     public static void form(String db, String collection){
         Long start = System.currentTimeMillis();
         
+        //シャッフリング用 Mongoコレクションの読み込み
         MongoDBPOJOData shuffleDB = MongoDBPOJOData.create();
         shuffleDB.set(db, collection+"_Shuffle", MSyaryoObject.class);
+        
+        //header
+        MHeaderObject header = shuffleDB.getHeader();
+        
+        //整形用 Mongoコレクションを生成
         MongoDBPOJOData formDB = MongoDBPOJOData.create();
         formDB.set(db, collection+"_Form", MSyaryoObject.class);
         formDB.clear();
-        
-        MHeaderObject header = shuffleDB.getHeader();
         formDB.coll.insertOne(header);
         
+        //整形実行
         shuffleDB.getKeyList().parallelStream()
                 .map(sid -> formOne(header, shuffleDB.getObj(sid)))
                 .forEach(formDB.coll::insertOne);
@@ -60,6 +65,7 @@ public class MSyaryoObjectFormatting {
         formDB.close();
     }
 
+    //1台の整形
     private static MSyaryoObject formOne(MHeaderObject header, MSyaryoObject obj) {
         //整形時のデータ削除ルールを設定
         DataRejectRule rule = new DataRejectRule();
@@ -85,20 +91,15 @@ public class MSyaryoObjectFormatting {
         
         //受注の整形
         obj.setData("受注", FormOrder.form(obj.getData("受注"), header.getHeader("受注"), rule));
-        
-        List sbnList = null;
-        if (obj.getData("受注") != null) {
-            sbnList = new ArrayList(obj.getData("受注").keySet());
-        }
-        
+ 
         //廃車の整形
         obj.setData("廃車", FormDead.form(obj.getData("廃車"), rule.currentDate, header.getHeader("廃車")));
         
         //作業の整形
-        obj.setData("作業", FormWork.form(obj.getData("作業"), sbnList, header.getHeader("作業"), rule.getWORKID()));
+        obj.setData("作業", FormWork.form(obj.getData("作業"), rule.sbnList, header.getHeader("作業")));
         
         //部品の整形
-        obj.setData("部品", FormParts.form(obj.getData("部品"), sbnList, header.getHeader("部品"), rule.getPARTSID()));
+        obj.setData("部品", FormParts.form(obj.getData("部品"), rule.sbnList, header.getHeader("部品")));
         
         //SMRの整形
         obj.setData("SMR", FormSMR.form(obj.getData("SMR"), header.getHeader("SMR"), obj.getName().split("-")[3]));

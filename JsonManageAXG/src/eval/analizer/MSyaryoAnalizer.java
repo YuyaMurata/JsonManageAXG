@@ -392,7 +392,7 @@ public class MSyaryoAnalizer{
 
     //startからstopまでの経過日数計算
     public static Integer time(String start, String stop) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyymmdd");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         try {
             Date st = sdf.parse(start);
             Date sp = sdf.parse(stop);
@@ -434,7 +434,7 @@ public class MSyaryoAnalizer{
 
     //オールサポート対象期間か判定
     private Boolean checkAS(String d) {
-        LocalDate date = LocalDate.parse(d, DateTimeFormatter.ofPattern("yyyymmdd"));
+        LocalDate date = LocalDate.parse(d, DateTimeFormatter.ofPattern("yyyyMMdd"));
         for (String[] term : termAllSupport) {
             LocalDate ts = LocalDate.parse(term[0]);
             LocalDate tf = LocalDate.parse(term[1]);

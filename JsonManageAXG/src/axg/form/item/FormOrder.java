@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class FormOrder {
 
     //受注情報を整形
-    public static Map form(Map<String, List<String>> order, List indexList, DataRejectRule reject) {
+    public static Map form(Map<String, List<String>> order, List indexList, DataRejectRule rule) {
         if (order == null) {
             //System.out.println("Not found Order!");
             return null;
@@ -32,7 +32,7 @@ public class FormOrder {
         
         Map<String, Integer> sortMap = order.entrySet().stream()
                 .filter(e -> !e.getValue().get(date).equals(""))  //受注日が空の場合無視
-                .filter(e -> Integer.valueOf(reject.getNew()) <= Integer.valueOf(e.getValue().get(date)))  //納入前受注情報の削除
+                .filter(e -> Integer.valueOf(rule.getNew()) <= Integer.valueOf(e.getValue().get(date)))  //納入前受注情報の削除
                 .collect(Collectors.toMap(e -> e.getKey(), e -> Integer.valueOf(e.getValue().get(date))));
 
         //作番重複除去
@@ -47,7 +47,6 @@ public class FormOrder {
 
         int db = indexList.indexOf("受注.DB");
         int price = indexList.indexOf("受注.請求金額");
-        int kind = indexList.indexOf("受注.受注区分");
         int fin_date = indexList.indexOf("受注.作業完了日");
         
         //6桁以下の規格外の作番を取得するリスト
@@ -89,12 +88,6 @@ public class FormOrder {
             if (sbn.length() < 7) {
                 sixSBN.add(sbn);
             }
-
-            //System.out.println(map.get(sbn));
-            reject.addPARTSID(sbn);
-            if (map.get(sbn).get(kind).equals("2")) {
-                reject.addWORKID(sbn);
-            }
         }
 
         //規格外作番で修正されている場合は削除
@@ -119,15 +112,16 @@ public class FormOrder {
 
             if (list.get(fin_date).contains("")) {
                 list.set(fin_date, list.get(date));
-                //System.out.println(list);
             }
             
             map.put(sbn, list);
 
             //最新の受注日
-            reject.currentDate = list.get(date);
+            rule.currentDATE(list.get(date));
         }
-
+        
+        rule.setSBN(map.keySet());
+        
         return map;
     }
 }

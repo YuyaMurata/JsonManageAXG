@@ -58,6 +58,7 @@ public class MongoDBData {
         return this.coll.find(eq(field, key)).first();
     }
     
+    //将来的に動作しなくなる可能性がある
     public List<String> getKeyList(){
         List keys = new ArrayList<>();
         Document match = new Document("$match", new Document("name", new Document("$ne", null)));
@@ -86,7 +87,7 @@ public class MongoDBData {
         return ndoc;
     }
 
-    //将来的に動作しなくなるため修正
+    //将来的に動作しなくなる可能性がある
     public void copyTo(String newcollname) {
         if(db.getCollection(newcollname).countDocuments() != 0)
             throw new MongoException("Already exists "+newcollname);

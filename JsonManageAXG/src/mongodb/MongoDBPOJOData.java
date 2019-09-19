@@ -65,7 +65,7 @@ public class MongoDBPOJOData {
         System.out.println("get key start!");
         MongoDBData cl = MongoDBData.create();
         
-        System.out.println(this.db.getName()+","+this.coll.getNamespace().getCollectionName());
+        System.out.println("mongo connect : "+this.db.getName()+"."+this.coll.getNamespace().getCollectionName());
         
         cl.set(this.db.getName(), this.coll.getNamespace().getCollectionName());
         List keys = cl.getKeyList();

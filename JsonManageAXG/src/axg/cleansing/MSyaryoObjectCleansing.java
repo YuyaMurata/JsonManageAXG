@@ -34,7 +34,7 @@ public class MSyaryoObjectCleansing {
         MongoDBData originDB = MongoDBData.create();
         originDB.set(db, collection);
         
-        //設定ファイルのヘッダ読み込み
+        //設定ファイルとヘッダ読み込み
         ruleMap = new MapToJSON().toMap(cleanSetting); 
         hobj = originDB.getHeaderObj();
         

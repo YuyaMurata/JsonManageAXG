@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class FormWork {
     //作業明細を整形
-    public static Map form(Map<String, List<String>> work, List odrSBN, List indexList, List workOrder) {
+    public static Map form(Map<String, List<String>> work, List odrSBN, List indexList) {
         if (work == null || odrSBN == null) {
             //System.out.println("Not found Work!");
             return null;

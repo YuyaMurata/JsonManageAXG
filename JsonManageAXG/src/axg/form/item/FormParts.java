@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class FormParts {
 
     //部品明細を整形
-    public static Map form(Map<String, List<String>> parts, List odrSBN, List indexList, List partsOrder) {
+    public static Map form(Map<String, List<String>> parts, List odrSBN, List indexList) {
         if (parts == null || odrSBN == null) {
             //System.out.println("Not found Parts!");
             return null;

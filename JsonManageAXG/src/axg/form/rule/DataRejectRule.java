@@ -7,6 +7,7 @@ package axg.form.rule;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -22,26 +23,13 @@ public class DataRejectRule {
         this.newd = nd.split("#")[0];
     }
     
-    List work = new ArrayList();
-    public List getWORKID(){
-        return work;
-    }
-    
-    public void addWORKID(String id){
-        work.add(id);
-    }
-    
-    List parts = new ArrayList();
-    public List getPARTSID(){
-        return parts;
-    }
-    
-    public void addPARTSID(String id){
-        parts.add(id);
-    }
-    
     public String currentDate = "0";
     public void currentDATE(String date){
         currentDate = date;
+    }
+    
+    public List<String> sbnList;
+    public void setSBN(Set<String> sbns){
+        sbnList = new ArrayList(sbns);
     }
 }
