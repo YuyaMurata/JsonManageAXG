@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
  */
 public class FormWork {
     //作業明細を整形
-    public static Map form(Map<String, List<String>> work, List odrSBN, List indexList) {
+    public static Map form(Map<String, List<String>> work, List<String> odrSBN, List indexList) {
         if (work == null || odrSBN == null) {
             //System.out.println("Not found Work!");
             return null;
@@ -28,10 +28,10 @@ public class FormWork {
         int db = indexList.indexOf("作業.DB");
         int cd = indexList.indexOf("作業.作業コード");
         
-        for (Object sbn : odrSBN) {
+        for (String sbn : odrSBN) {
             //重複作番を取り出す
             List<String> sbnGroup = work.keySet().stream()
-                    .filter(s -> s.contains(sbn.toString()))
+                    .filter(s -> s.split("#")[0].equals(sbn.toString()))
                     .collect(Collectors.toList());
 
             //KOMPAS 作業情報が存在するときは取り出す

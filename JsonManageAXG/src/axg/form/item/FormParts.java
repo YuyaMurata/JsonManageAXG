@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class FormParts {
 
     //部品明細を整形
-    public static Map form(Map<String, List<String>> parts, List odrSBN, List indexList) {
+    public static Map form(Map<String, List<String>> parts, List<String> odrSBN, List indexList) {
         if (parts == null || odrSBN == null) {
             //System.out.println("Not found Parts!");
             return null;
@@ -30,10 +30,10 @@ public class FormParts {
         int db = indexList.indexOf("部品.DB");
         int cd = indexList.indexOf("部品.品番");
 
-        for (Object sbn : odrSBN) {
+        for (String sbn : odrSBN) {
             //重複作番を取り出す
             List<String> sbnGroup = parts.keySet().stream()
-                    .filter(s -> s.contains(sbn.toString()))
+                    .filter(s -> s.split("#")[0].equals(sbn))
                     .collect(Collectors.toList());
 
             //KOMPAS 部品情報が存在するときは取り出す
