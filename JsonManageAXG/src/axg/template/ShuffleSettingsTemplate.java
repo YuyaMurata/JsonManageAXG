@@ -20,7 +20,7 @@ import mongodb.MongoDBData;
  */
 public class ShuffleSettingsTemplate {
     public static void main(String[] args) {
-        create("json", "komatsuDB_PC200", "mongo_syaryo_template.json");
+        create("json", "komatsuDB_TEST", "settings\\mongo_syaryo_template.json");
     }
     
     //シャッフル用ファイルを作成するための元ファイル作成
