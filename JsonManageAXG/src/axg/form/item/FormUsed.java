@@ -57,11 +57,11 @@ public class FormUsed {
         for (String date : used.keySet()) {
             List list = used.get(date);
             String d = date.split("#")[0].replace("/", "");
-
-            //KUECを除外
-            /*if (kuec.contains(d)) {
+            
+            //空日付を除外
+            if (d.length() < 8) {
                 continue;
-            }*/
+            }
 
             //新車より前に存在する中古車情報を削除
             if (Integer.valueOf(d) <= Integer.valueOf(newd)) {

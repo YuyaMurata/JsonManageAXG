@@ -24,7 +24,7 @@ public class MSyaryoObjectShuffle {
 
     public static void main(String[] args) {
         //シャッフル
-        shuffle("json", "komatsuDB_PC200", "axg\\shuffle_mongo_syaryo.json", "axg\\layout_mongo_syaryo.json");
+        shuffle("json", "komatsuDB_TEST", "settings\\shuffle_mongo_syaryo.json", "settings\\layout_mongo_syaryo.json");
     }
 
     //シャッフリング実行
@@ -144,7 +144,13 @@ public class MSyaryoObjectShuffle {
             
             String key = idx.split("\\.")[0];
             
-            String data = refdata.get(header.getHeaderIdx(key, idx));
+            String data = null;
+            try{
+            data = refdata.get(header.getHeaderIdx(key, idx));
+            }catch(Exception e){
+                System.err.println(idx);
+                System.exit(0);
+            }
             
             //空白列の除去
             if(data.replace(" ", "").equals(""))

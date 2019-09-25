@@ -47,7 +47,9 @@ public class FormOrder {
         int db = indexList.indexOf("受注.DB");
         int price = indexList.indexOf("受注.請求金額");
         int fin_date = indexList.indexOf("受注.作業完了日");
-
+        
+        System.out.println(db);
+        
         for (String sbn : sbnList) {
             //重複作番を取り出す
             List<String> sbnGroup = order.keySet().stream()
