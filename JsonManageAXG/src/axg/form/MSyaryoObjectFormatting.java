@@ -34,7 +34,7 @@ import mongodb.MongoDBPOJOData;
  */
 public class MSyaryoObjectFormatting {
     public static void main(String[] args) {
-        form("json", "komatsuDB_TEST");
+        form("json", "komatsuDB_PC200");
     }
     
     public static void form(String db, String collection){

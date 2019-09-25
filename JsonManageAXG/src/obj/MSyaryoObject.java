@@ -73,9 +73,9 @@ public class MSyaryoObject {
     }
     
     public List<String> getDataOne(String key){
-        if(this.map.get(key) != null)
+        if(this.map.get(key) != null){
             return this.map.get(key).values().stream().findFirst().get();
-        else{
+        }else{
             return null;
         }
     }
