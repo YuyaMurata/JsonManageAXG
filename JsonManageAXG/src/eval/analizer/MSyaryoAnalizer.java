@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.Optional;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
@@ -30,7 +31,8 @@ import obj.MSyaryoObject;
  *
  * @author ZZ17390
  */
-public class MSyaryoAnalizer{
+public class MSyaryoAnalizer {
+
     public MSyaryoObject syaryo;
     public String kind = "";
     public String type = "";
@@ -50,24 +52,24 @@ public class MSyaryoAnalizer{
     public Integer acmLCC = -1;
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
-    public TreeMap<Integer, String> smrDate = new TreeMap<>();
+    public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
     private int D_DATE = 365;
     private int D_SMR = 10;
     private List<String[]> termAllSupport;
 
     public static Boolean DISP_COUNT = true;
-    
+
     //初期設定
     private static MongoDBPOJOData db;
     private static MHeaderObject header;
 
     private static int CNT = 0;
-    
-    public static void initialize(MongoDBPOJOData mdb){
+
+    public static void initialize(MongoDBPOJOData mdb) {
         db = mdb;
         header = db.getHeader();
     }
-    
+
     public MSyaryoAnalizer(String name) {
         CNT++;
         this.syaryo = db.getObj(name);
@@ -92,59 +94,65 @@ public class MSyaryoAnalizer{
     private void settings() {
         //Name
         this.kind = syaryo.getName().split("-")[0];
-        this.type = syaryo.getName().split("-")[1]+syaryo.getName().split("-")[2].replace(" ", "");
+        this.type = syaryo.getName().split("-")[1] + syaryo.getName().split("-")[2].replace(" ", "");
         this.no = syaryo.getName().split("-")[3];
-        
+
         //Status
         setLifeStatus();
         setSpecStatus();
         setOwnerStatus();
         setServiceStatus();
-    }
-    
-    private void setSpecStatus(){
-        //車両マスタのKOMTRAX列は利用しない
-        if(get("KOMTRAX_SMR") != null)
-            komtrax = true;
         
+        //SMR
+        setSMRDateDict();
+    }
+
+    private void setSpecStatus() {
+        //車両マスタのKOMTRAX列は利用しない
+        if (get("KOMTRAX_SMR") != null) {
+            komtrax = true;
+        }
+
         //KUECでの中古売買のみ
-        if(get("中古") != null){
+        if (get("中古") != null) {
             used = true;
             usedlife = new ArrayList<>(get("中古").keySet());
         }
-        
+
         //オールサポート
-        if(get("オールサポート") != null){
+        if (get("オールサポート") != null) {
             allsupport = true;
             termAllSupport = get("オールサポート").entrySet().stream()
-                                .map(e -> new String[]{e.getKey(), e.getValue().get(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"))})
-                                .collect(Collectors.toList());
+                    .map(e -> new String[]{e.getKey(), e.getValue().get(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"))})
+                    .collect(Collectors.toList());
         }
     }
-    
-    private void setLifeStatus(){
+
+    private void setLifeStatus() {
         //納入日
         lifestart = get("新車").keySet().stream().findFirst().get();
-        
+
         //最終確認日
-        if(get("KOMTRAX_SMR") != null)
+        if (get("KOMTRAX_SMR") != null) {
             lifestop = get("KOMTRAX_SMR").keySet().stream()
-                            .sorted(Comparator.comparing(d -> Integer.valueOf(d), Comparator.reverseOrder()))
-                            .findFirst().get();
-        else if(get("受注") != null)
+                    .sorted(Comparator.comparing(d -> Integer.valueOf(d), Comparator.reverseOrder()))
+                    .findFirst().get();
+        } else if (get("受注") != null) {
             lifestop = getValue("受注", "受注.作業完了日", true).get(0);
-        else
+        } else {
             lifestop = "-1";
-        
+        }
+
         //lifedead
-        if(get("廃車") != null)
+        if (get("廃車") != null) {
             lifedead = get("廃車").keySet().stream().findFirst().get();
-        else
+        } else {
             lifedead = "-1";
+        }
     }
-    
-    private void setServiceStatus(){
-        if(get("受注") != null){
+
+    private void setServiceStatus() {
+        if (get("受注") != null) {
             //受注情報
             numOrders = get("受注").size();
             acmLCC = getValue("受注", "受注.請求金額", false).parallelStream().mapToInt(p -> Integer.valueOf(p)).sum();
@@ -155,31 +163,58 @@ public class MSyaryoAnalizer{
                             (e1, e2) -> e1,
                             TreeMap::new)
                     );
-            
+
             //作業情報
-            if(get("作業") != null)
+            if (get("作業") != null) {
                 numWorks = get("作業").size();
-            
+            }
+
             //部品情報
-            if(get("部品") != null)
+            if (get("部品") != null) {
                 numParts = get("部品").size();
+            }
         }
     }
-    
-    private void setOwnerStatus(){
-        if(get("顧客") != null){
+
+    private void setOwnerStatus() {
+        if (get("顧客") != null) {
             numOwners = get("顧客").size();
-            
+
             //主要な代理店
             mcompany = getValue("顧客", "顧客.会社コード", false).stream().filter(c -> c.length() > 1).findFirst().get();
         }
-        
-    }
-    
-    private void setDateSMRDict(){
-        //KOMTRAXが存在する場合の辞書構成
+
     }
 
+    private void setSMRDateDict() {
+        String[] smrKey = new String[]{"KOMTRAX_SMR", "SMR", "LOADMAP_DATE_SMR"};
+        
+        //SMR Keyからデータを取得
+        Arrays.stream(smrKey)
+                .map(key -> get(key))
+                .filter(d -> d != null)
+                .flatMap(d -> d.entrySet().stream())
+                .forEach(d -> {
+                    Integer smr = (Integer.valueOf(d.getValue().get(1)) / D_SMR) * D_SMR;
+                    if (smrDate.get(smr) == null) {
+                        smrDate.put(smr, Integer.valueOf(d.getKey().split("#")[0]));
+                    }
+                });
+        
+        //日付が前後している情報を削除
+        List<Integer> removeSMR = new ArrayList<>();
+        Integer tmpDate = 0;
+        for(Integer smr : smrDate.keySet()){
+            Integer date = smrDate.get(smr);
+            if(tmpDate > date)
+                removeSMR.add(smr);
+            tmpDate = date;
+        }
+        System.out.println(removeSMR);
+        
+        removeSMR.stream().forEach(smrDate::remove);
+    }
+    
     /*
     private void setAgeSMR(Map<String, List<String>> act_smr) {
         //初期値
@@ -227,20 +262,23 @@ public class MSyaryoAnalizer{
             }
         }
     }*/
-
+    
     public String getSMRToDate(Integer smr) {
-        try {
-            return smrDate.ceilingEntry(smr).getValue();
-        } catch (NullPointerException ne) {
+        Map.Entry<Integer, Integer> date = smrDate.floorEntry(smr);
+        if(date != null)
+            return date.getValue().toString();
+        else
             return null;
-        }
     }
 
-    public Map.Entry<Integer, Integer> getDateToSMR(String date) {
-        if (ageSMR.get(date) != null) {
-            return ageSMR.get(date);
-        } else {
-            return forecast(date);
+    public Integer getDateToSMR(String date) {
+        Optional<Map.Entry<Integer, Integer>> smr = smrDate.entrySet().stream()
+                    .filter(v -> v.getValue().equals(Integer.valueOf(date))).findFirst();
+        
+        if(smr != null)
+            return smr.get().getKey();
+        else{
+            return null;
         }
     }
 
@@ -385,7 +423,7 @@ public class MSyaryoAnalizer{
         return time(lifestart, fstop);
     }
 
-    //納車されてからstopまでの経過日数
+    //納車されてからcurrentまでの経過日数
     public Map.Entry getAgeSMR(String current) {
         return ageSMR.floorEntry(current);
     }
@@ -497,9 +535,16 @@ public class MSyaryoAnalizer{
     public static void main(String[] args) {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-        
+
         MSyaryoAnalizer.initialize(db);
-        MSyaryoAnalizer sa = new MSyaryoAnalizer("PC200-8-N1-313240"); //test:"PC200-8-N1-314804"
+        MSyaryoAnalizer sa = new MSyaryoAnalizer("PC200-8-N1-311987");
         System.out.println(sa.toString());
+        
+        //辞書の出力
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
+            sa.smrDate.entrySet().stream().map(d -> d.getValue()+","+d.getKey()).forEach(pw::println);
+        }catch(Exception e){
+            
+        }
     }
 }
