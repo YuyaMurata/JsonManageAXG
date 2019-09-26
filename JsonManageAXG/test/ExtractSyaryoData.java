@@ -26,10 +26,10 @@ public class ExtractSyaryoData {
         shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         
-        String[] headers = new String[]{"分類.会社コード", "分類.車歴区分"};
+        String[] headers = new String[]{"Check2.作番クローズ理由コード"};
         List<String> out = extract(headers);
         
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test.csv")) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test_作番クローズ.csv")) {
             pw.println("SID,"+String.join(",", headers));
             out.stream().forEach(pw::println);
         }

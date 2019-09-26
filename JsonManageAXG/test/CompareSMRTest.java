@@ -1,4 +1,9 @@
 
+import file.CSVFileReadWrite;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import mongodb.MongoDBPOJOData;
 import obj.MSyaryoObject;
 
@@ -7,14 +12,48 @@ import obj.MSyaryoObject;
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 /**
  *
  * @author ZZ17807
  */
 public class CompareSMRTest {
+
     public static void main(String[] args) {
         MongoDBPOJOData formDB = MongoDBPOJOData.create();
         formDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
+
+        //SMRの下がる車両を抽出
+        formDB.getKeyList().stream()
+                .map(s -> formDB.getObj(s))
+                .filter(s -> s.getData("KOMTRAX_SMR") != null)
+                .forEach(s -> {
+                    detect(s.getName(), s.getData("KOMTRAX_SMR"));
+                });
+    }
+
+    private static void detect(String n, Map<String, List<String>> smr) {
+        Integer temp = 0;
+        List<String> dates = new ArrayList<>();
+        for (String date : smr.keySet()) {
+            String v = smr.get(date).get(1);
+            if (temp > Integer.valueOf(v)) {
+                dates.add(date);
+            }
+            temp = Integer.valueOf(v);
+        }
+
+        if (!dates.isEmpty()) {
+            System.out.println(n+dates);
+            try (PrintWriter pw = CSVFileReadWrite.writerSJIS("smrtest\\" + n + "_smr.csv")) {
+                pw.println("date,value,check");
+                smr.entrySet().stream()
+                        .map(s -> format(s.getKey().split("#")[0]) + "," + s.getValue().get(1) + "," + (dates.contains(s.getKey()) ? "1" : ""))
+                        .forEach(pw::println);
+            }
+        }
+    }
+
+    private static String format(String d) {
+        return d.substring(0, 4) + "/" + d.substring(4, 6) + "/" + d.substring(6, 8);
     }
 }
