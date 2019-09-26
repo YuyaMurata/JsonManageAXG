@@ -69,11 +69,11 @@ public class FormParts {
                 } else {
                     if (c > q) {
                         System.err.println(sbn + ":" + q + ", cancel=" + c);
-                        System.exit(0);
+                        cancels.add(sbn);
+                    } else {
+                        list.set(quant, String.valueOf(q - c));
+                        list.set(cancel, "0");
                     }
-
-                    list.set(quant, String.valueOf(q - c));
-                    list.set(cancel, "0");
                 }
             }
 

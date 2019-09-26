@@ -23,7 +23,7 @@ public class FormDead {
         Map<String, List<String>> map = new TreeMap();
         String date = "0";
         for (String d : dead.keySet()) {
-            if (!d.equals("")) {
+            if (d.length() > 7) {
                 //System.out.println(d);
                 if (Integer.valueOf(date) < Integer.valueOf(d.split("#")[0])) {
                     date = d.split("#")[0];
