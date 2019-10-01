@@ -21,7 +21,6 @@ import axg.form.rule.DataRejectRule;
 import axg.form.util.FormalizeUtils;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;

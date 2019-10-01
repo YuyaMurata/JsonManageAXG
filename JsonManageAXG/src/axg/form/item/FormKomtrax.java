@@ -5,6 +5,7 @@
  */
 package axg.form.item;
 
+import java.util.Arrays;
 import obj.MSyaryoObject;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -27,18 +28,20 @@ public class FormKomtrax {
         if (syaryo.getData("KOMTRAX_SMR") == null) {
             return;
         }
-
-        //String stdate = syaryo.getData("出荷").keySet().stream().findFirst().get();
-        syaryo.setData("KOMTRAX_SMR", formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR")));
+        
+        syaryo.setData("KOMTRAX_SMR", formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR"), syaryo.getData("生産")));
     }
 
-    private static Map formKMSMR(Map<String, List<String>> smr, List<String> index) {
+    private static Map formKMSMR(Map<String, List<String>> smr, List<String> index, Map<String, List<String>> product) {
         TreeMap<Integer, List<String>> map = new TreeMap<>();
 
         int dbIdx = index.indexOf("KOMTRAX_SMR.DB");
         int smrIdx = index.indexOf("KOMTRAX_SMR.SMR_VALUE");
         int unitIdx = index.indexOf("KOMTRAX_SMR.DAILY_UNIT");
-
+        
+        //初期値の設定
+        String initDate = product.keySet().stream().findFirst().get().split("#")[0];
+        
         //KOMTRAX_ACT を取得
         Map<String, List<String>> actSMR = smr.entrySet().parallelStream()
                 .filter(e -> e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
@@ -67,7 +70,9 @@ public class FormKomtrax {
 
         //マージしたものをKOMTRAX_SMRデータに上書き
         Map<String, List<String>> newMap = new TreeMap<>();
-        map.entrySet().stream().forEach(e -> {
+        map.entrySet().stream()
+                .filter(e -> Integer.valueOf(initDate) <= e.getKey())
+                .forEach(e -> {
             Integer k = e.getKey();
             List<String> v = e.getValue();
 
@@ -76,7 +81,10 @@ public class FormKomtrax {
 
             newMap.put(k.toString(), v);
         });
-
+        
+        List<String> initValue = Arrays.asList(new String[]{"EQP車両", "0", "1"});
+        newMap.put(initDate, initValue);
+        
         return newMap;
     }
 

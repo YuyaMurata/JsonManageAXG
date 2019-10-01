@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -21,8 +22,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.AbstractMap;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Collector;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
@@ -186,6 +189,7 @@ public class MSyaryoAnalizer {
 
     }
 
+    //SMR <-> 日付　辞書の作成
     private void setSMRDateDict() {
         String[] smrKey = new String[]{"KOMTRAX_SMR", "SMR", "LOADMAP_DATE_SMR"};
         
@@ -215,55 +219,10 @@ public class MSyaryoAnalizer {
         removeSMR.stream().forEach(smrDate::remove);
     }
     
-    /*
-    private void setAgeSMR(Map<String, List<String>> act_smr) {
-        //初期値
-        ageSMR.put("0", new AbstractMap.SimpleEntry<>(0, 0));
-        smrDate.put(0, lifestart);
-
-        // d刻みでSMRをsで丸める
-        for (String date : act_smr.keySet()) {
-            Integer t = age(date) / D_DATE;
-            Integer smr = (Double.valueOf(act_smr.get(date).get(0)).intValue() / D_SMR) * D_SMR;  //ACT_SMRの構成が変わるとエラー
-            if (maxSMR[4] <= smr) {
-                ageSMR.put(date, new AbstractMap.SimpleEntry<>(t, smr));
-
-                if (smrDate.get(smr) == null) {
-                    smrDate.put(smr, date);
-                }
-
-                maxSMR[4] = smr;
-            }
-        }
-
-        //取得できていない箇所を手入力サービスメータから取得
-        if (get("SMR") == null) {
-            return;
-        }
-
-        List<String> l = new ArrayList<>(ageSMR.keySet());
-        Integer last = Integer.valueOf(l.get(l.size() - 1));
-        List<String> svsmr = get("SMR").keySet().stream()
-                .filter(date -> last < Integer.valueOf(date.split("#")[0]))
-                .collect(Collectors.toList());
-
-        for (String date : svsmr) {
-            Integer t = age(date) / D_DATE;
-            Integer smr = (Double.valueOf(get("SMR").get(date).get(2)).intValue() / D_SMR) * D_SMR;  //SMRの構成が変わるとエラー
-
-            if (maxSMR[4] <= smr) {
-                ageSMR.put(date, new AbstractMap.SimpleEntry<>(t, smr));
-
-                if (smrDate.get(smr) == null) {
-                    smrDate.put(smr, date);
-                }
-
-                maxSMR[4] = smr;
-            }
-        }
-    }*/
-    
     public String getSMRToDate(Integer smr) {
+        Integer[] smrs = betweenValue(smr, smrDate.keySet());
+        System.out.println(Arrays.toString(smrs));
+        
         Map.Entry<Integer, Integer> date = smrDate.floorEntry(smr);
         if(date != null)
             return date.getValue().toString();
@@ -272,14 +231,34 @@ public class MSyaryoAnalizer {
     }
 
     public Integer getDateToSMR(String date) {
-        Optional<Map.Entry<Integer, Integer>> smr = smrDate.entrySet().stream()
-                    .filter(v -> v.getValue().equals(Integer.valueOf(date))).findFirst();
+        Integer[] dates = betweenValue(Integer.valueOf(date), smrDate.values());
+        System.out.println(Arrays.toString(dates));
         
-        if(smr != null)
+        Optional<Map.Entry<Integer, Integer>> smr = smrDate.entrySet().stream()
+                    .filter(v -> v.getValue() <= Integer.valueOf(date))
+                    .findFirst();
+
+        if(smr.isPresent())
             return smr.get().getKey();
         else{
             return null;
         }
+    }
+    
+    private Integer[] betweenValue(Integer mid, Collection<Integer> col){
+        List<Integer> l = new ArrayList(col);
+        Integer a = l.stream().filter(a1 -> a1 <= mid).reduce((a1,b1) -> b1).orElse(null);
+        Integer b = l.size() <= l.indexOf(a)+1 ? null : l.get(l.indexOf(a)+1);
+        if(a == null) a = 0;
+        if(b == null) {
+            b = a;
+            a = l.get(l.indexOf(a)-1);
+        }
+            
+        
+        Integer[] bet = new Integer[]{a, b};
+        
+        return bet;
     }
 
     //周辺2点から予測 精度低
@@ -430,21 +409,12 @@ public class MSyaryoAnalizer {
 
     //startからstopまでの経過日数計算
     public static Integer time(String start, String stop) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-        try {
-            Date st = sdf.parse(start);
-            Date sp = sdf.parse(stop);
-            Long age = (sp.getTime() - st.getTime()) / (1000 * 60 * 60 * 24);
+        LocalDate st = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        LocalDate sp = LocalDate.parse(stop, DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-            if (age == 0L) {
-                age = 1L;
-            }
+        Long age = ChronoUnit.DAYS.between(st, sp);
 
-            return age.intValue();
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-            return null;
-        }
+        return age.intValue();
     }
 
     //オールサポート対象期間のサービスを返す
@@ -541,10 +511,14 @@ public class MSyaryoAnalizer {
         System.out.println(sa.toString());
         
         //辞書の出力
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
+        /*try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
             sa.smrDate.entrySet().stream().map(d -> d.getValue()+","+d.getKey()).forEach(pw::println);
         }catch(Exception e){
             
-        }
+        }*/
+        
+        //SMRチェック
+        System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
+        System.out.println("6400:"+sa.getSMRToDate(6400));
     }
 }
