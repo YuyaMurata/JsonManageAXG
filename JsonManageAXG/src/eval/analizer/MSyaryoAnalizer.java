@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
@@ -53,7 +52,6 @@ public class MSyaryoAnalizer {
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
-    private int D_DATE = 365;
     private int D_SMR = 10;
     private List<String[]> termAllSupport;
 
@@ -230,6 +228,12 @@ public class MSyaryoAnalizer {
     }
 
     public Integer getDateToSMR(String date) {
+        Integer d = Integer.valueOf(date.split("#")[0]);
+        if(smrDate.values().contains(d))
+            return smrDate.entrySet().stream()
+                            .filter(v -> v.getValue().equals(d))
+                            .map(v -> v.getKey()).findFirst().get();
+        
         Integer[] dates = betweenValue(Integer.valueOf(date), smrDate.values());
         System.out.println(Arrays.toString(dates));
         
@@ -244,7 +248,7 @@ public class MSyaryoAnalizer {
         }
     }
     
-    private Integer[] betweenValue(Integer mid, Collection<Integer> col){
+    private Map<String, Integer[]) betweenValue(Integer mid, Collection<Integer> col){
         List<Integer> l = new ArrayList(col);
         Integer a = l.stream().filter(a1 -> a1 <= mid).reduce((a1,b1) -> b1).orElse(null);
         Integer b = l.size() <= l.indexOf(a)+1 ? null : l.get(l.indexOf(a)+1);
@@ -261,7 +265,7 @@ public class MSyaryoAnalizer {
     }
 
     //周辺2点から線形補間
-    public Map.Entry<Integer, Integer> interpolation(Integer smr, Integer[] date) {
+    public Double interpolation(Integer smr, Integer[] date) {
         
         return null;
     }
