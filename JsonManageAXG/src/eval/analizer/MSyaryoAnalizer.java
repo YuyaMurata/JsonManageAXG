@@ -53,7 +53,6 @@ public class MSyaryoAnalizer {
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
-    public TreeMap<Integer, Integer> dateSMR = new TreeMap<>();
     private int D_DATE = 365;
     private int D_SMR = 10;
     private List<String[]> termAllSupport;
@@ -205,39 +204,29 @@ public class MSyaryoAnalizer {
                     if(smrDate.lastEntry().getValue() < date)
                         if (smrDate.get(smr) == null)
                             smrDate.put(smr, date);
-                    
-                    if(dateSMR.get(date) == null)
-                        dateSMR.put(date, smr);
                 });
         
         //日付が前後している情報を削除
         List<Integer> removeSMR = new ArrayList<>();
-        List<Integer> removeDATE = new ArrayList<>();
         Integer tmpDate = 0;
         for(Integer smr : smrDate.keySet()){
             Integer date = smrDate.get(smr);
             if(tmpDate > date){
                 removeSMR.add(smr);
-                removeDATE.add(date);
             }
             tmpDate = date;
         }
-        System.out.println(removeDATE);
         System.out.println(removeSMR);
         
         removeSMR.stream().forEach(smrDate::remove);
-        removeDATE.stream().forEach(dateSMR::remove);
     }
     
     public String getSMRToDate(Integer smr) {
+        if(smrDate.get(smr) != null)
+            return smrDate.get(smr).toString();
         
         Integer[] smrs = betweenValue(smr, smrDate.keySet());
         
-        Map.Entry<Integer, Integer> date = smrDate.floorEntry(smr);
-        if(date != null)
-            return date.getValue().toString();
-        else
-            return null;
     }
 
     public Integer getDateToSMR(String date) {
@@ -271,34 +260,10 @@ public class MSyaryoAnalizer {
         return bet;
     }
 
-    //周辺2点から予測 精度低
-    public Map.Entry<Integer, Integer> forecast(String date) {
-        Integer t = age(date) / D_DATE;
-        Integer smr = 0;
-        Map.Entry<String, Map.Entry<Integer, Integer>> a1 = ageSMR.floorEntry(date);
-        try {
-            //区間点を予測
-            Map.Entry<String, Map.Entry<Integer, Integer>> a2 = ageSMR.higherEntry(date);
-            if (!a1.getKey().equals("0")) {
-                Double a = (a2.getValue().getValue() - a1.getValue().getValue()) / time(a2.getKey(), a1.getKey()).doubleValue();
-                smr = ((Double) (a1.getValue().getValue().doubleValue() + a * time(date, a1.getKey()))).intValue() / D_SMR * D_SMR;
-            }
-        } catch (NullPointerException ne) {
-            try {
-                //最終2点から未来を予測
-                Map.Entry<String, Map.Entry<Integer, Integer>> a0 = ageSMR.lowerEntry(ageSMR.floorKey(date));
-                Double a = (a1.getValue().getValue() - a0.getValue().getValue()) / time(a1.getKey(), a0.getKey()).doubleValue();
-                smr = ((Double) (a1.getValue().getValue().doubleValue() + a * time(date, a1.getKey()))).intValue() / D_SMR * D_SMR;
-            } catch (NullPointerException ne2) {
-                System.out.println(syaryo.getName());
-                System.out.println("a0=" + ageSMR.lowerEntry(ageSMR.floorKey(date)) + " , a1=" + a1);
-                ageSMR.entrySet().stream().map(a -> a.getKey() + "," + a.getValue()).forEach(System.out::println);
-                ne2.printStackTrace();
-                System.exit(0);
-            }
-        }
-
-        return new AbstractMap.SimpleEntry<>(t, smr);
+    //周辺2点から線形補間
+    public Map.Entry<Integer, Integer> interpolation(Integer smr, Integer[] date) {
+        
+        return null;
     }
 
     //作番と日付をswで相互変換
@@ -517,29 +482,27 @@ public class MSyaryoAnalizer {
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         
         Random r = new Random();
-        String sid = "PC200-8-N1-316797";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
+        String sid = db.getKeyList().get(r.nextInt(db.getKeyList().size()));
         
         MSyaryoAnalizer.initialize(db);
         MSyaryoAnalizer sa = new MSyaryoAnalizer(sid);
         System.out.println(sa.toString());
         
-        //辞書の出力
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
-            pw.println("Date,SMR,SMR->Date");
-            sa.dateSMR.entrySet().stream().map(d -> d.getKey()+","+d.getValue()+","+sa.smrDate.get(d.getValue())).forEach(pw::println);
-        }catch(Exception e){
-            
-        }
+        //smrDictOut(sa);
         
+        
+        //SMRチェック
+        System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
+        System.out.println("6400:"+sa.getSMRToDate(6400));
+    }
+    
+    private static void smrDictOut(MSyaryoAnalizer sa){
+        //辞書の出力
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize_dict.csv")){
             pw.println("Date,SMR");
             sa.smrDate.entrySet().stream().map(d -> d.getValue()+","+d.getKey()).forEach(pw::println);
         }catch(Exception e){
             
         }
-        
-        //SMRチェック
-        //System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
-        //System.out.println("6400:"+sa.getSMRToDate(6400));
     }
 }
