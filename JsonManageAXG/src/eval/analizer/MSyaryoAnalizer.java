@@ -7,14 +7,11 @@ package eval.analizer;
 
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,7 +22,7 @@ import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.stream.Collector;
+import java.util.Random;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
@@ -56,6 +53,7 @@ public class MSyaryoAnalizer {
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
+    public TreeMap<Integer, Integer> dateSMR = new TreeMap<>();
     private int D_DATE = 365;
     private int D_SMR = 10;
     private List<String[]> termAllSupport;
@@ -199,29 +197,41 @@ public class MSyaryoAnalizer {
                 .filter(d -> d != null)
                 .flatMap(d -> d.entrySet().stream())
                 .forEach(d -> {
+                    Integer date = Integer.valueOf(d.getKey().split("#")[0]);
                     Integer smr = (Integer.valueOf(d.getValue().get(1)) / D_SMR) * D_SMR;
-                    if (smrDate.get(smr) == null) {
-                        smrDate.put(smr, Integer.valueOf(d.getKey().split("#")[0]));
-                    }
+                    if(smrDate.lastEntry() == null)
+                        smrDate.put(smr, date);
+                    
+                    if(smrDate.lastEntry().getValue() < date)
+                        if (smrDate.get(smr) == null)
+                            smrDate.put(smr, date);
+                    
+                    if(dateSMR.get(date) == null)
+                        dateSMR.put(date, smr);
                 });
         
         //日付が前後している情報を削除
         List<Integer> removeSMR = new ArrayList<>();
+        List<Integer> removeDATE = new ArrayList<>();
         Integer tmpDate = 0;
         for(Integer smr : smrDate.keySet()){
             Integer date = smrDate.get(smr);
-            if(tmpDate > date)
+            if(tmpDate > date){
                 removeSMR.add(smr);
+                removeDATE.add(date);
+            }
             tmpDate = date;
         }
+        System.out.println(removeDATE);
         System.out.println(removeSMR);
         
         removeSMR.stream().forEach(smrDate::remove);
+        removeDATE.stream().forEach(dateSMR::remove);
     }
     
     public String getSMRToDate(Integer smr) {
+        
         Integer[] smrs = betweenValue(smr, smrDate.keySet());
-        System.out.println(Arrays.toString(smrs));
         
         Map.Entry<Integer, Integer> date = smrDate.floorEntry(smr);
         if(date != null)
@@ -505,20 +515,31 @@ public class MSyaryoAnalizer {
     public static void main(String[] args) {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-
+        
+        Random r = new Random();
+        String sid = "PC200-8-N1-316797";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
+        
         MSyaryoAnalizer.initialize(db);
-        MSyaryoAnalizer sa = new MSyaryoAnalizer("PC200-8-N1-311987");
+        MSyaryoAnalizer sa = new MSyaryoAnalizer(sid);
         System.out.println(sa.toString());
         
         //辞書の出力
-        /*try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize.csv")){
+            pw.println("Date,SMR,SMR->Date");
+            sa.dateSMR.entrySet().stream().map(d -> d.getKey()+","+d.getValue()+","+sa.smrDate.get(d.getValue())).forEach(pw::println);
+        }catch(Exception e){
+            
+        }
+        
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize_dict.csv")){
+            pw.println("Date,SMR");
             sa.smrDate.entrySet().stream().map(d -> d.getValue()+","+d.getKey()).forEach(pw::println);
         }catch(Exception e){
             
-        }*/
+        }
         
         //SMRチェック
-        System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
-        System.out.println("6400:"+sa.getSMRToDate(6400));
+        //System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
+        //System.out.println("6400:"+sa.getSMRToDate(6400));
     }
 }

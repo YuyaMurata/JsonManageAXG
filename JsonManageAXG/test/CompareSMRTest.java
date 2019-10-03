@@ -23,11 +23,12 @@ public class CompareSMRTest {
         formDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
 
         //SMRの下がる車両を抽出
-        formDB.getKeyList().stream()
+        formDB.getKeyList().stream().filter(sid -> sid.equals("PC200-8-N1-316686"))
                 .map(s -> formDB.getObj(s))
                 .filter(s -> s.getData("KOMTRAX_SMR") != null)
                 .forEach(s -> {
-                    detect(s.getName(), s.getData("KOMTRAX_SMR"));
+                    //detect(s.getName(), s.getData("KOMTRAX_SMR"));
+                    output(s.getName(), s.getData("KOMTRAX_SMR"));
                 });
     }
 
@@ -50,6 +51,16 @@ public class CompareSMRTest {
                         .map(s -> format(s.getKey().split("#")[0]) + "," + s.getValue().get(1) + "," + (dates.contains(s.getKey()) ? "1" : ""))
                         .forEach(pw::println);
             }
+        }
+    }
+    
+    private static void output(String n, Map<String, List<String>> smr) {
+
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(n + "_smr.csv")) {
+            pw.println("date,value");
+            smr.entrySet().stream()
+                .map(s -> format(s.getKey().split("#")[0]) + "," + s.getValue().get(1))
+                .forEach(pw::println);
         }
     }
 
