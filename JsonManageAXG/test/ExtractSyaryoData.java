@@ -27,7 +27,7 @@ public class ExtractSyaryoData {
 
     public static void main(String[] args) {
         shDB = MongoDBPOJOData.create();
-        shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
+        shDB.set("json", "komatsuDB_PC200_Form_raw", MSyaryoObject.class);
 
         String[] headers = new String[]{"受注"};
         //List<String> out = extract(headers);

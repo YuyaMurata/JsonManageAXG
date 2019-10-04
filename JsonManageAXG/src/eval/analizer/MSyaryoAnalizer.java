@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,11 +21,12 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Optional;
+import java.util.Queue;
 import java.util.Random;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
  *
@@ -52,7 +54,8 @@ public class MSyaryoAnalizer {
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
-    private int D_SMR = 10;
+    private static int D_SMR = 10;
+    private static int R = 10;
     private List<String[]> termAllSupport;
 
     public static Boolean DISP_COUNT = true;
@@ -100,7 +103,7 @@ public class MSyaryoAnalizer {
         setSpecStatus();
         setOwnerStatus();
         setServiceStatus();
-        
+
         //SMR
         setSMRDateDict();
     }
@@ -152,12 +155,13 @@ public class MSyaryoAnalizer {
     private void setServiceStatus() {
         if (get("受注") != null) {
             //受注情報
+            int idx_date = header.getHeaderIdx("受注", "受注.作業完了日");
             numOrders = get("受注").size();
             acmLCC = getValue("受注", "受注.請求金額", false).parallelStream().mapToInt(p -> Integer.valueOf(p)).sum();
             sbnDate = get("受注").entrySet().parallelStream()
                     .collect(Collectors.toMap(
                             e -> e.getKey(),
-                            e -> e.getValue().get(header.getHeaderIdx("受注", "受注.作業完了日")),
+                            e -> e.getValue().get(idx_date),
                             (e1, e2) -> e1,
                             TreeMap::new)
                     );
@@ -187,7 +191,7 @@ public class MSyaryoAnalizer {
     //SMR <-> 日付　辞書の作成
     private void setSMRDateDict() {
         String[] smrKey = new String[]{"KOMTRAX_SMR", "SMR", "LOADMAP_DATE_SMR"};
-        
+
         //SMR Keyからデータを取得
         Arrays.stream(smrKey)
                 .map(key -> get(key))
@@ -196,84 +200,102 @@ public class MSyaryoAnalizer {
                 .forEach(d -> {
                     Integer date = Integer.valueOf(d.getKey().split("#")[0]);
                     Integer smr = (Integer.valueOf(d.getValue().get(1)) / D_SMR) * D_SMR;
-                    if(smrDate.lastEntry() == null)
+                    if (smrDate.lastEntry() == null) {
                         smrDate.put(smr, date);
-                    
-                    if(smrDate.lastEntry().getValue() < date)
-                        if (smrDate.get(smr) == null)
+                    }
+
+                    if (smrDate.lastEntry().getValue() < date) {
+                        if (smrDate.get(smr) == null) {
                             smrDate.put(smr, date);
+                        }
+                    }
                 });
-        
+
         //日付が前後している情報を削除
         List<Integer> removeSMR = new ArrayList<>();
         Integer tmpDate = 0;
-        for(Integer smr : smrDate.keySet()){
+        for (Integer smr : smrDate.keySet()) {
             Integer date = smrDate.get(smr);
-            if(tmpDate > date){
+            if (tmpDate > date) {
                 removeSMR.add(smr);
             }
             tmpDate = date;
         }
         System.out.println(removeSMR);
-        
+
         removeSMR.stream().forEach(smrDate::remove);
     }
-    
-    public String getSMRToDate(Integer smr) {
-        if(smrDate.get(smr) != null)
-            return smrDate.get(smr).toString();
-        
-        Integer[] smrs = betweenValue(smr, smrDate.keySet());
-        
+
+    //SMR -> 日付
+    public Integer getSMRToDate(Integer smr) {
+        if (smrDate.get(smr) != null) {
+            return smrDate.get(smr);
+        }
+
+        Integer date = regression("smr", smr);
+
+        return date;
     }
 
+    //日付　-> SMR
     public Integer getDateToSMR(String date) {
         Integer d = Integer.valueOf(date.split("#")[0]);
-        if(smrDate.values().contains(d))
+        if (smrDate.values().contains(d)) {
             return smrDate.entrySet().stream()
-                            .filter(v -> v.getValue().equals(d))
-                            .map(v -> v.getKey()).findFirst().get();
-        
-        Integer[] dates = betweenValue(Integer.valueOf(date), smrDate.values());
-        System.out.println(Arrays.toString(dates));
-        
-        Optional<Map.Entry<Integer, Integer>> smr = smrDate.entrySet().stream()
-                    .filter(v -> v.getValue() <= Integer.valueOf(date))
-                    .findFirst();
+                    .filter(v -> v.getValue().equals(d))
+                    .map(v -> v.getKey()).findFirst().get();
+        }
 
-        if(smr.isPresent())
-            return smr.get().getKey();
-        else{
-            return null;
-        }
+        Integer smr = regression("date", Integer.valueOf(date));
+
+        return smr;
     }
-    
-    private Map<String, Integer[]) betweenValue(Integer mid, Collection<Integer> col){
-        List<Integer> l = new ArrayList(col);
-        Integer a = l.stream().filter(a1 -> a1 <= mid).reduce((a1,b1) -> b1).orElse(null);
-        Integer b = l.size() <= l.indexOf(a)+1 ? null : l.get(l.indexOf(a)+1);
-        if(a == null) a = 0;
-        if(b == null) {
-            b = a;
-            a = l.get(l.indexOf(a)-1);
-        }
+
+    //回帰式の算出
+    private Integer regression(String type, Integer p) {
+        Queue<Integer> q = new ArrayDeque();
+        int cnt = R / 2;
+        Collection<Integer> data = smrDate.keySet();
+        if (type.equals("date"))
+            data = smrDate.values();
+
+        for (Integer d : data) {
+            q.add(d);
+            if (R < q.size())
+                q.poll();
             
+            if (p < d)
+                cnt--;
+            
+            if (cnt < 0)
+                break;
+        }
         
-        Integer[] bet = new Integer[]{a, b};
+        SimpleRegression reg = new SimpleRegression();
+        String stdate = type.equals("date")?q.peek().toString():getSMRToDate(q.peek()).toString();
+        q.stream().forEach(d ->{
+            Integer date = type.equals("date")?d:getSMRToDate(d);
+            Integer smr = type.equals("smr")?d:getDateToSMR(d.toString());
+            reg.addData(time(stdate, date.toString()), smr);
+        });
         
-        return bet;
-    }
-
-    //周辺2点から線形補間
-    public Double interpolation(Integer smr, Integer[] date) {
+        //System.out.println("Q:"+q);
+        //System.out.println("R = "+reg.getSlope()+"x+"+reg.getIntercept());
         
-        return null;
+        Double v;
+        if(type.equals("smr")){
+            Double x = (p - reg.getIntercept()) / reg.getSlope();
+            v = Double.valueOf(time(stdate, x.intValue()));
+        }else{
+            v = reg.predict(time(stdate, p.toString()));
+        }
+        
+        return v.intValue();
     }
 
     //作番と日付をswで相互変換
     private Map<String, String> sbnDate = new HashMap<>();
     private Map<String, String> dateSBN = new HashMap<>();
-
     public String getSBNDate(String sbn, Boolean sw) {
         if (sw) {
             //SBN -> Date
@@ -395,6 +417,13 @@ public class MSyaryoAnalizer {
 
         return age.intValue();
     }
+    
+    //経過日から日付を計算
+    public static Integer time(String start, Integer days) {
+        LocalDate st = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyyMMdd")).plusDays(days);
+        //System.out.println("start="+start+" days="+days+" local:"+st);
+        return Integer.valueOf(st.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+    }
 
     //オールサポート対象期間のサービスを返す
     public Map<String, List<String>> allsupportService() {
@@ -484,29 +513,28 @@ public class MSyaryoAnalizer {
     public static void main(String[] args) {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-        
+
         Random r = new Random();
-        String sid = db.getKeyList().get(r.nextInt(db.getKeyList().size()));
-        
+        String sid = "PC200-8-N1-316797";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
+        System.out.println(sid);
+
         MSyaryoAnalizer.initialize(db);
         MSyaryoAnalizer sa = new MSyaryoAnalizer(sid);
         System.out.println(sa.toString());
-        
+
         //smrDictOut(sa);
-        
-        
         //SMRチェック
-        System.out.println("2007/10/29:"+sa.getDateToSMR("20181027"));
-        System.out.println("6400:"+sa.getSMRToDate(6400));
+        System.out.println("2017/12/28:" + sa.getDateToSMR("20171228"));
+        System.out.println("7000:" + sa.getSMRToDate(7000));
     }
-    
-    private static void smrDictOut(MSyaryoAnalizer sa){
+
+    private static void smrDictOut(MSyaryoAnalizer sa) {
         //辞書の出力
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize_dict.csv")){
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize_dict.csv")) {
             pw.println("Date,SMR");
-            sa.smrDate.entrySet().stream().map(d -> d.getValue()+","+d.getKey()).forEach(pw::println);
-        }catch(Exception e){
-            
+            sa.smrDate.entrySet().stream().map(d -> d.getValue() + "," + d.getKey()).forEach(pw::println);
+        } catch (Exception e) {
+
         }
     }
 }
