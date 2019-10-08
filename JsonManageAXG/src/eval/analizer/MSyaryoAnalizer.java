@@ -29,11 +29,10 @@ import obj.MSyaryoObject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- *
+ *　車両オブジェクト用の分析器
  * @author ZZ17390
  */
 public class MSyaryoAnalizer {
-
     public MSyaryoObject syaryo;
     public String kind = "";
     public String type = "";
@@ -51,6 +50,7 @@ public class MSyaryoAnalizer {
     public Integer numParts = -1;
     public Integer numWorks = -1;
     public Integer acmLCC = -1;
+    public Integer maxSMR = -1;
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
@@ -61,19 +61,17 @@ public class MSyaryoAnalizer {
     public static Boolean DISP_COUNT = true;
 
     //初期設定
-    private static MongoDBPOJOData db;
     private static MHeaderObject header;
 
     private static int CNT = 0;
 
-    public static void initialize(MongoDBPOJOData mdb) {
-        db = mdb;
-        header = db.getHeader();
+    public static void initialize(MHeaderObject h) {
+        header = h;
     }
 
-    public MSyaryoAnalizer(String name) {
+    public MSyaryoAnalizer(MSyaryoObject obj) {
         CNT++;
-        this.syaryo = db.getObj(name);
+        this.syaryo = obj;
 
         //設定
         settings();
@@ -518,8 +516,8 @@ public class MSyaryoAnalizer {
         String sid = "PC200-8-N1-316797";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
         System.out.println(sid);
 
-        MSyaryoAnalizer.initialize(db);
-        MSyaryoAnalizer sa = new MSyaryoAnalizer(sid);
+        MSyaryoAnalizer.initialize(db.getHeader());
+        MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj(sid));
         System.out.println(sa.toString());
 
         //smrDictOut(sa);

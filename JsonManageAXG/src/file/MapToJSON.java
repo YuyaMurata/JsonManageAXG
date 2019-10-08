@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class MapToJSON {
 
-    public void toJSON(String filename, Map index) {
+    public static void toJSON(String filename, Map index) {
         try (JsonWriter writer = new JsonWriter(new BufferedWriter(new FileWriter(filename)))) {
             writer.setIndent("  ");
 
@@ -37,7 +37,7 @@ public class MapToJSON {
         }
     }
 
-    public Map toMapSJIS(String filename) {
+    public static Map toMapSJIS(String filename) {
         Map<String, String> index;
         try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename), "SJIS")))) {
 
@@ -54,7 +54,7 @@ public class MapToJSON {
         return index;
     }
 
-    public Map toMap(String filename) {
+    public static Map toMap(String filename) {
         Map<String, String> index;
         try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename))))) {
 
