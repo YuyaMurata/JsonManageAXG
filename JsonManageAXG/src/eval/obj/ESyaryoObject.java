@@ -6,6 +6,7 @@
 package eval.obj;
 
 import eval.analizer.MSyaryoAnalizer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import obj.MSyaryoObject;
@@ -38,6 +39,10 @@ public class ESyaryoObject implements Clusterable{
     
     public void setID(Integer id){
         this.cid = id;
+    }
+    
+    public String check(){
+        return a.syaryo.getName()+":"+a.maxSMR+"/"+a.lifestop+":"+data.toString()+"->"+Arrays.toString(getPoint());
     }
 
     @Override

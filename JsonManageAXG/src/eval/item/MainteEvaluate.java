@@ -7,13 +7,10 @@ package eval.item;
 
 import eval.obj.ESyaryoObject;
 import eval.time.TimeSeriesObject;
-import file.CSVFileReadWrite;
 import file.MapToJSON;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,16 +66,14 @@ public class MainteEvaluate extends EvaluateTemplate {
     
     //時系列のメンテナンスデータ取得
     public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
-        int dateIDX = 2;
         Map<String, List<String>> data = new HashMap();
         
         //時系列情報の取得
         INTERVAL.entrySet().stream().forEach(e -> {
-            List<String> svlist = sv.get(e.getKey()).stream()
-                                        .map(v -> v.split(",")[dateIDX])
-                                        .collect(Collectors.toList());
-            TimeSeriesObject t = new TimeSeriesObject(s.a, dateIDX, svlist);
+            int idx = Arrays.asList(TARGET.get(e.getKey()+"#H").get(0).split(",")).indexOf("部品.作番");
             
+            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, idx, sv.get(e.getKey())));
+
             //最大SMRからSMR系列を取得
             Integer len = s.a.maxSMR / Integer.valueOf(e.getValue());
             
@@ -91,10 +86,7 @@ public class MainteEvaluate extends EvaluateTemplate {
                     .forEach(v -> {
                         int i = v / Integer.valueOf(e.getValue());
                         if (i < len) {
-                            //if(series.get(i).equals("0"))
                             series.set(i, v.toString());
-                            //else
-                            //    series.set(i, series.get(i)+"_"+v.toString());
                         }
                     });
             
@@ -118,54 +110,10 @@ public class MainteEvaluate extends EvaluateTemplate {
 
         return norm;
     }
-
-    @Override
-    public Map<String, Integer> scoring(Map<String, Integer> cluster, String key, Map<String, List<Double>> data) {
-        int maxCluster = cluster.values().stream().distinct().mapToInt(c -> c).max().getAsInt();
-
-        //Average
-        Map<Integer, Double> avg = IntStream.range(0, maxCluster + 1).boxed()
-                .collect(Collectors.toMap(
-                        i -> i,
-                        i -> cluster.entrySet().stream()
-                                .filter(c -> c.getValue().equals(i))
-                                .flatMap(c -> data.get(c.getKey()).stream())
-                                .mapToDouble(d -> d).average().getAsDouble()
-                ));
-
-        //Sort
-        List<Integer> sort = avg.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .map(a -> a.getKey())
-                .collect(Collectors.toList());
-
-        //Scoring
-        Map score = cluster.entrySet().stream()
-                .collect(Collectors.toMap(c -> c.getKey(), c -> sort.indexOf(c.getValue()) + 1));
-
-        return score;
-    }
-
+    
     //Test
     public static void main(String[] args) {
-        LOADER.setFile("PC200_loadmap");
-        SyaryoAnalizer.rejectSettings(false, false, false);
-        SyaryoAnalizer s = new SyaryoAnalizer(LOADER.getSyaryoMap().get("PC200-10-452525"), true);
-
-        MainteEvaluate mainte = new MainteEvaluate();
-
-        /*Map<String, List<String>> data = mainte.getdata(s);
-        Map<String, Double> result = mainte.evaluate("メンテナンス", s);
-
-        data.entrySet().stream().forEach(d -> {
-            System.out.println(d.getKey());
-            System.out.println("  " + d.getValue());
-            System.out.println("  " + result.get(d.getKey()));
-        });
-         */
-        //クラスタ用データ
-        System.out.println("\n" + mainte.header("メンテナンス"));
-        System.out.println(mainte.getClusterData("メンテナンス"));
+        
     }
 
 }

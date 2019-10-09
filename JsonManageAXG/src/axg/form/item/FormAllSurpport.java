@@ -21,8 +21,8 @@ public class FormAllSurpport {
             return null;
         }
 
-        int finDate = indexList.indexOf("オールサポート.M契約満了日");
-        int kaiDate = indexList.indexOf("オールサポート.M解約日");
+        int finDate = indexList.indexOf("オールサポート.契約満了日");
+        int kaiDate = indexList.indexOf("オールサポート.解約日");
 
         Map newMap = new TreeMap();
         for (String date : as.keySet()) {

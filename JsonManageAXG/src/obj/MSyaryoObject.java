@@ -57,6 +57,10 @@ public class MSyaryoObject {
         return count;
     }
     
+    public Integer getCount(String key){
+        return count.get(key);
+    }
+    
     public void setCount(final Map count){
         this.count = count;
     }

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class ListToCSV {
     public static List<String> toList(String csv){
         List<String> list = new ArrayList<>();
-        try(BufferedReader br = CSVFileReadWrite.reader(csv)){
+        try(BufferedReader br = CSVFileReadWrite.readerSJIS(csv)){
             String line;
             while((line = br.readLine()) != null){
                 //コメント除外
@@ -67,7 +67,7 @@ public class ListToCSV {
     }
     
     public static void toCSV(String csv, List list){
-        try(PrintWriter pw = CSVFileReadWrite.writer(csv)){
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(csv)){
             list.stream().forEach(pw::println);   
         }
     }

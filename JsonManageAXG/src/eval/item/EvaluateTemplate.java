@@ -5,6 +5,7 @@
  */
 package eval.item;
 
+import eval.analizer.MSyaryoAnalizer;
 import eval.obj.ESyaryoObject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +50,11 @@ public abstract class EvaluateTemplate {
         _eval.add(trans(s));
     };
     
-    public abstract ESyaryoObject trans(MSyaryoObject s);
+    public List<String> dateSeq(MSyaryoAnalizer a, int idx, List<String> sv){
+        return sv.stream()
+                .map(d -> a.getSBNToDate(d.split(",")[idx], true))
+                .collect(Collectors.toList());
+    }
     
-    public abstract Map<String, Integer> scoring(Map<String, List> cluster, String key, Map<String, List<Double>> data);  
+    public abstract ESyaryoObject trans(MSyaryoObject s);
 }

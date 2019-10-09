@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Queue;
 import java.util.Random;
 import mongodb.MongoDBPOJOData;
@@ -95,15 +94,15 @@ public class MSyaryoAnalizer {
         this.kind = syaryo.getName().split("-")[0];
         this.type = syaryo.getName().split("-")[1] + syaryo.getName().split("-")[2].replace(" ", "");
         this.no = syaryo.getName().split("-")[3];
-
+        
+        //SMR
+        setSMRDateDict();
+        
         //Status
-        setLifeStatus();
         setSpecStatus();
         setOwnerStatus();
         setServiceStatus();
-
-        //SMR
-        setSMRDateDict();
+        setLifeStatus();
     }
 
     private void setSpecStatus() {
@@ -121,6 +120,7 @@ public class MSyaryoAnalizer {
         //オールサポート
         if (get("オールサポート") != null) {
             allsupport = true;
+            System.out.println(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"));
             termAllSupport = get("オールサポート").entrySet().stream()
                     .map(e -> new String[]{e.getKey(), e.getValue().get(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"))})
                     .collect(Collectors.toList());
@@ -133,14 +133,15 @@ public class MSyaryoAnalizer {
 
         //最終確認日
         if (get("KOMTRAX_SMR") != null) {
-            lifestop = get("KOMTRAX_SMR").keySet().stream()
-                    .sorted(Comparator.comparing(d -> Integer.valueOf(d), Comparator.reverseOrder()))
-                    .findFirst().get();
+            lifestop = get("KOMTRAX_SMR").keySet().stream().reduce((a, b) -> b).orElse(null);
         } else if (get("受注") != null) {
             lifestop = getValue("受注", "受注.作業完了日", true).get(0);
         } else {
             lifestop = "-1";
         }
+        
+        //最大SMR
+        maxSMR = getDateToSMR(lifestop);
 
         //lifedead
         if (get("廃車") != null) {
@@ -188,7 +189,7 @@ public class MSyaryoAnalizer {
 
     //SMR <-> 日付　辞書の作成
     private void setSMRDateDict() {
-        String[] smrKey = new String[]{"KOMTRAX_SMR", "SMR", "LOADMAP_DATE_SMR"};
+        String[] smrKey = new String[]{"KOMTRAX_SMR", "SMR"};
 
         //SMR Keyからデータを取得
         Arrays.stream(smrKey)
@@ -219,7 +220,7 @@ public class MSyaryoAnalizer {
             }
             tmpDate = date;
         }
-        System.out.println(removeSMR);
+        //System.out.println(removeSMR);
 
         removeSMR.stream().forEach(smrDate::remove);
     }
@@ -294,7 +295,7 @@ public class MSyaryoAnalizer {
     //作番と日付をswで相互変換
     private Map<String, String> sbnDate = new HashMap<>();
     private Map<String, String> dateSBN = new HashMap<>();
-    public String getSBNDate(String sbn, Boolean sw) {
+    public String getSBNToDate(String sbn, Boolean sw) {
         if (sw) {
             //SBN -> Date
             return sbnDate.get(sbn.split("#")[0]);
@@ -513,14 +514,14 @@ public class MSyaryoAnalizer {
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
 
         Random r = new Random();
-        String sid = "PC200-8-N1-316797";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
+        String sid = "PC200-10- -454702";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
         System.out.println(sid);
 
         MSyaryoAnalizer.initialize(db.getHeader());
         MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj(sid));
         System.out.println(sa.toString());
 
-        //smrDictOut(sa);
+        smrDictOut(sa);
         //SMRチェック
         System.out.println("2017/12/28:" + sa.getDateToSMR("20171228"));
         System.out.println("7000:" + sa.getSMRToDate(7000));

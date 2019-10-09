@@ -23,9 +23,9 @@ public class TimeSeriesObject {
     private MSyaryoAnalizer s;
     public List<Integer> series;
 
-    public TimeSeriesObject(MSyaryoAnalizer syaryo, int idx, List<String> sv) {
+    public TimeSeriesObject(MSyaryoAnalizer syaryo, List<String> datesq) {
         this.s = syaryo;
-        this.series = toSeries(sv.stream().map(v -> v.split(",")[idx]).collect(Collectors.toList()));
+        this.series = toSeries(datesq);
     }
 
     //サービス実績の時系列を取得
