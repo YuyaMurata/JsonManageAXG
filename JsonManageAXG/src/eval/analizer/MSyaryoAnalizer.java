@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.Collection;
+import java.util.OptionalInt;
 import java.util.Queue;
 import java.util.Random;
 import mongodb.MongoDBPOJOData;
@@ -28,10 +29,12 @@ import obj.MSyaryoObject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 /**
- *　車両オブジェクト用の分析器
+ * 車両オブジェクト用の分析器
+ *
  * @author ZZ17390
  */
 public class MSyaryoAnalizer {
+
     public MSyaryoObject syaryo;
     public String kind = "";
     public String type = "";
@@ -55,6 +58,7 @@ public class MSyaryoAnalizer {
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
     private static int D_SMR = 10;
     private static int R = 10;
+    public static String LEAST_DATE = "20170501";
     private List<String[]> termAllSupport;
 
     public static Boolean DISP_COUNT = true;
@@ -62,10 +66,22 @@ public class MSyaryoAnalizer {
     //初期設定
     private static MHeaderObject header;
 
-    private static int CNT = 0;
+    private static int CNT;
 
-    public static void initialize(MHeaderObject h) {
-        header = h;
+    public static void initialize(String db, String collection) {
+        CNT = 0;
+        MongoDBPOJOData mdb = MongoDBPOJOData.create();
+        mdb.set(db, collection, MSyaryoObject.class);
+        header = mdb.getHeader();
+
+        //受注情報の最大日付
+        int idx = header.getHeaderIdx("受注", "受注.作業完了日");
+        LEAST_DATE = String.valueOf(mdb.getKeyList().stream()
+                .map(s -> mdb.getObj(s))
+                .map(s -> s.getData("受注"))
+                .filter(odr -> odr != null)
+                .flatMap(odr -> odr.values().stream().map(d -> d.get(idx)))
+                .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
     }
 
     public MSyaryoAnalizer(MSyaryoObject obj) {
@@ -94,10 +110,10 @@ public class MSyaryoAnalizer {
         this.kind = syaryo.getName().split("-")[0];
         this.type = syaryo.getName().split("-")[1] + syaryo.getName().split("-")[2].replace(" ", "");
         this.no = syaryo.getName().split("-")[3];
-        
+
         //SMR
         setSMRDateDict();
-        
+
         //Status
         setSpecStatus();
         setOwnerStatus();
@@ -120,7 +136,6 @@ public class MSyaryoAnalizer {
         //オールサポート
         if (get("オールサポート") != null) {
             allsupport = true;
-            System.out.println(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"));
             termAllSupport = get("オールサポート").entrySet().stream()
                     .map(e -> new String[]{e.getKey(), e.getValue().get(header.getHeaderIdx("オールサポート", "オールサポート.契約満了日"))})
                     .collect(Collectors.toList());
@@ -139,9 +154,9 @@ public class MSyaryoAnalizer {
         } else {
             lifestop = "-1";
         }
-        
+
         //最大SMR
-        maxSMR = getDateToSMR(lifestop);
+        maxSMR = getDateToSMR(LEAST_DATE);
 
         //lifedead
         if (get("廃車") != null) {
@@ -255,46 +270,50 @@ public class MSyaryoAnalizer {
         Queue<Integer> q = new ArrayDeque();
         int cnt = R / 2;
         Collection<Integer> data = smrDate.keySet();
-        if (type.equals("date"))
+        if (type.equals("date")) {
             data = smrDate.values();
+        }
 
         for (Integer d : data) {
             q.add(d);
-            if (R < q.size())
+            if (R < q.size()) {
                 q.poll();
-            
-            if (p < d)
+            }
+
+            if (p < d) {
                 cnt--;
-            
-            if (cnt < 0)
+            }
+
+            if (cnt < 0) {
                 break;
+            }
         }
-        
+
         SimpleRegression reg = new SimpleRegression();
-        String stdate = type.equals("date")?q.peek().toString():getSMRToDate(q.peek()).toString();
-        q.stream().forEach(d ->{
-            Integer date = type.equals("date")?d:getSMRToDate(d);
-            Integer smr = type.equals("smr")?d:getDateToSMR(d.toString());
+        String stdate = type.equals("date") ? q.peek().toString() : getSMRToDate(q.peek()).toString();
+        q.stream().forEach(d -> {
+            Integer date = type.equals("date") ? d : getSMRToDate(d);
+            Integer smr = type.equals("smr") ? d : getDateToSMR(d.toString());
             reg.addData(time(stdate, date.toString()), smr);
         });
-        
+
         //System.out.println("Q:"+q);
         //System.out.println("R = "+reg.getSlope()+"x+"+reg.getIntercept());
-        
         Double v;
-        if(type.equals("smr")){
+        if (type.equals("smr")) {
             Double x = (p - reg.getIntercept()) / reg.getSlope();
             v = Double.valueOf(time(stdate, x.intValue()));
-        }else{
+        } else {
             v = reg.predict(time(stdate, p.toString()));
         }
-        
+
         return v.intValue();
     }
 
     //作番と日付をswで相互変換
     private Map<String, String> sbnDate = new HashMap<>();
     private Map<String, String> dateSBN = new HashMap<>();
+
     public String getSBNToDate(String sbn, Boolean sw) {
         if (sw) {
             //SBN -> Date
@@ -416,7 +435,7 @@ public class MSyaryoAnalizer {
 
         return age.intValue();
     }
-    
+
     //経過日から日付を計算
     public static Integer time(String start, Integer days) {
         LocalDate st = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyyMMdd")).plusDays(days);
@@ -517,7 +536,7 @@ public class MSyaryoAnalizer {
         String sid = "PC200-10- -454702";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
         System.out.println(sid);
 
-        MSyaryoAnalizer.initialize(db.getHeader());
+        MSyaryoAnalizer.initialize("json", "komatsuDB_PC200_Form");
         MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj(sid));
         System.out.println(sa.toString());
 

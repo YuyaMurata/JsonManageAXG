@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import obj.MSyaryoObject;
 
@@ -22,12 +24,10 @@ import obj.MSyaryoObject;
  */
 public abstract class EvaluateTemplate {
     private static Map<String, List<String>> _header;
-    public List<MSyaryoObject> _master;
-    public List<ESyaryoObject> _eval; 
+    public Map<String, ESyaryoObject> _eval; 
 
     public EvaluateTemplate() {
-        _master = new ArrayList<>();
-        _eval = new ArrayList<>();
+        _eval = new ConcurrentHashMap();
         _header = new HashMap<>();
     }
     
@@ -46,8 +46,7 @@ public abstract class EvaluateTemplate {
     }
     
     public void add(MSyaryoObject s){
-        _master.add(s);
-        _eval.add(trans(s));
+        _eval.put(s.getName(), trans(s));
     };
     
     public List<String> dateSeq(MSyaryoAnalizer a, int idx, List<String> sv){

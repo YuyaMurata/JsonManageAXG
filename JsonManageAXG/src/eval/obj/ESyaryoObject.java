@@ -21,9 +21,9 @@ public class ESyaryoObject implements Clusterable{
     
     double[] points;
     private Integer cid;
-    private Map<String, List<String>> sv;
-    private Map<String, List<String>> data;
-    private Map<String, Double> norm;
+    public Map<String, List<String>> sv;
+    public Map<String, List<String>> data;
+    public Map<String, Double> norm;
     
     
     public ESyaryoObject(MSyaryoObject syaryo) {
@@ -42,7 +42,8 @@ public class ESyaryoObject implements Clusterable{
     }
     
     public String check(){
-        return a.syaryo.getName()+":"+a.maxSMR+"/"+a.lifestop+":"+data.toString()+"->"+Arrays.toString(getPoint());
+        String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
+        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.maxSMR+","+p;
     }
 
     @Override
