@@ -11,6 +11,7 @@ import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -105,8 +106,10 @@ public class MainteEvaluate extends EvaluateTemplate {
                         iv -> data.get(iv).stream()
                                 .map(ti -> Integer.valueOf(ti) > 0 ? 1 : 0)
                                 .mapToDouble(ti -> ti.doubleValue())
-                                .average().getAsDouble()
-                )
+                                .average().getAsDouble(),
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                    )
                 );
 
         return norm;
