@@ -6,6 +6,7 @@
 package eval;
 
 import eval.analizer.MSyaryoAnalizer;
+import eval.cluster.ClusteringESyaryo;
 import eval.item.EvaluateTemplate;
 import eval.item.MainteEvaluate;
 import eval.obj.ESyaryoObject;
@@ -51,10 +52,13 @@ public class EvaluationSyaryoObject {
         map.values().parallelStream().forEach(s -> {
             evalMainte.add(s);
         });
-
-        //print(evalMainte);
-        evalMainte._eval.values().stream().limit(100)
-                .forEach(s -> print(evalMainte, s));
+        
+        //クラスタリング
+        ClusteringESyaryo.cluster(evalMainte._eval.values());
+        
+        print(evalMainte, true);
+        //evalMainte._eval.values().stream().limit(100)
+        //        .forEach(s -> print(evalMainte, s));
     }
 
     public static void main(String[] args) {
@@ -66,21 +70,25 @@ public class EvaluationSyaryoObject {
         eval.scoring(map);
     }
 
-    private static void print(EvaluateTemplate eval) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test_print_eval.csv")) {
-            pw.println("SID,DATE,SMR," + String.join(",", eval.header("メンテナンス")));
+    private static void print(EvaluateTemplate eval, Boolean flg) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_mainte_eval.csv")) {
+            pw.println("SID,DATE,AGE,SMR," + String.join(",", eval.header("メンテナンス"))+",AVG,CID");
             eval._eval.values().stream()
                     .map(s -> s.check())
                     .forEach(pw::println);
         }
+        
+        if(flg){
+            
+        }
     }
 
     private static void print(EvaluateTemplate evtemp, ESyaryoObject eval) {
-        String file = "C:\\Users\\zz17807\\OneDrive - Komatsu Ltd\\共同研究\\メンテ検証\\raw\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
+        String file = "file\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             //評価結果
             pw.println("評価結果");
-            pw.println("SID,DATE,SMR," + String.join(",", evtemp.header("メンテナンス")));
+            pw.println("SID,DATE,AGE,SMR," + String.join(",", evtemp.header("メンテナンス"))+",CID");
             pw.println(eval.check());
             pw.println();
 

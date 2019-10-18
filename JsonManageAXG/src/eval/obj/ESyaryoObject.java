@@ -20,7 +20,7 @@ public class ESyaryoObject implements Clusterable{
     public MSyaryoAnalizer a;
     
     double[] points;
-    private Integer cid;
+    public Integer cid = -1;
     public Map<String, List<String>> sv;
     public Map<String, List<String>> data;
     public Map<String, Double> norm;
@@ -43,7 +43,8 @@ public class ESyaryoObject implements Clusterable{
     
     public String check(){
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
-        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.maxSMR+","+p;
+        String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
+        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.age(a.LEAST_DATE)+","+a.maxSMR+","+p+","+avg+","+cid;
     }
 
     @Override

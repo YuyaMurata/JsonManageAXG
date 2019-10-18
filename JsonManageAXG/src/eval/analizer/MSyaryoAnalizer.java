@@ -144,7 +144,7 @@ public class MSyaryoAnalizer {
 
     private void setLifeStatus() {
         //納入日
-        lifestart = get("新車").keySet().stream().findFirst().get();
+        lifestart = get("新車").keySet().stream().findFirst().get().split("#")[0];
 
         //最終確認日
         if (get("KOMTRAX_SMR") != null) {
@@ -160,7 +160,7 @@ public class MSyaryoAnalizer {
 
         //lifedead
         if (get("廃車") != null) {
-            lifedead = get("廃車").keySet().stream().findFirst().get();
+            lifedead = get("廃車").keySet().stream().findFirst().get().split("#")[0];
         } else {
             lifedead = "-1";
         }
