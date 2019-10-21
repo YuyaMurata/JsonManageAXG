@@ -43,7 +43,10 @@ public class ESyaryoObject implements Clusterable{
     
     public String check(){
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
-        String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
+        String avg = "-1";
+        if(!p.equals("null"))
+            avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
+        
         return a.syaryo.getName()+","+a.LEAST_DATE+","+a.age(a.LEAST_DATE)+","+a.maxSMR+","+p+","+avg+","+cid;
     }
 

@@ -20,7 +20,7 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public abstract class EvaluateTemplate {
-    private static Map<String, List<String>> _header;
+    public Map<String, List<String>> _header;
     public Map<String, ESyaryoObject> _eval; 
 
     public EvaluateTemplate() {
@@ -53,4 +53,10 @@ public abstract class EvaluateTemplate {
     }
     
     public abstract ESyaryoObject trans(MSyaryoObject s);
+    
+    public abstract Map<String, List<String>> extract(ESyaryoObject s);
+    
+    public abstract Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv);
+    
+    public abstract Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data);
 }

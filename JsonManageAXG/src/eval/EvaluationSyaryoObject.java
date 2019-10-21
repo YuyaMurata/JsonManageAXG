@@ -9,6 +9,7 @@ import eval.analizer.MSyaryoAnalizer;
 import eval.cluster.ClusteringESyaryo;
 import eval.item.EvaluateTemplate;
 import eval.item.MainteEvaluate;
+import eval.item.UseEvaluate;
 import eval.obj.ESyaryoObject;
 import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
@@ -39,40 +40,49 @@ public class EvaluationSyaryoObject {
 
         Map<String, String> temp = MapToJSON.toMap(userDefine);
         def = new HashMap<>();
-        temp.entrySet().stream().forEach(d -> {
+        /*temp.entrySet().stream().forEach(d -> {
             def.put(d.getKey(), ListToCSV.toList(d.getValue()));
             def.put(d.getKey() + "#H", Arrays.asList(new String[]{ListToCSV.toList(d.getValue()).get(0)}));
-        });
+        });*/
     }
 
     public void scoring(Map<String, MSyaryoObject> map) {
         //メンテナンス分析
-        EvaluateTemplate evalMainte = new MainteEvaluate("settings\\user\\PC200_mainteparts_interval.json", def);
-
+        //Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
+        //EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
+        
+        //使われ方分析
+        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
+        EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
+        
         map.values().parallelStream().forEach(s -> {
-            evalMainte.add(s);
+            //evalMainte.add(s);
+            evalUse.add(s);
         });
         
         //クラスタリング
-        ClusteringESyaryo.cluster(evalMainte._eval.values());
+        //ClusteringESyaryo.cluster(evalMainte._eval.values());
         
-        print(evalMainte, true);
+        //print(evalMainte, true);
         //evalMainte._eval.values().stream().limit(100)
         //        .forEach(s -> print(evalMainte, s));
+        
+        print(evalUse, true);
     }
 
     public static void main(String[] args) {
         EvaluationSyaryoObject eval = new EvaluationSyaryoObject("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(10)
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
-
+        
+        System.out.println("スコアリング開始");
         eval.scoring(map);
     }
 
     private static void print(EvaluateTemplate eval, Boolean flg) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_mainte_eval.csv")) {
-            pw.println("SID,DATE,AGE,SMR," + String.join(",", eval.header("メンテナンス"))+",AVG,CID");
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_use_eval.csv")) {
+            pw.println("SID,DATE,AGE,SMR," + String.join(",", eval.header("走行機器"))+",AVG,CID");
             eval._eval.values().stream()
                     .map(s -> s.check())
                     .forEach(pw::println);

@@ -24,13 +24,13 @@ import obj.MSyaryoObject;
  */
 public class MainteEvaluate extends EvaluateTemplate {
 
-    private static Map<String, String> INTERVAL;
-    private static Map<String, List<String>> TARGET;
+    private Map<String, String> MAINTE_INTERVAL;
+    private Map<String, List<String>> PARTS_DEF;
 
-    public MainteEvaluate(String setting, Map<String, List<String>> def) {
-        INTERVAL = MapToJSON.toMap(setting);
-        TARGET = def;
-        super.setHeader("メンテナンス", new ArrayList<>(INTERVAL.keySet()));
+    public MainteEvaluate(Map<String, String> setting, Map<String, List<String>> def) {
+        MAINTE_INTERVAL = setting;
+        PARTS_DEF = def;
+        super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
     }
 
     @Override
@@ -38,7 +38,7 @@ public class MainteEvaluate extends EvaluateTemplate {
         ESyaryoObject s = new ESyaryoObject(syaryo);
 
         //評価対象データの抽出
-        Map<String, List<String>> sv = extract(syaryo.getName());
+        Map<String, List<String>> sv = extract(s);
 
         //評価対象データをSMRで集約
         Map<String, List<String>> data = aggregate(s, sv);
@@ -53,12 +53,12 @@ public class MainteEvaluate extends EvaluateTemplate {
     }
 
     //対象サービスの抽出
-    private Map<String, List<String>> extract(String sid) {
-        Map<String, List<String>> map = INTERVAL.keySet().stream()
-                .collect(Collectors.toMap(
-                        iv -> iv,
-                        iv -> TARGET.get(iv).stream()
-                                .filter(s -> s.split(",")[0].equals(sid))
+    @Override
+    public Map<String, List<String>> extract(ESyaryoObject s) {
+        Map<String, List<String>> map = MAINTE_INTERVAL.keySet().stream()
+                .collect(Collectors.toMap(iv -> iv,
+                        iv -> PARTS_DEF.get(iv).stream()
+                                .filter(sv -> sv.split(",")[0].equals(s.a.get().getName()))
                                 .collect(Collectors.toList())
                 )
                 );
@@ -66,12 +66,13 @@ public class MainteEvaluate extends EvaluateTemplate {
     }
 
     //時系列のメンテナンスデータ取得
+    @Override
     public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
 
         //時系列情報の取得
-        INTERVAL.entrySet().stream().forEach(e -> {
-            int idx = Arrays.asList(TARGET.get(e.getKey() + "#H").get(0).split(",")).indexOf("部品.作番");
+        MAINTE_INTERVAL.entrySet().stream().forEach(e -> {
+            int idx = Arrays.asList(PARTS_DEF.get(e.getKey() + "#H").get(0).split(",")).indexOf("部品.作番");
 
             TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, idx, sv.get(e.getKey())));
 
@@ -99,8 +100,9 @@ public class MainteEvaluate extends EvaluateTemplate {
     }
 
     //正規化
+    @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
-        Map norm = INTERVAL.keySet().stream()
+        Map norm = MAINTE_INTERVAL.keySet().stream()
                 .collect(Collectors.toMap(
                         iv -> iv,
                         iv -> data.get(iv).stream()
