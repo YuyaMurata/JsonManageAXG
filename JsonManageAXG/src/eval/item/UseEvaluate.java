@@ -9,6 +9,7 @@ import eval.obj.ESyaryoObject;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -27,14 +28,23 @@ public class UseEvaluate extends EvaluateTemplate {
 
     private Map<String, List<String>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
-
+    
+    private static Map<String, List<String>> loadDim2Rawh = new HashMap(){{
+        put("LOADMAP_実エンジン回転VSエンジントルク", Arrays.asList(new String[]{"_1100","_1300","_1500","_1700","_1800","_1900","_2000","_2100","_2200","_2300","_2400","_2400_"}));
+        put("LOADMAP_エンジン水温VS作動油温", Arrays.asList(new String[]{"_50","_75","_85","_95","_100","_105","_120","_120_"}));
+        put("LOADMAP_ポンプ斜板(R)", Arrays.asList(new String[]{"_100","_200","_300","_300_"}));
+        put("LOADMAP_ポンプ斜板(F)", Arrays.asList(new String[]{"_100","_200","_300","_300_"}));
+    }};
+    
     public UseEvaluate(Map<String, List<String>> settings, MHeaderObject h) {
         USE_DATAKEYS = settings;
         HEADER_OBJ = h;
 
         settings.entrySet().forEach(e -> {
             List<String> hlist = e.getValue().stream()
-                    .flatMap(eh -> h.getHeader(eh).stream())
+                    .flatMap(eh -> loadDim2Rawh.get(eh) == null ? 
+                                h.getHeader(eh).stream() : 
+                                h.getHeader(eh).stream().flatMap(hcol -> loadDim2Rawh.get(eh).stream().map(hraw -> hcol+"."+hraw)))
                     .collect(Collectors.toList());
             super.setHeader(e.getKey(), hlist);
         });
@@ -69,6 +79,7 @@ public class UseEvaluate extends EvaluateTemplate {
                                 .map(dkey -> s.a.get(dkey) != null ? dkey : "")
                                 .collect(Collectors.toList())
                 ));
+        
         return map;
     }
 
@@ -81,21 +92,28 @@ public class UseEvaluate extends EvaluateTemplate {
                                 .flatMap(v -> s.a.get(v).values().stream().flatMap(loadmap -> loadmap.stream()))
                                 .collect(Collectors.toList())
                 ));
+        
+        System.out.println(s.a.get().getName());
+        data.entrySet().stream().map(e -> "  "+_header.get(e.getKey())+"\n  "+e.getKey()+":"+e.getValue()).forEach(System.out::println);
+        
         return data;
     }
 
     @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
-        Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(0)).findFirst().get() : "-1");
-        Map norm = data.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> IntStream.range(0, _header.get(e.getKey()).size()).boxed()
-                                .map(i -> !e.getValue().isEmpty() ? e.getValue().get(i) : "0")
-                                .peek(System.out::println)
-                                .map(loadmap -> Double.valueOf(loadmap) / smr)
-                                .collect(Collectors.toList())
-                ));
+        int smridx = 1; //LOADMAP_DATE_SMR Value
+        Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
+        
+        Map norm = new HashMap();
+        data.entrySet().stream().forEach(e -> {
+            _header.get(e.getKey()).stream().forEach(h ->{
+                int i= _header.get(e.getKey()).indexOf(h);
+                if(data.get(e.getKey()).isEmpty())
+                    norm.put(e.getKey()+"_"+h, -1d);
+                else
+                    norm.put(e.getKey()+"_"+h, Double.valueOf(e.getValue().get(i)) / smr);
+            });
+        });
 
         return norm;
     }
