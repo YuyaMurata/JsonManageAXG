@@ -53,7 +53,9 @@ public class EvaluationSyaryoObject {
         
         //使われ方分析
         Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
+        testparam(useSettings);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
+        
         
         map.values().stream().forEach(s -> {
             //evalMainte.add(s);
@@ -72,7 +74,7 @@ public class EvaluationSyaryoObject {
 
     public static void main(String[] args) {
         EvaluationSyaryoObject eval = new EvaluationSyaryoObject("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().filter(s -> s.equals("PC200-10- -454702"))
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
@@ -139,5 +141,11 @@ public class EvaluationSyaryoObject {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+    
+    private static void testparam(Map param){
+        param.remove("油圧機器");
+        param.remove("エンジン");
+        param.remove("車体");
     }
 }

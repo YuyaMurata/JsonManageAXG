@@ -65,11 +65,13 @@ public class FormalizeUtils {
         return list;
     }
     
-    //日付を整形　2018/08/09 -> 20180809
+    //日付を整形　2018/08/09 00:00:00#0 -> 20180809
     public static String dateFormalize(String date) {
         //日付の場合は整形
         if(date.contains("/"))
             date = date.split("#")[0].split(" ")[0].replace("/", "").substring(0, 8);
+        if(date.contains("-"))
+            date = date.split("#")[0].split(" ")[0].replace("-", "").substring(0, 8);
         
         return date;    
     }

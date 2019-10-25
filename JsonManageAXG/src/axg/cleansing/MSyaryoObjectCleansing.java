@@ -5,6 +5,7 @@
  */
 package axg.cleansing;
 
+import axg.form.util.FormalizeUtils;
 import mongodb.MongoDBPOJOData;
 import mongodb.MongoDBData;
 import obj.MHeaderObject;
@@ -98,12 +99,38 @@ public class MSyaryoObjectCleansing {
         
         List<String> removeSubKey = data.entrySet().stream()
                 .filter(d -> rule.entrySet().parallelStream()
-                    .filter(r -> !r.getValue().contains(d.getValue().get(hobj.getHeaderIdx(key, r.getKey()))))
+                    .filter(r -> removeLogic(r, d.getValue(), hobj))
                     .findFirst().isPresent())
                 .map(s -> s.getKey())
                 .collect(Collectors.toList());
 
         //System.out.print(","+(data.size()-removeSubKey.size())+","+data.size()+"," + removeSubKey.size()+",");
         return removeSubKey;
+    }
+    
+    private static Boolean removeLogic(Map.Entry<String, List<String>> unirule, List<String> data, MHeaderObject hobj){
+        
+        if(!unirule.getValue().get(0).contains(".")){
+            //単純比較
+            return !unirule.getValue().contains(data.get(hobj.getHeaderIdx(unirule.getKey().split("\\.")[0], unirule.getKey())));
+        }else {
+            //参照比較
+            return !unirule.getValue().stream()
+                            .filter(ru -> 
+                                        num(data.get(hobj.getHeaderIdx(ru.split("\\.")[0], ru.split("\\.")[0]+"."+ru.split("\\.")[1])), data.get(hobj.getHeaderIdx(unirule.getKey().split("\\.")[0], unirule.getKey())))
+                                        < Integer.valueOf(ru.split("\\.")[2]))
+                            .findFirst().isPresent();
+        }
+    }
+    
+    private static Integer num(String d1, String d2){
+        if(d1.contains("/"))
+            return Math.abs(FormalizeUtils.dsub(
+                    FormalizeUtils.dateFormalize(d1), 
+                    FormalizeUtils.dateFormalize(d2)
+                )); 
+        else{
+            return Math.abs(Integer.valueOf(d1)-Integer.valueOf(d2));
+        }
     }
 }

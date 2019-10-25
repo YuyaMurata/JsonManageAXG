@@ -44,7 +44,7 @@ public class UseEvaluate extends EvaluateTemplate {
             List<String> hlist = e.getValue().stream()
                     .flatMap(eh -> loadDim2Rawh.get(eh) == null ? 
                                 h.getHeader(eh).stream() : 
-                                h.getHeader(eh).stream().flatMap(hcol -> loadDim2Rawh.get(eh).stream().map(hraw -> hcol+"."+hraw)))
+                                loadDim2Rawh.get(eh).stream().flatMap(hraw -> h.getHeader(eh).stream().map(hcol -> hcol.split("\\.")[0]+"."+hraw+"."+hcol.split("\\.")[1])))
                     .collect(Collectors.toList());
             super.setHeader(e.getKey(), hlist);
         });
@@ -89,12 +89,11 @@ public class UseEvaluate extends EvaluateTemplate {
                 .collect(Collectors.toMap(
                         e -> e.getKey(),
                         e -> e.getValue().stream().filter(v -> s.a.get(v) != null)
-                                .flatMap(v -> s.a.get(v).values().stream().flatMap(loadmap -> loadmap.stream()))
+                                .flatMap(v -> loadDim2Rawh.get(v) == null ?
+                                        s.a.get(v).values().stream().flatMap(loadmap -> loadmap.stream())
+                                        :loadDim2Rawh.get(v).stream().flatMap(ld -> s.a.get(v).get(ld).stream()))
                                 .collect(Collectors.toList())
                 ));
-        
-        System.out.println(s.a.get().getName());
-        data.entrySet().stream().map(e -> "  "+_header.get(e.getKey())+"\n  "+e.getKey()+":"+e.getValue()).forEach(System.out::println);
         
         return data;
     }
@@ -104,17 +103,20 @@ public class UseEvaluate extends EvaluateTemplate {
         int smridx = 1; //LOADMAP_DATE_SMR Value
         Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
         
-        Map norm = new HashMap();
+        Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
             _header.get(e.getKey()).stream().forEach(h ->{
                 int i= _header.get(e.getKey()).indexOf(h);
+                
+                //System.out.println("  "+h+"["+i+"]:"+e.getValue().get(i));
+                
                 if(data.get(e.getKey()).isEmpty())
                     norm.put(e.getKey()+"_"+h, -1d);
                 else
-                    norm.put(e.getKey()+"_"+h, Double.valueOf(e.getValue().get(i)) / smr);
+                    norm.put(e.getKey()+"_"+h, Double.valueOf(e.getValue().get(i))/smr);
             });
         });
-
+        
         return norm;
     }
 

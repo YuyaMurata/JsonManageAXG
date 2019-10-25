@@ -5,6 +5,7 @@
  */
 package axg.form.item;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import obj.MSyaryoObject;
 import java.util.Comparator;
@@ -87,22 +88,6 @@ public class FormKomtrax {
         
         return newMap;
     }
-
-    //KOMTRAXデータを整数値に変換(SMR, FUEL_CONSUME)
-    /*private static List<String> getTransformValue(String id, List<String> kmvalue) {
-        if (id.contains("SMR")) {
-            kmvalue.set(0, String.valueOf(Double.valueOf(kmvalue.get(0)).intValue()));
-        } else if (id.contains("FUEL")) {
-            kmvalue.set(0, String.valueOf(Double.valueOf(kmvalue.get(0))));
-        } else if (id.contains("GPS")) {
-            //緯度
-            kmvalue.set(0, String.valueOf(Double.valueOf(MapPathData.compValue(kmvalue.get(0)))));
-            //経度
-            kmvalue.set(1, String.valueOf(Double.valueOf(MapPathData.compValue(kmvalue.get(1)))));
-        }
-
-        return kmvalue;
-    }*/
     
     //ACT_DATAの累積変換
     private static void actToSMR(Map<String, List<String>> act, String initSMR, int actIdx, int unitIdx) {

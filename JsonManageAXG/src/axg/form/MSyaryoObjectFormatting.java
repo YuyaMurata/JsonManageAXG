@@ -9,6 +9,7 @@ import axg.form.item.FormAllSurpport;
 import axg.form.item.FormDead;
 import axg.form.item.FormDeploy;
 import axg.form.item.FormKomtrax;
+import axg.form.item.FormLoadMap;
 import axg.form.item.FormNew;
 import axg.form.item.FormOrder;
 import axg.form.item.FormOwner;
@@ -108,6 +109,9 @@ public class MSyaryoObjectFormatting {
         
         //Komtraxの整形
         FormKomtrax.form(obj, header);
+        
+        //Komtraxの整形
+        FormLoadMap.form(obj, header);
         
         //空データは削除
         removeEmptyObject(obj);
