@@ -40,10 +40,10 @@ public class EvaluationSyaryoObject {
 
         Map<String, String> temp = MapToJSON.toMap(userDefine);
         def = new HashMap<>();
-        /*temp.entrySet().stream().forEach(d -> {
+        temp.entrySet().stream().forEach(d -> {
             def.put(d.getKey(), ListToCSV.toList(d.getValue()));
             def.put(d.getKey() + "#H", Arrays.asList(new String[]{ListToCSV.toList(d.getValue()).get(0)}));
-        });*/
+        });
     }
 
     public void scoring(Map<String, MSyaryoObject> map) {
@@ -74,7 +74,7 @@ public class EvaluationSyaryoObject {
 
     public static void main(String[] args) {
         EvaluationSyaryoObject eval = new EvaluationSyaryoObject("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(10)
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
@@ -83,7 +83,7 @@ public class EvaluationSyaryoObject {
     }
 
     private static void print(EvaluateTemplate eval, Boolean flg) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_use_eval.csv")) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_mainte_eval.csv")) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
                                                                 .map(hv -> h.getKey()+"_"+hv))

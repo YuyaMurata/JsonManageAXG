@@ -22,14 +22,14 @@ import org.apache.commons.math3.ml.distance.EuclideanDistance;
 public class ClusteringESyaryo {
     static int C = 3;
     static int N = 10000;
-    static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N);
-    //static DBSCANClusterer<ESyaryoObject> cluster = new DBSCANClusterer(0.1, 1, new MaharanobisDistance());
+    //static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N);
+    static DBSCANClusterer<ESyaryoObject> cluster = new DBSCANClusterer(0.3, 1, new EuclideanDistance());
     
     public static void cluster(Collection<ESyaryoObject> data){    
         long start = System.currentTimeMillis();
         
-        List<CentroidCluster<ESyaryoObject>> results = cluster.cluster(data);
-        //List<Cluster<ESyaryoObject>> results = cluster.cluster(data);
+        //List<CentroidCluster<ESyaryoObject>> results = cluster.cluster(data);
+        List<Cluster<ESyaryoObject>> results = cluster.cluster(data);
         
         for (int i=0; i<results.size(); i++) {
             for (ESyaryoObject s : results.get(i).getPoints())

@@ -105,35 +105,56 @@ public class UseEvaluate extends EvaluateTemplate {
         
         Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
+            
+            switch(e.getKey()){
+                case "車体":    norm.putAll(body(smr, e.getValue(), _header.get(e.getKey())));
+                                break;
+                case "エンジン": norm.putAll(engine(smr, e.getValue(), _header.get(e.getKey())));
+                                break;
+                case "油圧機器": norm.putAll(pump(smr, e.getValue(), _header.get(e.getKey())));
+                                break;
+                case "走行機器": norm.putAll(travel(smr, e.getValue(), _header.get(e.getKey())));
+                                break;
+            }
+            /*
             _header.get(e.getKey()).stream().forEach(h ->{
                 int i= _header.get(e.getKey()).indexOf(h);
-                
                 //System.out.println("  "+h+"["+i+"]:"+e.getValue().get(i));
                 
                 if(data.get(e.getKey()).isEmpty())
                     norm.put(e.getKey()+"_"+h, -1d);
                 else
                     norm.put(e.getKey()+"_"+h, Double.valueOf(e.getValue().get(i))/smr);
-            });
+            });*/
         });
         
         return norm;
     }
 
-    private List<String> body(Map<String, List<String>> map) {
+    private Map<String, Double> body(Double smr, List<String> data, List<String> h) {
         return null;
     }
 
-    private List<String> engine(Map<String, List<String>> map) {
+    private Map<String, Double> engine(Double smr, List<String> data, List<String> h) {
         return null;
     }
 
-    private List<String> pump(Map<String, List<String>> map) {
+    private Map<String, Double> pump(Double smr, List<String> data, List<String> h){
         return null;
     }
 
-    private List<String> travel(Map<String, Double> data, int r) {
-        return null;
+    private Map<String, Double> travel(Double smr, List<String> data, List<String> h){
+        Map<String, Double> norm = new LinkedHashMap<>();
+        System.out.println("h"+h);
+        System.out.println("d"+data);
+        System.out.println("smr"+smr);
+        
+        if(data.isEmpty())
+            h.stream().forEach(hi -> norm.put("走行機器_"+hi, -1d));
+        else
+            h.stream().forEach(hi -> norm.put("走行機器_"+hi, Double.valueOf(data.get(h.indexOf(hi)))/smr));
+        
+        return norm;
     }
 
     /*
