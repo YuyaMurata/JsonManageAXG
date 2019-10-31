@@ -76,12 +76,14 @@ public class MSyaryoAnalizer {
 
         //受注情報の最大日付
         int idx = header.getHeaderIdx("受注", "受注.作業完了日");
-        LEAST_DATE = String.valueOf(mdb.getKeyList().stream()
-                .map(s -> mdb.getObj(s))
-                .map(s -> s.getData("受注"))
-                .filter(odr -> odr != null)
-                .flatMap(odr -> odr.values().stream().map(d -> d.get(idx)))
-                .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
+        LEAST_DATE = String.valueOf(
+                mdb.getKeyList().parallelStream()
+                    .map(s -> mdb.getObj(s))
+                    .filter(s -> s.getData("KOMTRAX_SMR") != null)
+                    .map(s -> s.getData("受注"))
+                    .filter(odr -> odr != null)
+                    .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
+                    .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
     }
 
     public MSyaryoAnalizer(MSyaryoObject obj) {

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 
@@ -26,28 +27,53 @@ import obj.MSyaryoObject;
  */
 public class UseEvaluate extends EvaluateTemplate {
 
-    private Map<String, List<String>> USE_DATAKEYS;
+    private Map<String, Map<String, Map<String, String>>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
-    
-    private static Map<String, List<String>> loadDim2Rawh = new HashMap(){{
-        put("LOADMAP_実エンジン回転VSエンジントルク", Arrays.asList(new String[]{"_1100","_1300","_1500","_1700","_1800","_1900","_2000","_2100","_2200","_2300","_2400","_2400_"}));
-        put("LOADMAP_エンジン水温VS作動油温", Arrays.asList(new String[]{"_50","_75","_85","_95","_100","_105","_120","_120_"}));
-        put("LOADMAP_ポンプ斜板(R)", Arrays.asList(new String[]{"_100","_200","_300","_300_"}));
-        put("LOADMAP_ポンプ斜板(F)", Arrays.asList(new String[]{"_100","_200","_300","_300_"}));
-    }};
-    
-    public UseEvaluate(Map<String, List<String>> settings, MHeaderObject h) {
+
+    private static Map<String, List<String>> loadDim2Rawh = new HashMap() {
+        {
+            put("LOADMAP_実エンジン回転VSエンジントルク", Arrays.asList(new String[]{"_1100", "_1300", "_1500", "_1700", "_1800", "_1900", "_2000", "_2100", "_2200", "_2300", "_2400", "_2400_"}));
+            put("LOADMAP_エンジン水温VS作動油温", Arrays.asList(new String[]{"_50", "_75", "_85", "_95", "_100", "_105", "_120", "_120_"}));
+            put("LOADMAP_ポンプ斜板(R)", Arrays.asList(new String[]{"_100", "_200", "_300", "_300_"}));
+            put("LOADMAP_ポンプ斜板(F)", Arrays.asList(new String[]{"_100", "_200", "_300", "_300_"}));
+        }
+    };
+
+    public UseEvaluate(Map<String, Map<String, Map<String, String>>> settings, MHeaderObject h) {
         USE_DATAKEYS = settings;
         HEADER_OBJ = h;
 
+        //設定ファイルのヘッダ変換　データ項目.行.列
         settings.entrySet().forEach(e -> {
-            List<String> hlist = e.getValue().stream()
-                    .flatMap(eh -> loadDim2Rawh.get(eh) == null ? 
-                                h.getHeader(eh).stream() : 
-                                loadDim2Rawh.get(eh).stream().flatMap(hraw -> h.getHeader(eh).stream().map(hcol -> hcol.split("\\.")[0]+"."+hraw+"."+hcol.split("\\.")[1])))
+            List<String> hlist = e.getValue().entrySet().stream()
+                    .flatMap(d -> {
+                        if (!d.getValue().containsKey("SUM")) {
+                            return d.getValue().entrySet().stream()
+                                    .filter(di -> !di.getKey().equals("HEADER"))
+                                    .flatMap(di -> Arrays.stream(d.getValue().get("HEADER").split(",")).map(dj -> d.getKey() + "." + di.getKey() + "." + dj));
+                        } else {
+                            if (d.getValue().get("SUM").equals("COLUMN")) {
+                                return Arrays.stream(d.getValue().get("HEADER").split(","))
+                                        .map(dj -> d.getKey() + ".SUM("
+                                        + d.getValue().keySet().stream()
+                                                .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                                                .collect(Collectors.joining(".")) + ")."
+                                        + dj);
+                            } else {
+                                return d.getValue().keySet().stream()
+                                        .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                                        .map(di -> d.getKey() + "."
+                                        + di + ".SUM("
+                                        + Arrays.stream(d.getValue().get("HEADER").split(","))
+                                                .collect(Collectors.joining(".")) + ")"
+                                        );
+                            }
+                        }
+                    })
                     .collect(Collectors.toList());
             super.setHeader(e.getKey(), hlist);
-        });
+        }
+        );
     }
 
     @Override
@@ -75,11 +101,11 @@ public class UseEvaluate extends EvaluateTemplate {
         Map<String, List<String>> map = USE_DATAKEYS.entrySet().stream()
                 .collect(Collectors.toMap(
                         ld -> ld.getKey(),
-                        ld -> ld.getValue().stream()
+                        ld -> ld.getValue().keySet().stream()
                                 .map(dkey -> s.a.get(dkey) != null ? dkey : "")
                                 .collect(Collectors.toList())
                 ));
-        
+
         return map;
     }
 
@@ -87,78 +113,70 @@ public class UseEvaluate extends EvaluateTemplate {
     public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = sv.entrySet().stream()
                 .collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> e.getValue().stream().filter(v -> s.a.get(v) != null)
-                                .flatMap(v -> loadDim2Rawh.get(v) == null ?
-                                        s.a.get(v).values().stream().flatMap(loadmap -> loadmap.stream())
-                                        :loadDim2Rawh.get(v).stream().flatMap(ld -> s.a.get(v).get(ld).stream()))
-                                .collect(Collectors.toList())
-                ));
-        
+                        e -> e.getKey(), //評価項目
+                        e -> e.getValue().stream().flatMap(d -> { //データ項目
+                            Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
+                            List<String> h = HEADER_OBJ.getHeader(d);
+
+                            if (!setting.containsKey("SUM")) {
+                                return s.a.get(d).entrySet().stream()
+                                        .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
+                                        .flatMap(di -> h.stream()
+                                            .map(hi -> {
+                                                String[] set = setting.get("INDEX")!= null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
+                                                int idx = HEADER_OBJ.getHeaderIdx(d, hi);
+                                                return mask(set[idx], di.getValue().get(idx));
+                                            })
+                                        );
+                            }else{
+                                return sum(setting, h, s.a.get(d)).stream();
+                            }
+                        }).collect(Collectors.toList())
+                ));        
         return data;
+    }
+
+    private String mask(String m, String ij) {
+        return String.valueOf(Double.valueOf(m) * Double.valueOf(ij));
+    }
+
+    private List<String> sum(Map<String, String> setting, List<String> h, Map<String, List<String>> d) {   
+        if(setting.get("SUM").equals("COLUMN")){
+            return h.stream()
+                    .map(hj -> h.indexOf(hj))
+                    .map(hj -> d.entrySet().stream()
+                                    .map(di -> mask(setting.get(di.getKey()).split(",")[hj], di.getValue().get(hj)))
+                                    .mapToDouble(di -> Double.valueOf(di)).sum())
+                                    .map(sum -> String.valueOf(sum))
+                    .collect(Collectors.toList());
+        }else{
+           return setting.keySet().stream().filter(hi -> !hi.equals("HEADER") && !hi.equals("SUM"))
+                    .map(hi -> h.stream().map(hj -> h.indexOf(hj))
+                                            .map(hj -> mask(setting.get(hi).split(",")[hj], d.get(hi).get(hj)))
+                                            .mapToDouble(dj -> Double.valueOf(dj)).sum())
+                                    .map(sum -> String.valueOf(sum))
+                    .collect(Collectors.toList()); 
+        }
     }
 
     @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
         int smridx = 1; //LOADMAP_DATE_SMR Value
         Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
-        
+
         Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
-            
-            switch(e.getKey()){
-                case "車体":    norm.putAll(body(e.getKey(), smr, e.getValue(), _header.get(e.getKey())));
-                                break;
-                case "エンジン": norm.putAll(engine(e.getKey(), smr, e.getValue(), _header.get(e.getKey())));
-                                break;
-                case "油圧機器": norm.putAll(pump(e.getKey(), smr, e.getValue(), _header.get(e.getKey())));
-                                break;
-                case "走行機器": norm.putAll(travel(e.getKey(), smr, e.getValue(), _header.get(e.getKey())));
-                                break;
-            }
-            /*
             _header.get(e.getKey()).stream().forEach(h ->{
                 int i= _header.get(e.getKey()).indexOf(h);
                 //System.out.println("  "+h+"["+i+"]:"+e.getValue().get(i));
                 
                 if(data.get(e.getKey()).isEmpty())
-                    norm.put(e.getKey()+"_"+h, -1d);
+                    norm.put(e.getKey()+"."+h, -1d);
                 else
-                    norm.put(e.getKey()+"_"+h, Double.valueOf(e.getValue().get(i))/smr);
-            });*/
+                    norm.put(e.getKey()+"."+h, Double.valueOf(e.getValue().get(i))/smr);
+            });
         });
-        
-        return norm;
-    }
 
-    private Map<String, Double> body(String key, Double smr, List<String> data, List<String> h) {
-        return null;
-    }
-
-    private Map<String, Double> engine(String key, Double smr, List<String> data, List<String> h) {
-        return null;
-    }
-
-    private Map<String, Double> pump(String key, Double smr, List<String> data, List<String> h){
-        return null;
-    }
-
-    private Map<String, Double> travel(String key, Double smr, List<String> data, List<String> h){
-        Map<String, Double> norm = new LinkedHashMap<>();
-        System.out.println("h"+h);
-        System.out.println("d"+data);
-        System.out.println("smr"+smr);
-        
-        List<String> i = Arrays.asList(new String[]{"LOADMAP_作業機操作状況.TRAVEL", "LOADMAP_作業機操作状況.Hi"});
-        List<String> head = h.stream().filter(hi -> i.contains(hi)).collect(Collectors.toList());
-        
-        if(data.isEmpty())
-            head.stream().forEach(hi -> norm.put("走行機器_"+hi, -1d));
-        else
-            head.stream().forEach(hi -> norm.put("走行機器_"+hi, Double.valueOf(data.get(h.indexOf(hi)))/smr));
-        
-        _header.put(key, head);
-        
         return norm;
     }
 

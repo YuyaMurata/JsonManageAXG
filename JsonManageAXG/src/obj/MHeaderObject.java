@@ -66,7 +66,10 @@ public class MHeaderObject {
     }
     
     public Integer getHeaderIdx(String key, String idxKey){
-        return this.map.get(key).indexOf(idxKey);
+        String item = idxKey;
+        if(!idxKey.contains("."))
+            item = key+"."+idxKey;
+        return this.map.get(key).indexOf(item);
     }
     
     public void setHeader(final List header){

@@ -53,7 +53,7 @@ public class EvaluationSyaryoObject {
         
         //使われ方分析
         Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
-        testparam(useSettings);
+        //testparam(useSettings);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
         
         
@@ -74,8 +74,9 @@ public class EvaluationSyaryoObject {
 
     public static void main(String[] args) {
         EvaluationSyaryoObject eval = new EvaluationSyaryoObject("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(10)
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
                 .map(s -> eval.db.getObj(s))
+                .filter(s -> s.getData("LOADMAP_DATE_SMR")!=null).limit(1)
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         System.out.println("スコアリング開始");
