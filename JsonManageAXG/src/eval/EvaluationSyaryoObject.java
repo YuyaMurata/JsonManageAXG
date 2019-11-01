@@ -48,42 +48,42 @@ public class EvaluationSyaryoObject {
 
     public void scoring(Map<String, MSyaryoObject> map) {
         //メンテナンス分析
-        //Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
-        //EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
+        Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
+        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
         
         //使われ方分析
-        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
-        //testparam(useSettings);
+        /*Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
+        testparam(useSettings);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
-        
+        */
         
         map.values().stream().forEach(s -> {
-            //evalMainte.add(s);
-            evalUse.add(s);
+            evalMainte.add(s);
+            //evalUse.add(s);
         });
         
         //クラスタリング
-        //ClusteringESyaryo.cluster(evalMainte._eval.values());
+        ClusteringESyaryo.cluster(evalMainte._eval.values());
         
-        //print(evalMainte, true);
-        //evalMainte._eval.values().stream().limit(100)
-        //        .forEach(s -> print(evalMainte, s));
-        
-        print(evalUse, true);
+        print(evalMainte);
+        /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
+        evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
+                .forEach(s -> print(evalMainte, s));
+        */
+        //print(evalUse, true);
     }
 
     public static void main(String[] args) {
         EvaluationSyaryoObject eval = new EvaluationSyaryoObject("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
         Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
                 .map(s -> eval.db.getObj(s))
-                .filter(s -> s.getData("LOADMAP_DATE_SMR")!=null).limit(1)
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         System.out.println("スコアリング開始");
         eval.scoring(map);
     }
 
-    private static void print(EvaluateTemplate eval, Boolean flg) {
+    private static void print(EvaluateTemplate eval) {
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_mainte_eval.csv")) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
@@ -92,10 +92,6 @@ public class EvaluationSyaryoObject {
             eval._eval.values().stream()
                     .map(s -> s.check())
                     .forEach(pw::println);
-        }
-        
-        if(flg){
-            
         }
     }
 
