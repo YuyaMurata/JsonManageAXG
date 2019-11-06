@@ -108,10 +108,10 @@ public class UseEvaluate extends EvaluateTemplate {
         Map<String, List<String>> data = sv.entrySet().stream()
                 .collect(Collectors.toMap(
                         e -> e.getKey(), //評価項目
-                        e -> e.getValue().stream().flatMap(d -> { //データ項目
+                        e -> e.getValue().stream().filter(d -> !d.isEmpty()).flatMap(d -> { //データ項目
                             Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
                             List<String> h = HEADER_OBJ.getHeader(d);
-
+                            
                             if (!setting.containsKey("SUM")) {
                                 return s.a.get(d).entrySet().stream()
                                         .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)

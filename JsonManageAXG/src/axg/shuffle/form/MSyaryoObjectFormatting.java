@@ -3,23 +3,23 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.form;
+package axg.shuffle.form;
 
-import axg.form.item.FormAllSurpport;
-import axg.form.item.FormDead;
-import axg.form.item.FormDeploy;
-import axg.form.item.FormKomtrax;
-import axg.form.item.FormLoadMap;
-import axg.form.item.FormNew;
-import axg.form.item.FormOrder;
-import axg.form.item.FormOwner;
-import axg.form.item.FormParts;
-import axg.form.item.FormProduct;
-import axg.form.item.FormSMR;
-import axg.form.item.FormUsed;
-import axg.form.item.FormWork;
-import axg.form.rule.DataRejectRule;
-import axg.form.util.FormalizeUtils;
+import axg.shuffle.form.item.FormAllSurpport;
+import axg.shuffle.form.item.FormDead;
+import axg.shuffle.form.item.FormDeploy;
+import axg.shuffle.form.item.FormKomtrax;
+import axg.shuffle.form.item.FormLoadMap;
+import axg.shuffle.form.item.FormNew;
+import axg.shuffle.form.item.FormOrder;
+import axg.shuffle.form.item.FormOwner;
+import axg.shuffle.form.item.FormParts;
+import axg.shuffle.form.item.FormProduct;
+import axg.shuffle.form.item.FormSMR;
+import axg.shuffle.form.item.FormUsed;
+import axg.shuffle.form.item.FormWork;
+import axg.shuffle.form.rule.DataRejectRule;
+import axg.shuffle.form.util.FormalizeUtils;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import java.util.List;
@@ -61,8 +61,12 @@ public class MSyaryoObjectFormatting {
         long stop = System.currentTimeMillis();
         System.out.println("FormattingTime="+(stop-start)+"ms");
 
-        shuffleDB.close();
         formDB.close();
+        
+        //中間コレクション削除
+        shuffleDB.clear();
+        shuffleDB.close();
+        
     }
 
     //1台の整形

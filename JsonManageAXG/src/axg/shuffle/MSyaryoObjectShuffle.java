@@ -5,6 +5,7 @@
  */
 package axg.shuffle;
 
+import axg.shuffle.form.MSyaryoObjectFormatting;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
 public class MSyaryoObjectShuffle {
 
     public static void main(String[] args) {
-        //シャッフル
-        shuffle("json", "komatsuDB_PC200", "settings\\shuffle_mongo_syaryo.json", "settings\\layout_mongo_syaryo.json");
+        //シャッフル+整形処理
+        shuffle("json", "komatsuDB_PC200", "config\\shuffle_mongo_syaryo.json", "config\\layout_mongo_syaryo.json");
     }
 
     //シャッフリング実行
@@ -57,7 +58,13 @@ public class MSyaryoObjectShuffle {
         System.out.println("ShufflingTime="+(stop-start)+"ms");
 
         shuffleDB.close();
+        
+        //中間コレクション削除
+        cleanDB.clear();
         cleanDB.close();
+        
+        //整形処理
+        MSyaryoObjectFormatting.form(db, collection); 
     }
     
     //1台のシャッフリング

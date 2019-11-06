@@ -5,7 +5,6 @@
  */
 package eval.cluster;
 
-import eval.cluster.distance.MaharanobisDistance;
 import eval.obj.ESyaryoObject;
 import java.util.Collection;
 import java.util.List;
@@ -38,5 +37,17 @@ public class ClusteringESyaryo {
         
         long stop = System.currentTimeMillis();
         System.out.println("clustering time = "+(stop-start)+"ms");
+    }
+    
+    static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, 100);
+    public static List<CentroidCluster<DataVector>> splitor(Collection<DataVector> data){    
+        long start = System.currentTimeMillis();
+        
+        List<CentroidCluster<DataVector>> results = spcluster.cluster(data);
+        
+        long stop = System.currentTimeMillis();
+        System.out.println("3 spliting time = "+(stop-start)+"ms");
+        
+        return results;
     }
 }

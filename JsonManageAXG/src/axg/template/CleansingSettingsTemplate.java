@@ -18,10 +18,9 @@ import mongodb.MongoDBData;
  *
  * @author ZZ17807
  */
-public class ShuffleSettingsTemplate {
-    public static void main(String[] args) {  
+public class CleansingSettingsTemplate {
+    public static void main(String[] args) {
         create("json", "komatsuDB_PC200", "config\\shuffle_template.json");
-        create("json", "komatsuDB_PC200", "config\\layout_template.json");
     }
     
     //シャッフル用ファイルを作成するための元ファイル作成

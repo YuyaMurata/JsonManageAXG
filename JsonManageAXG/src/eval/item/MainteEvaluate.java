@@ -5,11 +5,14 @@
  */
 package eval.item;
 
+import eval.cluster.ClusteringESyaryo;
+import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
 import eval.time.TimeSeriesObject;
 import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,6 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import obj.MSyaryoObject;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 /**
  *
@@ -111,9 +115,53 @@ public class MainteEvaluate extends EvaluateTemplate {
                                 .average().getAsDouble(),
                         (e1, e2) -> e1,
                         LinkedHashMap::new
-                    )
+                )
                 );
 
         return norm;
+    }
+
+    @Override
+    public void scoring() {
+        Map<Integer, List<ESyaryoObject>> cids = new LinkedHashMap<>();
+
+        //CIDで集計
+        super._eval.values().stream().forEach(e -> {
+            if (cids.get(e.cid) == null) {
+                cids.put(e.cid, new ArrayList<>());
+            }
+
+            if (e.cid == 0) {
+                e.score = 0;
+            } else {
+                cids.get(e.cid).add(e);
+            }
+        });
+
+        //cidごとの平均充足率
+        List<DataVector> cidavg = cids.entrySet().stream()
+                .map(cid -> 
+                        new DataVector(cid.getKey(),
+                            cid.getValue().stream()
+                                .mapToDouble(e -> e.norm.values().stream().mapToDouble(m -> m).average().getAsDouble())
+                                .average().getAsDouble()))
+                .collect(Collectors.toList());
+        
+        //スコアリング用にデータを3分割
+        List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
+                                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
+                                .map(i -> i).collect(Collectors.toList());
+        
+        //スコアリング
+        sort.stream().forEach(i ->{
+            splitor.get(i).getPoints().stream()
+                                .map(sp -> sp.cid)
+                                .forEach(cid -> {
+                                    cids.get(cid).stream().forEach(e -> {
+                                        e.score = sort.indexOf(i)+1;
+                                    });
+                                });
+        });
     }
 }

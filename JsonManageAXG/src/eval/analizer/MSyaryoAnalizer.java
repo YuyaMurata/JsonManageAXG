@@ -266,6 +266,21 @@ public class MSyaryoAnalizer {
 
         return smr;
     }
+    
+    public Integer getDateToSVSMR(String date) {
+        Integer d = Integer.valueOf(date.split("#")[0]);
+        TreeMap<String, List<String>> map = new TreeMap(syaryo.getData("SMR"));
+        
+        Integer smr;
+        
+        try{
+            smr = Integer.valueOf(map.floorEntry(date).getValue().get(1));
+        }catch(NullPointerException e){
+            smr = Integer.valueOf(map.ceilingEntry(date).getValue().get(1));
+        }
+        
+        return smr;
+    }
 
     //回帰式の算出
     private Integer regression(String type, Integer p) {

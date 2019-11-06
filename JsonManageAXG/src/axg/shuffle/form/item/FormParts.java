@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.form.item;
+package axg.shuffle.form.item;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

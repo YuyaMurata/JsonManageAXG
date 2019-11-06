@@ -21,6 +21,7 @@ public class ESyaryoObject implements Clusterable{
     
     double[] points;
     public Integer cid = -1;
+    public Integer score = 0;
     public Map<String, List<String>> sv;
     public Map<String, List<String>> data;
     public Map<String, Double> norm;
@@ -45,7 +46,7 @@ public class ESyaryoObject implements Clusterable{
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
         String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
         
-        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.age(a.LEAST_DATE)+","+a.maxSMR+","+p+","+avg+","+cid;
+        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.age(a.LEAST_DATE)+","+a.maxSMR+","+p+","+avg+","+cid+","+score;
     }
 
     @Override

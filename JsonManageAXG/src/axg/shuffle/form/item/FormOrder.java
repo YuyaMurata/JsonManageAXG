@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.form.item;
+package axg.shuffle.form.item;
 
-import axg.form.rule.DataRejectRule;
+import axg.shuffle.form.rule.DataRejectRule;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

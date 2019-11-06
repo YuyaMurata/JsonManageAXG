@@ -12,12 +12,14 @@ import org.apache.commons.math3.ml.clustering.Clusterable;
  * @author ZZ17807
  */
 public class DataVector implements Clusterable{
-    String name;
+    public Integer cid;
     double[] points;
+    public double p;
     
-    public DataVector(String n, double[] p){
-        this.name = n;
-        this.points = p;
+    public DataVector(Integer cid, double p){
+        this.cid = cid;
+        this.p = p;
+        this.points = new double[]{p};
     }
     
     @Override

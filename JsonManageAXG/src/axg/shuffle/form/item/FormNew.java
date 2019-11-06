@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.form.item;
+package axg.shuffle.form.item;
 
-import axg.form.util.FormalizeUtils;
+import axg.shuffle.form.util.FormalizeUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

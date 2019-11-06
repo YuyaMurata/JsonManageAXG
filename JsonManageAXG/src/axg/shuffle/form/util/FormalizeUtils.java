@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package axg.form.util;
+package axg.shuffle.form.util;
 
 import java.text.DecimalFormat;
 import java.text.ParseException;

@@ -59,4 +59,6 @@ public abstract class EvaluateTemplate {
     public abstract Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv);
     
     public abstract Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data);
+    
+    public abstract void scoring();
 }
