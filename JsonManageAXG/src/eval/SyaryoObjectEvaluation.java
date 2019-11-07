@@ -48,28 +48,28 @@ public class SyaryoObjectEvaluation {
 
     public void scoring(Map<String, MSyaryoObject> map) {
         //メンテナンス分析
-        Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
-        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
+        //Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
+        //EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
         
         //使われ方分析
-        //Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use.json");
+        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use_engine_rotate.json");
         //testparam(useSettings);
-        //EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
+        EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
         
         
         map.values().parallelStream().forEach(s -> {
-            evalMainte.add(s);
-            //evalUse.add(s);
+            //evalMainte.add(s);
+            evalUse.add(s);
         });
         
         //クラスタリング
-        ClusteringESyaryo.cluster(evalMainte._eval.values());
-        //ClusteringESyaryo.cluster(evalUse._eval.values());
+        //ClusteringESyaryo.cluster(evalMainte._eval.values());
+        ClusteringESyaryo.cluster(evalUse._eval.values());
         
-        evalMainte.scoring();
+        //evalMainte.scoring();
         
-        print(evalMainte);
-        //print(evalUse);
+        //print(evalMainte);
+        print(evalUse);
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
         evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
                 .forEach(s -> print(evalMainte, s));
@@ -88,11 +88,11 @@ public class SyaryoObjectEvaluation {
     }
 
     private static void print(EvaluateTemplate eval) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_mainte_eval.csv")) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_use_eval.csv")) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
                                                                 .map(hv -> h.getKey()+"_"+hv))
-                                                .collect(Collectors.joining(","))+",AVG,CID");
+                                                .collect(Collectors.joining(","))+",AVG,CID,SCORE");
             eval._eval.values().stream()
                     .map(s -> s.check())
                     .forEach(pw::println);

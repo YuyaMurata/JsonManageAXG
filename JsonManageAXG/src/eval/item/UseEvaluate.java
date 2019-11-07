@@ -156,8 +156,11 @@ public class UseEvaluate extends EvaluateTemplate {
     @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
         int smridx = 1; //LOADMAP_DATE_SMR Value
+        String date = s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").keySet().stream().findFirst().get() : "-1";
         Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
-
+        
+        s.setDateSMR(date, smr.intValue());
+        
         Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
             _header.get(e.getKey()).stream().forEach(h ->{
@@ -269,4 +272,9 @@ public class UseEvaluate extends EvaluateTemplate {
 
         return mat;
     }*/
+
+    @Override
+    public void scoring() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

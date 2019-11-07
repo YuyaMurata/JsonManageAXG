@@ -127,41 +127,41 @@ public class MainteEvaluate extends EvaluateTemplate {
 
         //CIDで集計
         super._eval.values().stream().forEach(e -> {
-            if (cids.get(e.cid) == null) {
-                cids.put(e.cid, new ArrayList<>());
-            }
-
-            if (e.cid == 0) {
+            if (!e.norm.values().stream().filter(ed -> ed > 0d).findFirst().isPresent()) {
                 e.score = 0;
             } else {
+                if (cids.get(e.cid) == null) {
+                    cids.put(e.cid, new ArrayList<>());
+                }
+
                 cids.get(e.cid).add(e);
             }
         });
 
         //cidごとの平均充足率
         List<DataVector> cidavg = cids.entrySet().stream()
-                .map(cid -> 
-                        new DataVector(cid.getKey(),
-                            cid.getValue().stream()
+                .map(cid
+                        -> new DataVector(cid.getKey(),
+                        cid.getValue().stream()
                                 .mapToDouble(e -> e.norm.values().stream().mapToDouble(m -> m).average().getAsDouble())
                                 .average().getAsDouble()))
                 .collect(Collectors.toList());
-        
+
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
-                                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
-                                .map(i -> i).collect(Collectors.toList());
-        
+                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
+                .map(i -> i).collect(Collectors.toList());
+
         //スコアリング
-        sort.stream().forEach(i ->{
+        sort.stream().forEach(i -> {
             splitor.get(i).getPoints().stream()
-                                .map(sp -> sp.cid)
-                                .forEach(cid -> {
-                                    cids.get(cid).stream().forEach(e -> {
-                                        e.score = sort.indexOf(i)+1;
-                                    });
-                                });
+                    .map(sp -> sp.cid)
+                    .forEach(cid -> {
+                        cids.get(cid).stream().forEach(e -> {
+                            e.score = sort.indexOf(i) + 1;
+                        });
+                    });
         });
     }
 }

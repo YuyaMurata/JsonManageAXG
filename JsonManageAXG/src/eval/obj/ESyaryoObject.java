@@ -25,10 +25,14 @@ public class ESyaryoObject implements Clusterable{
     public Map<String, List<String>> sv;
     public Map<String, List<String>> data;
     public Map<String, Double> norm;
+    public String date;
+    public Integer smr;
     
     
     public ESyaryoObject(MSyaryoObject syaryo) {
         this.a = new MSyaryoAnalizer(syaryo);
+        date = a.LEAST_DATE;
+        smr = a.maxSMR;
     }
     
     public void setData(Map<String, List<String>> sv, Map<String, List<String>> data, Map<String, Double> norm){
@@ -42,11 +46,17 @@ public class ESyaryoObject implements Clusterable{
         this.cid = id;
     }
     
+    public void setDateSMR(String d, Integer v){
+        if(!d.equals("-1"))
+            this.date = d;
+        this.smr = v;
+    }
+    
     public String check(){
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
         String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
         
-        return a.syaryo.getName()+","+a.LEAST_DATE+","+a.age(a.LEAST_DATE)+","+a.maxSMR+","+p+","+avg+","+cid+","+score;
+        return a.syaryo.getName()+","+date+","+a.age(date)+","+smr+","+p+","+avg+","+cid+","+score;
     }
 
     @Override
