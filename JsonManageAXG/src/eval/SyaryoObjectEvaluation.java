@@ -52,7 +52,7 @@ public class SyaryoObjectEvaluation {
         //EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
         
         //使われ方分析
-        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use_engine_rotate.json");
+        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use_working_oiltemp.json");
         //testparam(useSettings);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
         
