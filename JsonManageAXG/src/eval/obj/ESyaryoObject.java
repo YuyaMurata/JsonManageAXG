@@ -27,6 +27,7 @@ public class ESyaryoObject implements Clusterable{
     public Map<String, Double> norm;
     public String date;
     public Integer smr;
+    private Boolean errflg;
     
     
     public ESyaryoObject(MSyaryoObject syaryo) {
@@ -40,6 +41,15 @@ public class ESyaryoObject implements Clusterable{
         this.data = data;
         this.norm = norm;
         this.points = norm.values().stream().mapToDouble(v -> v).toArray();
+        
+        //データ欠損確認フラグ
+        this.errflg = !norm.values().stream().filter(v -> v > 0).findFirst().isPresent();
+        if(errflg)
+            this.cid = 0;
+    }
+    
+    public Boolean none(){
+        return errflg;
     }
     
     public void setID(Integer id){
