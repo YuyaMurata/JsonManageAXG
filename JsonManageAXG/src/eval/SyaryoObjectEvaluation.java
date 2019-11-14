@@ -73,6 +73,7 @@ public class SyaryoObjectEvaluation {
         ClusteringESyaryo.cluster(evalUse._eval.values());
         
         //evalMainte.scoring();
+        evalUse.scoring();
         
         //print(evalAgeSMR);
         print(evalUse);
@@ -94,7 +95,7 @@ public class SyaryoObjectEvaluation {
     }
 
     private static void print(EvaluateTemplate eval) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_pumpmax_eval.csv")) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_use_pumpmax.csv")) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
                                                                 .map(hv -> h.getKey()+"_"+hv))

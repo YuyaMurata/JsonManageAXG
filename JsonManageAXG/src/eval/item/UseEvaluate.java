@@ -5,15 +5,21 @@
  */
 package eval.item;
 
+import eval.cluster.ClusteringESyaryo;
+import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 /**
  *
@@ -23,15 +29,6 @@ public class UseEvaluate extends EvaluateTemplate {
 
     private Map<String, Map<String, Map<String, String>>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
-
-    private static Map<String, List<String>> loadDim2Rawh = new HashMap() {
-        {
-            put("LOADMAP_実エンジン回転VSエンジントルク", Arrays.asList(new String[]{"_1100", "_1300", "_1500", "_1700", "_1800", "_1900", "_2000", "_2100", "_2200", "_2300", "_2400", "_2400_"}));
-            put("LOADMAP_エンジン水温VS作動油温", Arrays.asList(new String[]{"_50", "_75", "_85", "_95", "_100", "_105", "_120", "_120_"}));
-            put("LOADMAP_ポンプ斜板(R)", Arrays.asList(new String[]{"_100", "_200", "_300", "_300_"}));
-            put("LOADMAP_ポンプ斜板(F)", Arrays.asList(new String[]{"_100", "_200", "_300", "_300_"}));
-        }
-    };
 
     public UseEvaluate(Map<String, Map<String, Map<String, String>>> settings, MHeaderObject h) {
         USE_DATAKEYS = settings;
@@ -275,6 +272,50 @@ public class UseEvaluate extends EvaluateTemplate {
 
     @Override
     public void scoring() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Map<Integer, List<ESyaryoObject>> cids = new LinkedHashMap<>();
+        
+        //CIDで集計
+        super._eval.values().stream().forEach(e -> {
+            if (!e.norm.values().stream().filter(ed -> ed > 0d).findFirst().isPresent()) {
+                e.score = 0;
+            } else {
+                if (cids.get(e.cid) == null) {
+                    cids.put(e.cid, new ArrayList<>());
+                }
+
+                cids.get(e.cid).add(e);
+            }
+        });
+        
+        //cidごとの分割値の差分
+        List<DataVector> cidavg = cids.entrySet().stream()
+                .map(cid
+                        -> new DataVector(cid.getKey(),
+                        cid.getValue().stream()
+                                .mapToDouble(e -> {
+                                        int s = e.norm.size();
+                                        double l = IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
+                                        double r = IntStream.range(s/2, s).mapToDouble(i -> e.getPoint()[i]).sum();
+                                        return r-l;
+                                    })
+                                .average().getAsDouble()))
+                .collect(Collectors.toList());
+        
+        //スコアリング用にデータを3分割
+        List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
+                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
+                .map(i -> i).collect(Collectors.toList());
+
+        //スコアリング
+        sort.stream().forEach(i -> {
+            splitor.get(i).getPoints().stream()
+                    .map(sp -> sp.cid)
+                    .forEach(cid -> {
+                        cids.get(cid).stream().forEach(e -> {
+                            e.score = sort.indexOf(i) + 1;
+                        });
+                    });
+        });
     }
 }
