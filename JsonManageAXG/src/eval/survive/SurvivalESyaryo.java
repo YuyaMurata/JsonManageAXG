@@ -5,23 +5,65 @@
  */
 package eval.survive;
 
+import eval.item.AgeSMREvaluate;
+import eval.item.EvaluateTemplate;
+import eval.obj.ESyaryoObject;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author ZZ17807
  */
 public class SurvivalESyaryo {
-    public Map<String, List<String>> results = new HashMap<>();
+    public static Map<String, List<String>> results = new HashMap<>();
+    public static String PATH = "";
+    public static String IMG_PATH = "";
+    public static String X = "";
     
-    public void analize(Map<String, List<String>> data) {
+    public static void survival(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr){
+        //ファイル出力パス
+        PATH = agesmr._settings.get("#PATH_FILE");
+        IMG_PATH = agesmr._settings.get("#PATH_IMAGEFILE");
+        
+        //出力ファイル設定
+        X = agesmr._settings.get("#VISUAL_X");
+
+        //生存分析用のデータ作成
+        Map<String, List<String>> data = new HashMap<>();
+        agesmr._eval.keySet().stream().forEach(s ->{
+            List<String> sv = new ArrayList<>();
+            
+            //各評価器のスコア取得
+            sv.add(mainte._eval.get(s).score.toString());
+            sv.add(use._eval.get(s).score.toString());
+            sv.add(agesmr._eval.get(s).score.toString());
+            
+            //生存解析に必要なデータ取得
+            List<String> d = Arrays.stream(agesmr._eval.get(s).getPoint())
+                                    .boxed().map(v -> String.valueOf(v.intValue()))
+                                    .collect(Collectors.toList());
+            sv.addAll(d);
+            
+            //データ作成
+            data.put(s, sv);
+        });
+        
+        analize(data);
+        results.entrySet().stream()
+                            .map(r -> r.getKey()+":"+r.getValue())
+                            .forEach(System.out::println);
+    }
+    
+    private static void analize(Map<String, List<String>> data) {
         int idx_m = 0;
         int idx_u = 1;
         int idx_smr = 5;
@@ -54,7 +96,7 @@ public class SurvivalESyaryo {
         });
     }
     
-    private Map<String, List<String>> km(String gkey, Map<String, List<String>> g) {
+    private static Map<String, List<String>> km(String gkey, Map<String, List<String>> g) {
         Map<Integer, List<String>> m = new TreeMap<>();
         g.entrySet().stream()
                 .forEach(e -> {
@@ -91,8 +133,11 @@ public class SurvivalESyaryo {
         }
         
         //故障率データ出力
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(gkey+"_test.csv")){
-            fail.entrySet().stream().map(df -> df.getKey()+","+count.get(df.getKey())+","+df.getValue()).forEach(pw::println);
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH+gkey+"_FR.csv")){
+            //ヘッダ
+            pw.println(X+",COUNT,RATE");
+            fail.entrySet().stream()
+                    .map(df -> df.getKey()+","+count.get(df.getKey())+","+df.getValue()).forEach(pw::println);
         }
         
         //スコアリング
@@ -101,7 +146,7 @@ public class SurvivalESyaryo {
         return result;
     }
     
-    private Map scoring(Map<String, List<String>> g, Map<Integer, Double> fail){
+    private static Map scoring(Map<String, List<String>> g, Map<Integer, Double> fail){
         Map<String, List<String>> result = new HashMap<>();
         
         int gidx_smr = 0;

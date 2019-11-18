@@ -12,6 +12,7 @@ import eval.item.EvaluateTemplate;
 import eval.item.MainteEvaluate;
 import eval.item.UseEvaluate;
 import eval.obj.ESyaryoObject;
+import eval.survive.SurvivalESyaryo;
 import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
 import file.ListToCSV;
@@ -49,34 +50,39 @@ public class SyaryoObjectEvaluation {
 
     public void scoring(Map<String, MSyaryoObject> map) {
         //メンテナンス分析
-        //Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
-        //EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
+        Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
+        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
         
         //使われ方分析
         Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use_pumpmax.json");
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
         
         //経年/SMR分析
-        //Map agesmrSettings = MapToJSON.toMap("settings\\user\\PC200_agesmr.json");
-        //testparam(useSettings);
-        //EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, def);
+        Map agesmrSettings = MapToJSON.toMap("settings\\user\\PC200_agesmr.json");
+        EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, def);
         
         
         map.values().parallelStream().forEach(s -> {
-            //evalMainte.add(s);
+            evalMainte.add(s);
             evalUse.add(s);
-            //evalAgeSMR.add(s);
+            evalAgeSMR.add(s);
         });
         
         //クラスタリング
-        //ClusteringESyaryo.cluster(evalMainte._eval.values());
+        ClusteringESyaryo.cluster(evalMainte._eval.values());
         ClusteringESyaryo.cluster(evalUse._eval.values());
         
-        //evalMainte.scoring();
+        //スコアリング
+        evalMainte.scoring();
         evalUse.scoring();
         
+        //生存解析
+        SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
+        
+        //print(evalMainte);
         //print(evalAgeSMR);
-        print(evalUse);
+        //print(evalUse);
+        
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
         evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
                 .forEach(s -> print(evalMainte, s));
@@ -86,7 +92,7 @@ public class SyaryoObjectEvaluation {
 
     public static void main(String[] args) {
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         

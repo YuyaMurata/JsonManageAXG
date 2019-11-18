@@ -294,8 +294,8 @@ public class UseEvaluate extends EvaluateTemplate {
                         cid.getValue().stream()
                                 .mapToDouble(e -> {
                                         int s = e.norm.size();
-                                        double l = IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
-                                        double r = IntStream.range(s/2, s).mapToDouble(i -> e.getPoint()[i]).sum();
+                                        double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
+                                        double r = IntStream.range(3*s/4, s).mapToDouble(i -> e.getPoint()[i]).sum();
                                         return r-l;
                                     })
                                 .average().getAsDouble()))
@@ -304,7 +304,7 @@ public class UseEvaluate extends EvaluateTemplate {
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
-                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
+                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.reverseOrder()))
                 .map(i -> i).collect(Collectors.toList());
 
         //スコアリング

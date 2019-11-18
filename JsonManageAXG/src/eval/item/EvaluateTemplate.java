@@ -22,6 +22,7 @@ import obj.MSyaryoObject;
 public abstract class EvaluateTemplate {
     public Map<String, List<String>> _header;
     public Map<String, ESyaryoObject> _eval; 
+    public Map<String, String> _settings; 
 
     public EvaluateTemplate() {
         _eval = new ConcurrentHashMap();

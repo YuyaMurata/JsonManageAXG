@@ -33,7 +33,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         AGE_SMR_SETTING.keySet().stream().forEach(setting::remove);
         AGE_SMR_PARTS = setting;
-
+        
+        super._settings = AGE_SMR_SETTING;
+        
         PARTS_DEF = def;
     }
 
