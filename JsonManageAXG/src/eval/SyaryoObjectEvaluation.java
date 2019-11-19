@@ -80,7 +80,7 @@ public class SyaryoObjectEvaluation {
         SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
         
         //print(evalMainte);
-        //print(evalAgeSMR);
+        print(evalAgeSMR);
         //print(evalUse);
         
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
