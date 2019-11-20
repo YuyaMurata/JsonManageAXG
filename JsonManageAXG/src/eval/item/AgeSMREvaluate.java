@@ -5,6 +5,7 @@
  */
 package eval.item;
 
+import axg.shuffle.form.util.FormalizeUtils;
 import eval.obj.ESyaryoObject;
 import eval.time.TimeSeriesObject;
 import java.util.ArrayList;
@@ -33,9 +34,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         AGE_SMR_SETTING.keySet().stream().forEach(setting::remove);
         AGE_SMR_PARTS = setting;
-        
+
         super._settings = AGE_SMR_SETTING;
-        
+
         PARTS_DEF = def;
     }
 
@@ -49,12 +50,13 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         //評価対象データをSMRで集約
         Map<String, List<String>> data = aggregate(s, sv);
 
+        //集約データのテスト出力
         System.out.println(s.a.get().getName());
         data.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue()).forEach(System.out::println);
 
         //評価対象データの正規化
         Map<String, Double> norm = normalize(s, data);
-        norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
+        //norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
 
         //各データを検証にセット
         s.setData(sv, data, norm);
@@ -80,7 +82,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         String visual = AGE_SMR_SETTING.get("#VISUAL_X");
         Integer agediv = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_AGE"));
         Integer smrdiv = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_SMR"));
-        
+
         //時系列情報の取得
         AGE_SMR_PARTS.keySet().stream().forEach(k -> {
             int idx = Arrays.asList(PARTS_DEF.get(k + "#H").get(0).split(",")).indexOf("部品.作番");
@@ -88,43 +90,52 @@ public class AgeSMREvaluate extends EvaluateTemplate {
             TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, idx, sv.get(k)));
 
             //生存解析のデータ作成
-            if (data.get(k) == null) {
-                data.put(k, new ArrayList<>());
+            if (!t.series.isEmpty()) {
+                t.series.stream().forEach(ti -> {
+                    String k2 = FormalizeUtils.dup(k, data);
+                    data.put(k2, new ArrayList<>());
+                    
+                    //納入年月
+                    data.get(k2).add(s.a.lifestart);
 
-                //納入年月
-                data.get(k).add(s.a.lifestart);
-
-                if (!t.series.isEmpty()) {
                     //最初のサービス実績
-                    String firstDate = s.a.getSMRToDate(t.first()).toString();
-                    data.get(k).add(firstDate);
+                    String firstDate = s.a.getSMRToDate(ti).toString();//s.a.getSMRToDate(t.first()).toString();
+                    data.get(k2).add(firstDate);
 
                     //経年
                     if (visual.equals("AGE")) {
                         Integer y = s.a.age(firstDate) / agediv;
-                        data.get(k).add(y.toString());
+                        data.get(k2).add(y.toString());
                     } else {
                         //SMR
-                        Integer smr = t.first() / smrdiv;
-                        data.get(k).add(smr.toString());
+                        Integer smr = ti / smrdiv;
+                        data.get(k2).add(smr.toString());
                     }
 
                     //サービス発生の有無
-                    data.get(k).add("1");
-                } else {
-                    data.get(k).add(s.date);
-                    //経年
-                    if (visual.equals("AGE")) {
-                        Integer y = s.a.age(s.date) / agediv;
-                        data.get(k).add(y.toString());
-                    } else {
-                        //SMR
-                        Integer smr = s.smr / smrdiv;
-                        data.get(k).add(smr.toString());
-                    }
-                    data.get(k).add("0");
+                    data.get(k2).add("1");
+                });
+            } else {
+                if(data.get(k) == null){
+                    data.put(k, new ArrayList<>());
+                    
+                    //納入年月
+                    data.get(k).add(s.a.lifestart);
                 }
+                    
+                data.get(k).add(s.date);
+                //経年
+                if (visual.equals("AGE")) {
+                    Integer y = s.a.age(s.date) / agediv;
+                    data.get(k).add(y.toString());
+                } else {
+                    //SMR
+                    Integer smr = s.smr / smrdiv;
+                    data.get(k).add(smr.toString());
+                }
+                data.get(k).add("0");
             }
+
         });
 
         return data;

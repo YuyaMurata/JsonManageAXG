@@ -77,10 +77,11 @@ public class SyaryoObjectEvaluation {
         evalUse.scoring();
         
         //生存解析
-        SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
+        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
+        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
         
         //print(evalMainte);
-        print(evalAgeSMR);
+        //print(evalAgeSMR);
         //print(evalUse);
         
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
@@ -92,8 +93,8 @@ public class SyaryoObjectEvaluation {
 
     public static void main(String[] args) {
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
-                .map(s -> eval.db.getObj(s))
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+                .map(s -> eval.db.getObj(s)).limit(100)
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         System.out.println("スコアリング開始");
