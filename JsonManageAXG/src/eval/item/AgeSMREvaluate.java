@@ -50,17 +50,15 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         //評価対象データをSMRで集約
         Map<String, List<String>> data = aggregate(s, sv);
 
-        //集約データのテスト出力
-        System.out.println(s.a.get().getName());
-        data.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue()).forEach(System.out::println);
-
         //評価対象データの正規化
         Map<String, Double> norm = normalize(s, data);
-        //norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
-
+        
         //各データを検証にセット
         s.setData(sv, data, norm);
-
+        
+        //テスト出力
+        //testPrint(data, norm, s);
+        
         return s;
     }
 
@@ -143,15 +141,16 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
     @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
-        Map<String, List<String>> mid = data.values().stream()
+        List<String> mid = data.values().stream()
                 .sorted(Comparator.comparing(v -> v.get(1), Comparator.naturalOrder()))
                 .limit(1)
-                .collect(Collectors.toMap(v -> "SUV", v -> v));
+                .flatMap(l -> l.stream())
+                .collect(Collectors.toList());
 
         Map norm = _header.get("経年/SMR").stream()
                 .collect(Collectors.toMap(
                         h -> h,
-                        h -> Double.valueOf(mid.get("SUV").get(_header.get("経年/SMR").indexOf(h))))
+                        h -> Double.valueOf(mid.get(_header.get("経年/SMR").indexOf(h))))
                 );
 
         return norm;
@@ -161,5 +160,13 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     public void scoring() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-
+    
+    public void testPrint(Map<String, List<String>> data, Map<String, Double> norm, ESyaryoObject s){
+        //集約データのテスト出力
+        System.out.println(s.a.get().getName());
+        data.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue()).forEach(System.out::println);
+        
+        //正規化データのテスト出力
+        norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
+    }
 }

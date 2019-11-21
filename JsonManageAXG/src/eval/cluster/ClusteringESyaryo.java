@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 
 /**
  *
@@ -19,7 +22,8 @@ import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 public class ClusteringESyaryo {
     static int C = 9;
     static int N = 10000;
-    static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N);
+    static RandomGenerator rg = new JDKRandomGenerator(1);
+    static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N, new EuclideanDistance(), rg);
     //static DBSCANClusterer<ESyaryoObject> cluster = new DBSCANClusterer(0.02, 1, new EuclideanDistance());
     
     public static void cluster(Collection<ESyaryoObject> data){    
@@ -39,7 +43,7 @@ public class ClusteringESyaryo {
         System.out.println("clustering time = "+(stop-start)+"ms");
     }
     
-    static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, 100);
+    static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, 100, new EuclideanDistance(), rg);
     public static List<CentroidCluster<DataVector>> splitor(Collection<DataVector> data){    
         long start = System.currentTimeMillis();
         

@@ -9,6 +9,7 @@ import eval.analizer.MSyaryoAnalizer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 
@@ -72,5 +73,13 @@ public class ESyaryoObject implements Clusterable{
     @Override
     public double[] getPoint() {
         return points;
+    }
+    
+    //経年/SMR専用のメソッド　複数サービスに対応
+    public List<double[]> getPoints() {
+        List<double[]> pointList = data.values().stream()
+                                .map(v -> v.stream().mapToDouble(vi -> Double.valueOf(vi)).toArray())
+                                .collect(Collectors.toList());
+        return pointList;
     }
 }

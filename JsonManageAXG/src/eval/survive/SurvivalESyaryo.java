@@ -64,21 +64,22 @@ public class SurvivalESyaryo {
     }
 
     public static void analize(String gkey, List<ESyaryoObject> g) {
-        TreeMap<Integer, Integer> fail = new TreeMap<>();
-        TreeMap<Integer, Integer> count = new TreeMap<>();
+        TreeMap<Double, Integer> fail = new TreeMap<>();
+        TreeMap<Double, Integer> count = new TreeMap<>();
 
         int xidx = 2;
         int svidx = 3;
 
         //故障台数
         g.stream().forEach(gs -> {
-            gs.data.values().stream()
-                    .filter(d -> d.get(svidx).equals("1"))
-                    .map(d -> Integer.valueOf(d.get(xidx)))
+            gs.getPoints().stream()
+                    .filter(d -> {
+                        if (fail.get(d[xidx]) == null)
+                            fail.put(d[xidx], 0);
+                        return d[svidx] == 1d;
+                    }).map(d -> d[xidx])
+                    //.distinct() //各期間でユニークにカウントする
                     .forEach(d -> {
-                        if (fail.get(d) == null) {
-                            fail.put(d, 0);
-                        }
                         fail.put(d, fail.get(d) + 1);
                     });
         });
@@ -92,12 +93,25 @@ public class SurvivalESyaryo {
             count.put(ft, cnt.intValue());
         });
         
+        //故障確率の計算
+        Map<Double, Double> prob = new HashMap();
+        Double before = 1d;
+        for (Double smr : fail.keySet()) {
+            Integer failCnt = fail.get(smr);
+            Integer remN = count.get(smr);
+
+            Double surv = before * (remN - failCnt) / remN;
+            before = surv;
+
+            prob.put(smr, 1d - surv);
+        }
+        
         //故障率データ出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + gkey + "_FR.csv")) {
             //ヘッダ
-            pw.println(X + ",COUNT,FAIL");
+            pw.println(X + ",COUNT,FAIL,RATE");
             fail.entrySet().stream()
-                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue()).forEach(pw::println);
+                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue()+","+prob.get(df.getKey())).forEach(pw::println);
         }
     }
 
@@ -158,8 +172,8 @@ public class SurvivalESyaryo {
         });
 
         //グループ確認
-        group.entrySet().stream().map(g -> g.getKey() + ":" + g.getValue().size()).forEach(System.out::println);
-        System.out.println("total:" + group.entrySet().stream().mapToInt(g -> g.getValue().size()).sum());
+        //group.entrySet().stream().map(g -> g.getKey() + ":" + g.getValue().size()).forEach(System.out::println);
+        //System.out.println("total:" + group.entrySet().stream().mapToInt(g -> g.getValue().size()).sum());
 
         //グループごとの故障確率
         Map<String, List<String>> map = new TreeMap<>();
@@ -183,9 +197,10 @@ public class SurvivalESyaryo {
                     }
                     m.get(smr).add(e.getKey());
                 });
-
+        
         //カプラン・マイヤー法
         Map<Integer, Double> fail = new TreeMap<>();
+        Map<Integer, Integer> failcnt = new TreeMap<>();
         Map<Integer, Integer> count = new TreeMap<>();
         Double before = 1d;
         for (Integer smr : m.keySet()) {
@@ -205,6 +220,7 @@ public class SurvivalESyaryo {
             Double surv = before * (total - dead) / total;
             before = surv;
 
+            failcnt.put(smr, dead.intValue());
             fail.put(smr, 1d - surv);
             count.put(smr, total.intValue());
         }
@@ -212,9 +228,9 @@ public class SurvivalESyaryo {
         //故障率データ出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + gkey + "_FR.csv")) {
             //ヘッダ
-            pw.println(X + ",COUNT,RATE");
+            pw.println(X + ",COUNT,FAIL,RATE");
             fail.entrySet().stream()
-                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue()).forEach(pw::println);
+                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + failcnt.get(df.getKey()) + "," + df.getValue()).forEach(pw::println);
         }
 
         //スコアリング

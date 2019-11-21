@@ -69,16 +69,16 @@ public class SyaryoObjectEvaluation {
         });
         
         //クラスタリング
-        ClusteringESyaryo.cluster(evalMainte._eval.values());
-        ClusteringESyaryo.cluster(evalUse._eval.values());
+        //ClusteringESyaryo.cluster(evalMainte._eval.values());
+        //ClusteringESyaryo.cluster(evalUse._eval.values());
         
         //スコアリング
-        evalMainte.scoring();
-        evalUse.scoring();
+        //evalMainte.scoring();
+        //evalUse.scoring();
         
         //生存解析
-        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
-        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
+        SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
+        //SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
         
         //print(evalMainte);
         //print(evalAgeSMR);
@@ -94,7 +94,7 @@ public class SyaryoObjectEvaluation {
     public static void main(String[] args) {
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
         Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
-                .map(s -> eval.db.getObj(s)).limit(100)
+                .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         System.out.println("スコアリング開始");
