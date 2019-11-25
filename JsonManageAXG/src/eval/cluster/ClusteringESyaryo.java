@@ -43,7 +43,7 @@ public class ClusteringESyaryo {
         System.out.println("clustering time = "+(stop-start)+"ms");
     }
     
-    static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, 100, new EuclideanDistance(), rg);
+    static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, N, new EuclideanDistance(), rg);
     public static List<CentroidCluster<DataVector>> splitor(Collection<DataVector> data){    
         long start = System.currentTimeMillis();
         

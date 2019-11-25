@@ -142,9 +142,11 @@ public class MainteEvaluate extends EvaluateTemplate {
         List<DataVector> cidavg = cids.entrySet().stream()
                 .map(cid
                         -> new DataVector(cid.getKey(),
-                        cid.getValue().stream()
+                            cid.getValue().stream()
                                 .mapToDouble(e -> e.norm.values().stream().mapToDouble(m -> m).average().getAsDouble())
-                                .average().getAsDouble()))
+                                //.average().getAsDouble()))
+                                //.max().getAsDouble()))
+                                .sorted().boxed().limit(cid.getValue().size()/2).reduce((a, b) -> b).orElse(null)))
                 .collect(Collectors.toList());
 
         //スコアリング用にデータを3分割

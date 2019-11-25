@@ -64,23 +64,23 @@ public class SyaryoObjectEvaluation {
         
         map.values().parallelStream().forEach(s -> {
             evalMainte.add(s);
-            evalUse.add(s);
-            evalAgeSMR.add(s);
+            //evalUse.add(s);
+            //evalAgeSMR.add(s);
         });
         
         //クラスタリング
-        //ClusteringESyaryo.cluster(evalMainte._eval.values());
+        ClusteringESyaryo.cluster(evalMainte._eval.values());
         //ClusteringESyaryo.cluster(evalUse._eval.values());
         
         //スコアリング
-        //evalMainte.scoring();
+        evalMainte.scoring();
         //evalUse.scoring();
         
         //生存解析
-        SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
+        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
         //SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
         
-        //print(evalMainte);
+        print(evalMainte);
         //print(evalAgeSMR);
         //print(evalUse);
         
