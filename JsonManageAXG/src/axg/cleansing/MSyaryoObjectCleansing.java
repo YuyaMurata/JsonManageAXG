@@ -6,7 +6,6 @@
 package axg.cleansing;
 
 import axg.shuffle.form.util.FormalizeUtils;
-import axg.template.CleansingSettingsTemplate;
 import file.CSVFileReadWrite;
 import mongodb.MongoDBPOJOData;
 import mongodb.MongoDBData;
@@ -16,6 +15,7 @@ import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +36,7 @@ public class MSyaryoObjectCleansing {
     public static void main(String[] args) {
         clean("json", "komatsuDB_PC200", "config\\cleansing_settings.json");
         System.out.println(cleansingResults);
-        logprint("log\\test");
+        logPrint("log");
     }
 
     public static void clean(String db, String collection, String cleanSetting) {
@@ -45,7 +45,7 @@ public class MSyaryoObjectCleansing {
 
         //元マスタデータのレイアウト出力
         String layoutpath = cleanSetting.substring(0, cleanSetting.lastIndexOf("\\"));
-        CleansingSettingsTemplate.create("json", "komatsuDB_PC200", layoutpath + "\\master_layout.json");
+        createTemplate("json", "komatsuDB_PC200", layoutpath + "\\master_layout.json");
 
         //設定ファイルとヘッダ読み込み
         ruleMap = new MapToJSON().toMap(cleanSetting);
@@ -155,13 +155,48 @@ public class MSyaryoObjectCleansing {
         }
     }
 
-    public static void logprint(String logname) {
+    public static void logPrint(String logFilePath) {
         removeLog.entrySet().stream().forEach(s -> {
-            try (PrintWriter pw = CSVFileReadWrite.writerSJIS(logname+"_"+s.getKey()+".csv")) {
-                pw.println("SID,"+String.join(",", hobj.getHeader(s.getKey())));
-                
+            try (PrintWriter pw = CSVFileReadWrite.writerSJIS(logFilePath+"\\cleansing_log_"+s.getKey()+".csv")) {
+                pw.println("SID,"+String.join(",", hobj.getHeader(s.getKey()))); 
                 s.getValue().stream().forEach(pw::println);
             }
         });
+    }
+    
+    //テンプレート生成
+    public static void createTemplate(String db, String collection, String file) {
+        MongoDBData mongo = MongoDBData.create();
+        mongo.set(db, collection);
+
+        List<String> hin = mongo.getHeader();
+        Map<String, Map<String, List<String>>> head = new HashMap<>();
+        Boolean flg = true;
+        for (String s : hin) {
+            if (s.equals("id ")) {
+                continue;
+            }
+
+            System.out.println(s);
+
+            String k = s.split("\\.")[0];
+
+            if (head.get(k) == null) {
+                head.put(k, new HashMap<>());
+                head.get(k).put(k + ".subKey", new ArrayList<>());
+                flg = false;
+            }
+
+            if (flg) {
+                head.get(k).get(k + ".subKey").add(s);
+            } else {
+                flg = true;
+            }
+        }
+
+        MapToJSON.toJSON(file, head);
+
+        System.out.println(hin);
+        mongo.close();
     }
 }

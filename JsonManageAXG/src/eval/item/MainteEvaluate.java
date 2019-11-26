@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
+import py.PythonCommand;
 
 /**
  *
@@ -144,9 +145,9 @@ public class MainteEvaluate extends EvaluateTemplate {
                         -> new DataVector(cid.getKey(),
                             cid.getValue().stream()
                                 .mapToDouble(e -> e.norm.values().stream().mapToDouble(m -> m).average().getAsDouble())
-                                //.average().getAsDouble()))
+                                .average().getAsDouble()))
                                 //.max().getAsDouble()))
-                                .sorted().boxed().limit(cid.getValue().size()/2).reduce((a, b) -> b).orElse(null)))
+                                //.sorted().boxed().limit(cid.getValue().size()/2).reduce((a, b) -> b).orElse(null)))
                 .collect(Collectors.toList());
 
         //スコアリング用にデータを3分割
@@ -165,5 +166,9 @@ public class MainteEvaluate extends EvaluateTemplate {
                         });
                     });
         });
+    }
+    
+    public static void printImage(String file, String x, String y, String c){
+        PythonCommand.py("py\\mainte_visualize.py", new String[]{file});
     }
 }

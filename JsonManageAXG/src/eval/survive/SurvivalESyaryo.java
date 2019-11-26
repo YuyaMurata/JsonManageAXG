@@ -31,7 +31,7 @@ public class SurvivalESyaryo {
     public static String X = "";
     public static Integer DELTA = 1;
 
-    public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr) {
+    public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
         PATH = agesmr._settings.get("#PATH_FILE");
         IMG_PATH = agesmr._settings.get("#PATH_IMAGEFILE");

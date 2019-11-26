@@ -12,10 +12,12 @@ import obj.MSyaryoObject;
 import file.MapToJSON;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import mongodb.MongoDBData;
 
 /**
  *
@@ -34,8 +36,8 @@ public class MSyaryoObjectShuffle {
         cleanDB.set(db, collection+"_Clean", MSyaryoObject.class);
         
         //設定ファイルの読み込み
-        Map index = new MapToJSON().toMap(shuffleSetting); //シャッフリング用
-        Map layout = new MapToJSON().toMap(layoutSetting); //ヘッダ用
+        Map index = MapToJSON.toMap(shuffleSetting); //シャッフリング用
+        Map layout = MapToJSON.toMap(layoutSetting); //ヘッダ用
 
         //Header
         MHeaderObject headerobj = cleanDB.getHeader();
@@ -194,5 +196,41 @@ public class MSyaryoObjectShuffle {
             k = key + "#" + df.format(++cnt);
         }
         return k;
+    }
+    
+    //テンプレート生成
+    public static void createTemplate(String db, String collection, String file) {
+        MongoDBData mongo = MongoDBData.create();
+        mongo.set(db, collection);
+
+        List<String> hin = mongo.getHeader();
+        Map<String, Map<String, List<String>>> head = new HashMap<>();
+        Boolean flg = true;
+        for (String s : hin) {
+            if (s.equals("id ")) {
+                continue;
+            }
+
+            System.out.println(s);
+
+            String k = s.split("\\.")[0];
+
+            if (head.get(k) == null) {
+                head.put(k, new HashMap<>());
+                head.get(k).put(k + ".subKey", new ArrayList<>());
+                flg = false;
+            }
+
+            if (flg) {
+                head.get(k).get(k + ".subKey").add(s);
+            } else {
+                flg = true;
+            }
+        }
+
+        MapToJSON.toJSON(file, head);
+
+        System.out.println(hin);
+        mongo.close();
     }
 }

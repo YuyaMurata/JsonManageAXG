@@ -48,41 +48,41 @@ public class SyaryoObjectEvaluation {
         });
     }
 
-    public void scoring(Map<String, MSyaryoObject> map) {
+    public void scoring(Map<String, MSyaryoObject> map, String mainteSettingFile, String useSettingFile, String agesmrSettingFile, String outPath) {
         //メンテナンス分析
-        Map mainteSettings = MapToJSON.toMap("settings\\user\\PC200_mainteparts_interval.json");
+        Map mainteSettings = MapToJSON.toMap(mainteSettingFile);
         EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
         
         //使われ方分析
-        Map useSettings = MapToJSON.toMap("settings\\user\\PC200_use_pumpmax.json");
+        Map useSettings = MapToJSON.toMap(useSettingFile);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
         
         //経年/SMR分析
-        Map agesmrSettings = MapToJSON.toMap("settings\\user\\PC200_agesmr.json");
+        Map agesmrSettings = MapToJSON.toMap(agesmrSettingFile);
         EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, def);
         
         
         map.values().parallelStream().forEach(s -> {
             evalMainte.add(s);
-            //evalUse.add(s);
-            //evalAgeSMR.add(s);
+            evalUse.add(s);
+            evalAgeSMR.add(s);
         });
         
         //クラスタリング
         ClusteringESyaryo.cluster(evalMainte._eval.values());
-        //ClusteringESyaryo.cluster(evalUse._eval.values());
+        ClusteringESyaryo.cluster(evalUse._eval.values());
         
         //スコアリング
         evalMainte.scoring();
-        //evalUse.scoring();
+        evalUse.scoring();
         
-        //生存解析
+        //故障解析
         //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
-        //SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
+        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
         
-        print(evalMainte);
-        //print(evalAgeSMR);
-        //print(evalUse);
+        print(evalMainte, outPath+"\\mainte_score.csv");
+        MainteEvaluate.printImage(outPath+"\\mainte_score.csv", "AGE", "AVG", "SCORE");
+        print(evalUse, outPath+"\\use_score.csv");
         
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
         evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
@@ -98,11 +98,15 @@ public class SyaryoObjectEvaluation {
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         System.out.println("スコアリング開始");
-        eval.scoring(map);
+        eval.scoring(map, 
+                "settings\\user\\PC200_mainteparts_interval.json", 
+                "settings\\user\\PC200_use_pumpmax.json", 
+                "settings\\user\\PC200_agesmr.json", 
+                "out");
     }
 
-    private static void print(EvaluateTemplate eval) {
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\PC200_use_pumpmax.csv")) {
+    private static void print(EvaluateTemplate eval, String file) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
                                                                 .map(hv -> h.getKey()+"_"+hv))
