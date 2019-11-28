@@ -6,10 +6,13 @@
 package eval.obj;
 
 import eval.analizer.MSyaryoAnalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 
@@ -81,5 +84,30 @@ public class ESyaryoObject implements Clusterable{
                                 .map(v -> v.stream().mapToDouble(vi -> Double.valueOf(vi)).toArray())
                                 .collect(Collectors.toList());
         return pointList;
+    }
+    
+    //経年/SMR専用のメソッド
+    public Double getMTBF(int xidx, int svidx){
+        Map<String, List<Double>> fail = new HashMap<>();
+        data.entrySet().stream()
+                    .filter(d -> d.getValue().get(svidx).equals("1"))
+                    .forEach(d -> {
+                        String k = d.getKey().split("#")[0];
+                        if(fail.get(k) == null){
+                            fail.put(k, new ArrayList<>());
+                            fail.get(k).add(0d);
+                        }
+                        fail.get(k).add(Double.valueOf(d.getValue().get(xidx)));
+                    });
+        
+        Map<String, Double> mtbf = new HashMap<>();
+        for(String key : fail.keySet()){
+            //差分系列
+            List<Double> failseq = fail.get(key);
+            List<Double> diffseq = IntStream.range(0, failseq.size()-1)
+                                        .map(i -> IntStream.range(1, failseq.size()).map(j -> failseq.get(j)-failseq.get(i)));
+        }
+        
+        return null;
     }
 }

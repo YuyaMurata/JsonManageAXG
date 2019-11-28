@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -27,23 +28,17 @@ public class SurvivalESyaryo {
 
     public static Map<String, List<String>> results = new HashMap<>();
     public static String PATH = "";
-    public static String IMG_PATH = "";
     public static String X = "";
     public static Integer DELTA = 1;
 
     public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
-        PATH = agesmr._settings.get("#PATH_FILE");
-        IMG_PATH = agesmr._settings.get("#PATH_IMAGEFILE");
+        PATH = outPath;
 
         //出力ファイル設定
         X = agesmr._settings.get("#VISUAL_X");
-        
-        if(X.equals("SMR"))
-            DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_SMR"));
-        else
-            DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_AGE"));
-        
+        DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_X"));
+
         //グループ分類
         Map<String, List<ESyaryoObject>> group = new HashMap<>();
         agesmr._eval.keySet().stream().forEach(s -> {
@@ -74,8 +69,9 @@ public class SurvivalESyaryo {
         g.stream().forEach(gs -> {
             gs.getPoints().stream()
                     .filter(d -> {
-                        if (fail.get(d[xidx]) == null)
+                        if (fail.get(d[xidx]) == null) {
                             fail.put(d[xidx], 0);
+                        }
                         return d[svidx] == 1d;
                     }).map(d -> d[xidx])
                     //.distinct() //各期間でユニークにカウントする
@@ -83,16 +79,16 @@ public class SurvivalESyaryo {
                         fail.put(d, fail.get(d) + 1);
                     });
         });
-        
+
         //故障時の残存台数
-        fail.keySet().stream().forEach(ft ->{
+        fail.keySet().stream().forEach(ft -> {
             Long cnt = g.stream()
-                        .map(s -> X.equals("SMR")?s.a.maxSMR:s.a.age(s.date))
-                        .filter(x -> ft <= x/DELTA)
-                        .count();
+                    .map(s -> X.equals("SMR") ? s.a.maxSMR : s.a.age(s.date))
+                    .filter(x -> ft <= x / DELTA)
+                    .count();
             count.put(ft, cnt.intValue());
         });
-        
+
         //故障確率の計算
         Map<Double, Double> prob = new HashMap();
         Double before = 1d;
@@ -106,19 +102,31 @@ public class SurvivalESyaryo {
             prob.put(smr, 1d - surv);
         }
         
+        //mtbf
+        mtbf(g, xidx, svidx);
+        int totalSyaryo = g.size();
+        long toatlFail = g.stream()
+                            .mapToLong(s -> s.getPoints().stream()
+                                    .filter(v -> v[svidx] == 1d).count())
+                            .sum();
+
         //故障率データ出力
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + gkey + "_FR.csv")) {
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + "\\" + gkey + "_FR.csv")) {
             //ヘッダ
             pw.println(X + ",COUNT,FAIL,RATE");
             fail.entrySet().stream()
-                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue()+","+prob.get(df.getKey())).forEach(pw::println);
+                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue() + "," + prob.get(df.getKey())).forEach(pw::println);
         }
     }
 
-    public static void survival(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr) {
+    private static Map<String, Double> mtbf(List<ESyaryoObject> data, int xidx, int svidx) {
+        data.stream().forEach(s -> s.getMTBF(xidx, svidx));
+        return null;
+    }
+
+    public static void survival(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
-        PATH = agesmr._settings.get("#PATH_FILE");
-        IMG_PATH = agesmr._settings.get("#PATH_IMAGEFILE");
+        PATH = outPath;
 
         //出力ファイル設定
         X = agesmr._settings.get("#VISUAL_X");
@@ -174,7 +182,6 @@ public class SurvivalESyaryo {
         //グループ確認
         //group.entrySet().stream().map(g -> g.getKey() + ":" + g.getValue().size()).forEach(System.out::println);
         //System.out.println("total:" + group.entrySet().stream().mapToInt(g -> g.getValue().size()).sum());
-
         //グループごとの故障確率
         Map<String, List<String>> map = new TreeMap<>();
         group.entrySet().stream().forEach(g -> map.putAll(km(g.getKey(), g.getValue())));
@@ -197,7 +204,7 @@ public class SurvivalESyaryo {
                     }
                     m.get(smr).add(e.getKey());
                 });
-        
+
         //カプラン・マイヤー法
         Map<Integer, Double> fail = new TreeMap<>();
         Map<Integer, Integer> failcnt = new TreeMap<>();

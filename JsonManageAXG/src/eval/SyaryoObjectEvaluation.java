@@ -77,23 +77,23 @@ public class SyaryoObjectEvaluation {
         evalUse.scoring();
         
         //故障解析
-        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR);
-        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR);
+        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR, "out");
+        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR, outPath);
         
         print(evalMainte, outPath+"\\mainte_score.csv");
         MainteEvaluate.printImage(outPath+"\\mainte_score.csv", "AGE", "AVG", "SCORE");
         print(evalUse, outPath+"\\use_score.csv");
+        print(evalAgeSMR, outPath+"\\agesmr_score.csv");
         
         /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
         evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
                 .forEach(s -> print(evalMainte, s));
         */
-        //print(evalUse, true);
     }
 
     public static void main(String[] args) {
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
@@ -117,12 +117,16 @@ public class SyaryoObjectEvaluation {
         }
     }
 
+    //メンテナンスのみ
     private static void print(EvaluateTemplate evtemp, ESyaryoObject eval) {
         String file = "file\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             //評価結果
             pw.println("評価結果");
-            pw.println("SID,DATE,AGE,SMR," + String.join(",", evtemp.header("メンテナンス"))+",CID");
+            pw.println("SID,DATE,AGE,SMR," + evtemp._header.entrySet().stream()
+                                                .flatMap(h -> h.getValue().stream()
+                                                                .map(hv -> h.getKey()+"_"+hv))
+                                                .collect(Collectors.joining(","))+",CID");
             pw.println(eval.check());
             pw.println();
 

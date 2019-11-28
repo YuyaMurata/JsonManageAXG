@@ -78,8 +78,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
         String visual = AGE_SMR_SETTING.get("#VISUAL_X");
-        Integer agediv = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_AGE"));
-        Integer smrdiv = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_SMR"));
+        Integer div = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_X"));
 
         //時系列情報の取得
         AGE_SMR_PARTS.keySet().stream().forEach(k -> {
@@ -102,11 +101,11 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
                     //経年
                     if (visual.equals("AGE")) {
-                        Integer y = s.a.age(firstDate) / agediv;
+                        Integer y = s.a.age(firstDate) / div;
                         data.get(k2).add(y.toString());
                     } else {
                         //SMR
-                        Integer smr = ti / smrdiv;
+                        Integer smr = ti / div;
                         data.get(k2).add(smr.toString());
                     }
 
@@ -124,11 +123,11 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 data.get(k).add(s.date);
                 //経年
                 if (visual.equals("AGE")) {
-                    Integer y = s.a.age(s.date) / agediv;
+                    Integer y = s.a.age(s.date) / div;
                     data.get(k).add(y.toString());
                 } else {
                     //SMR
-                    Integer smr = s.smr / smrdiv;
+                    Integer smr = s.smr / div;
                     data.get(k).add(smr.toString());
                 }
                 data.get(k).add("0");
