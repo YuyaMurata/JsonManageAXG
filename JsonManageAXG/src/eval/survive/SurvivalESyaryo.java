@@ -5,23 +5,22 @@
  */
 package eval.survive;
 
-import eval.item.AgeSMREvaluate;
 import eval.item.EvaluateTemplate;
 import eval.obj.ESyaryoObject;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- *
+ *　生存解析もしくは故障解析を実行するクラス
  * @author ZZ17807
  */
 public class SurvivalESyaryo {
@@ -31,6 +30,7 @@ public class SurvivalESyaryo {
     public static String X = "";
     public static Integer DELTA = 1;
 
+    //故障解析　外部呼出し時のメソッド　(累積の故障発生確率の計測)
     public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
         PATH = outPath;
@@ -39,16 +39,15 @@ public class SurvivalESyaryo {
         X = agesmr._settings.get("#VISUAL_X");
         DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_X"));
 
-        //グループ分類
-        Map<String, List<ESyaryoObject>> group = new HashMap<>();
+        //グループ分類 初期化
+        Map<String, List<ESyaryoObject>> group = IntStream.range(0, 4).boxed()
+                                                    .flatMap(i -> IntStream.range(0, 4).boxed().map(j -> i+","+j))
+                                                    .collect(Collectors.toMap(gij -> gij, gij -> new ArrayList()));
+        
         agesmr._eval.keySet().stream().forEach(s -> {
             String g = mainte._eval.get(s).score.toString()
                     + "," + use._eval.get(s).score.toString();
-
-            if (group.get(g) == null) {
-                group.put(g, new ArrayList());
-            }
-
+            
             group.get(g).add(agesmr._eval.get(s));
         });
 
@@ -58,6 +57,7 @@ public class SurvivalESyaryo {
         });
     }
 
+    //故障解析
     public static void analize(String gkey, List<ESyaryoObject> g) {
         TreeMap<Double, Integer> fail = new TreeMap<>();
         TreeMap<Double, Integer> count = new TreeMap<>();
@@ -74,7 +74,6 @@ public class SurvivalESyaryo {
                         }
                         return d[svidx] == 1d;
                     }).map(d -> d[xidx])
-                    //.distinct() //各期間でユニークにカウントする
                     .forEach(d -> {
                         fail.put(d, fail.get(d) + 1);
                     });
@@ -103,27 +102,26 @@ public class SurvivalESyaryo {
         }
         
         //mtbf
-        mtbf(g, xidx, svidx);
+        //mtbf(g, xidx, svidx);
         int totalSyaryo = g.size();
-        long toatlFail = g.stream()
+        long totalFail = g.stream()
                             .mapToLong(s -> s.getPoints().stream()
                                     .filter(v -> v[svidx] == 1d).count())
                             .sum();
 
-        //故障率データ出力
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + "\\" + gkey + "_FR.csv")) {
-            //ヘッダ
-            pw.println(X + ",COUNT,FAIL,RATE");
-            fail.entrySet().stream()
-                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + df.getValue() + "," + prob.get(df.getKey())).forEach(pw::println);
-        }
+        printCSV(totalSyaryo, totalFail, fail, count, prob, PATH + "\\" + gkey + "_FR.csv");
     }
 
+    //各車両の対象部品群 MTBF
     private static Map<String, Double> mtbf(List<ESyaryoObject> data, int xidx, int svidx) {
-        data.stream().forEach(s -> s.getMTBF(xidx, svidx));
-        return null;
+        Map<String, Double> mtbfMap = data.stream()
+                                .collect(Collectors.toMap(
+                                        s -> s.a.syaryo.getName(), 
+                                        s -> s.getMTBF(xidx, svidx)));
+        return mtbfMap;
     }
 
+    //生存解析 外部呼出し時のメソッド
     public static void survival(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
         PATH = outPath;
@@ -158,6 +156,7 @@ public class SurvivalESyaryo {
         //                    .forEach(System.out::println);
     }
 
+    //生存解析
     private static void analize(Map<String, List<String>> data) {
         int idx_m = 0;
         int idx_u = 1;
@@ -194,11 +193,12 @@ public class SurvivalESyaryo {
         });
     }
 
+    //カプラン・マイヤー法の計算
     private static Map<String, List<String>> km(String gkey, Map<String, List<String>> g) {
-        Map<Integer, List<String>> m = new TreeMap<>();
+        Map<Double, List<String>> m = new TreeMap<>();
         g.entrySet().stream()
                 .forEach(e -> {
-                    Integer smr = Integer.valueOf(e.getValue().get(0));
+                    Double smr = Double.valueOf(e.getValue().get(0));
                     if (m.get(smr) == null) {
                         m.put(smr, new ArrayList<>());
                     }
@@ -206,11 +206,11 @@ public class SurvivalESyaryo {
                 });
 
         //カプラン・マイヤー法
-        Map<Integer, Double> fail = new TreeMap<>();
-        Map<Integer, Integer> failcnt = new TreeMap<>();
-        Map<Integer, Integer> count = new TreeMap<>();
+        Map<Double, Double> fail = new TreeMap<>();
+        Map<Double, Integer> failcnt = new TreeMap<>();
+        Map<Double, Integer> count = new TreeMap<>();
         Double before = 1d;
-        for (Integer smr : m.keySet()) {
+        for (Double smr : m.keySet()) {
             if (fail.get(smr) == null) {
                 fail.put(smr, 0d);
             }
@@ -232,21 +232,20 @@ public class SurvivalESyaryo {
             count.put(smr, total.intValue());
         }
 
+        int totalSyaryo = g.size();
+        int totalFail = failcnt.values().stream().mapToInt(v -> v).sum();
+        
         //故障率データ出力
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(PATH + gkey + "_FR.csv")) {
-            //ヘッダ
-            pw.println(X + ",COUNT,FAIL,RATE");
-            fail.entrySet().stream()
-                    .map(df -> df.getKey() + "," + count.get(df.getKey()) + "," + failcnt.get(df.getKey()) + "," + df.getValue()).forEach(pw::println);
-        }
-
+        printCSV(totalSyaryo, totalFail, failcnt, count, fail, PATH + gkey + "_FR.csv");
+        
         //スコアリング
         Map result = scoring(g, fail);
 
         return result;
     }
 
-    private static Map scoring(Map<String, List<String>> g, Map<Integer, Double> fail) {
+    //解析結果のスコアリング
+    private static Map scoring(Map<String, List<String>> g, Map<Double, Double> fail) {
         Map<String, List<String>> result = new HashMap<>();
 
         int gidx_smr = 0;
@@ -274,5 +273,24 @@ public class SurvivalESyaryo {
         });
 
         return result;
+    }
+    
+    //解析結果のCSV出力
+    private static void printCSV(int totalSyaryo, long totalFail, Map<Double, Integer> failur, Map<Double, Integer> remain, Map<Double, Double> result, String filename){
+        //故障率データ出力
+        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)) {
+            //分析情報
+            pw.println("X,"+X+",dx,"+DELTA);
+            pw.println("Total Machines:"+totalSyaryo+",Total Failures:"+totalFail);
+
+            //ヘッダ
+            pw.println(X + ",COUNT,FAIL,RATE");
+            
+            Optional<Integer> st = remain.values().stream().findFirst();
+            pw.println("0,"+(st.isPresent()?st.get():0)+",0,0");
+            failur.entrySet().stream()
+                    .map(df -> (df.getKey()*DELTA) + "," + remain.get(df.getKey()) + "," + df.getValue() + "," + result.get(df.getKey()))
+                    .forEach(pw::println);
+        }
     }
 }
