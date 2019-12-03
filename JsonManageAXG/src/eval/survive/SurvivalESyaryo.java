@@ -281,7 +281,7 @@ public class SurvivalESyaryo {
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)) {
             //分析情報
             pw.println("X,"+X+",dx,"+DELTA);
-            pw.println("Total Machines:"+totalSyaryo+",Total Failures:"+totalFail);
+            pw.println("N : "+totalSyaryo+",F : "+totalFail);
 
             //ヘッダ
             pw.println(X + ",COUNT,FAIL,RATE");
