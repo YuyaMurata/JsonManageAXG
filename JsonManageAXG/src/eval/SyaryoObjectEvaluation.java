@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MSyaryoObject;
+import py.PythonCommand;
 
 /**
  *
@@ -91,10 +92,14 @@ public class SyaryoObjectEvaluation {
                 .forEach(s -> print(evalMainte, s));
         */
     }
+    
+    public static void compare(String[] pathScore){
+        PythonCommand.py("py\\compare_score.py", pathScore);
+    }
 
     public static void main(String[] args) {
-        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
+        /*SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
@@ -104,6 +109,9 @@ public class SyaryoObjectEvaluation {
                 "settings\\user\\PC200_use_pumpmax.json", 
                 "settings\\user\\PC200_agesmr.json", 
                 "out");
+        */
+        //比較
+        SyaryoObjectEvaluation.compare(new String[]{"out", "1_0", "2_0"});
     }
 
     private static void print(EvaluateTemplate eval, String file) {
@@ -167,9 +175,5 @@ public class SyaryoObjectEvaluation {
         }
     }
     
-    private static void testparam(Map param){
-        param.remove("油圧機器");
-        param.remove("エンジン");
-        param.remove("車体");
-    }
+    
 }

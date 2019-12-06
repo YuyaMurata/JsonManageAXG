@@ -1,25 +1,23 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import sys
 import codecs
-import os
-import linecache
-import pylab
 from scipy import stats
 
 path = 'out'
-files = ['0,0_FR.csv']
+files = []
 
 args = sys.argv
 #引数の処理
-'''
 if len(args) <= 1:
     print("データが選択されていません")
     exit(0)
-if len(args) > 2:
+if len(args) > 3:
     path = args[1]
-'''
+    for i in range(2,len(args)):
+        files.append(args[i].replace('_', ',')+'_FR.csv')
+
+
 def kstest(frdata, ax):
     keys = list(frdata.keys())
 
@@ -96,7 +94,8 @@ def process_file(fs, xmax):
     kstest(frdata, ax3)
 
     plt.legend()
-    plt.show()
+    #plt.show()
+    plt.savefig(path+'/compare_score.png')
 
 
 if __name__ == '__main__':
