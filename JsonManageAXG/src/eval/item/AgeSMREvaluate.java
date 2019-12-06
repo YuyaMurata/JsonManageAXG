@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import obj.MSyaryoObject;
+import py.PythonCommand;
 
 /**
  *
@@ -154,7 +155,13 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
         return norm;
     }
-
+    
+    //画像生成
+    public static void printImage(String deirectory){
+        System.out.println("経年/SMRの画像を生成．");
+        PythonCommand.py("py\\agesmr_visualize.py", new String[]{deirectory});
+    }
+    
     @Override
     public void scoring() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

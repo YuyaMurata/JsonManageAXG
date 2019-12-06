@@ -6,9 +6,11 @@
 package eval.cluster;
 
 import eval.obj.ESyaryoObject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
@@ -31,8 +33,15 @@ public class ClusteringESyaryo {
         
         Collection<ESyaryoObject> evaldata = data.stream().filter(d -> !d.none()).collect(Collectors.toList());
         
-        List<CentroidCluster<ESyaryoObject>> results = cluster.cluster(evaldata);
+        List<CentroidCluster<ESyaryoObject>> results = new ArrayList<>();
+        try{
+            results = cluster.cluster(evaldata);
         //List<Cluster<ESyaryoObject>> results = cluster.cluster(evaldata);
+        }catch(NumberIsTooSmallException ne){
+            System.err.println("分析車両数が少ないためクラスタ数を小さくして分析.");
+            KMeansPlusPlusClusterer<ESyaryoObject> minCluster = new KMeansPlusPlusClusterer(3, N, new EuclideanDistance(), rg);
+            results = minCluster.cluster(evaldata);
+        }
         
         for (int i=0; i<results.size(); i++) {
             for (ESyaryoObject s : results.get(i).getPoints())

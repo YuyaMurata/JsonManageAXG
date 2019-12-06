@@ -5,19 +5,12 @@
  */
 package eval.template;
 
-import file.CSVFileReadWrite;
 import file.MapToJSON;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import mongodb.MongoDBData;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;

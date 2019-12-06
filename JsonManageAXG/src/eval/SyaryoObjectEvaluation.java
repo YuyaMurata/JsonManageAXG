@@ -82,6 +82,7 @@ public class SyaryoObjectEvaluation {
         
         print(evalMainte, outPath+"\\mainte_score.csv");
         MainteEvaluate.printImage(outPath+"\\mainte_score.csv", "AGE", "AVG", "SCORE");
+        AgeSMREvaluate.printImage(outPath);
         print(evalUse, outPath+"\\use_score.csv");
         print(evalAgeSMR, outPath+"\\agesmr_score.csv");
         
@@ -93,7 +94,7 @@ public class SyaryoObjectEvaluation {
 
     public static void main(String[] args) {
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
