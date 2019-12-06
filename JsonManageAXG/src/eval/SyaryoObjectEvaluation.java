@@ -98,8 +98,8 @@ public class SyaryoObjectEvaluation {
     }
 
     public static void main(String[] args) {
-        /*SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream().limit(100)
+        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
+        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
                 .map(s -> eval.db.getObj(s))
                 .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
@@ -109,9 +109,9 @@ public class SyaryoObjectEvaluation {
                 "settings\\user\\PC200_use_pumpmax.json", 
                 "settings\\user\\PC200_agesmr.json", 
                 "out");
-        */
+        
         //比較
-        SyaryoObjectEvaluation.compare(new String[]{"out", "1_0", "2_0"});
+        SyaryoObjectEvaluation.compare(new String[]{"out", "1_0", "2_0", "3_0"});
     }
 
     private static void print(EvaluateTemplate eval, String file) {
