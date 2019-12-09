@@ -81,7 +81,7 @@ public class MongoDBPOJOData {
     }
     
     public void clear(){
-        System.err.println("Drop Collection!");
+        System.err.println("Drop Collection "+this.coll.getNamespace().getCollectionName());
         this.coll.drop();
     }
     

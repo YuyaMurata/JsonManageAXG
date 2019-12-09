@@ -56,12 +56,13 @@ def graph(info, data, ax1, ax2):
 
 def process_file(fs, xmax):
     fig = plt.figure()
-    fig.subplots_adjust(left=0.05, bottom=0.1, right=0.95, top=0.95, wspace=0.1, hspace=0.1)
+    fig.subplots_adjust(left=0.11, bottom=0.11, right=0.9, top=0.95, wspace=0.05, hspace=0.05)
 
-    ax = fig.add_axes((0.1, 0.3, 0.75, 0.65))
-    ax3 = fig.add_axes((0.15, 0.0, 0.75, 0.2))
+    ax = fig.add_subplot(1, 1, 1)
+    #ax = fig.add_axes((0.1, 0.3, 0.75, 0.65))
+    #ax3 = fig.add_axes((0.15, 0.0, 0.75, 0.2))
     ax2 = ax.twinx()
-    ax3.axis('off')
+    #ax3.axis('off')
 
     plt.xlim(0, xmax)
     info = ''
@@ -91,7 +92,7 @@ def process_file(fs, xmax):
     ax.set_xlabel(info.split(',')[1] + '(dx' + info.split(',')[3] + ')', fontsize=12)
 
     #KS検定
-    kstest(frdata, ax3)
+    #kstest(frdata, ax3)
 
     plt.legend()
     #plt.show()

@@ -29,6 +29,8 @@ public class FormParts {
 
         int db = indexList.indexOf("部品.DB");
         int cd = indexList.indexOf("部品.品番");
+        int partsMeisai = indexList.indexOf("部品.部品明細番号");
+        int partsMeisaiadd = indexList.indexOf("部品.部品明細番号追番");
 
         for (String sbn : odrSBN) {
             //重複作番を取り出す
@@ -44,11 +46,19 @@ public class FormParts {
             if (kom.isPresent()) {
                 sbnGroup.stream()
                         .filter(s -> !parts.get(s).get(db).equals("サービス経歴(KOMPAS)"))
-                        .forEach(s -> map.put(s, parts.get(s)));
+                        .forEach(s -> {
+                            //作番に明細番号を付加 明細+追番
+                            String id = s.split("#")[0]+"#"+parts.get(s).get(partsMeisai)+parts.get(s).get(partsMeisaiadd);
+                            map.put(id, parts.get(s));
+                        });
             } else {
                 sbnGroup.stream()
                         .filter(s -> !parts.get(s).get(cd).equals(""))
-                        .forEach(s -> map.put(s, parts.get(s)));
+                        .forEach(s -> {
+                            //作番に明細番号を付加 明細+追番
+                            String id = s.split("#")[0]+"#"+parts.get(s).get(partsMeisai)+parts.get(s).get(partsMeisaiadd);
+                            map.put(s, parts.get(s));
+                        });
             }
         }
 

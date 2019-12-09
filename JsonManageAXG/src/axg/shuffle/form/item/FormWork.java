@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class FormWork {
+
     //作業明細を整形
     public static Map form(Map<String, List<String>> work, List<String> odrSBN, List indexList) {
         if (work == null || odrSBN == null) {
@@ -27,7 +28,8 @@ public class FormWork {
 
         int db = indexList.indexOf("作業.DB");
         int cd = indexList.indexOf("作業.作業コード");
-        
+        int workMeisai = indexList.indexOf("作業.作業明細番号");
+
         for (String sbn : odrSBN) {
             //重複作番を取り出す
             List<String> sbnGroup = work.keySet().stream()
@@ -39,15 +41,21 @@ public class FormWork {
                     .map(s -> work.get(s))
                     .filter(l -> l.get(db).equals("作業(KOMPAS)"))
                     .findFirst();
-            
+
             if (kom.isPresent()) {
                 sbnGroup.stream()
                         .filter(s -> !work.get(s).get(db).equals("サービス経歴(KOMPAS)"))
-                        .forEach(s -> map.put(s, work.get(s)));
+                        .forEach(s -> {
+                            String id = s.split("#")[0] + "#" + work.get(s).get(workMeisai);
+                            map.put(id, work.get(s));
+                        });
             } else {
                 sbnGroup.stream()
                         .filter(s -> !work.get(s).get(cd).equals("")) //作業コードが存在しないときは削除
-                        .forEach(s -> map.put(s, work.get(s)));
+                        .forEach(s -> {
+                            String id = s.split("#")[0] + "#" + work.get(s).get(workMeisai);
+                            map.put(id, work.get(s));
+                        });
             }
         }
 
