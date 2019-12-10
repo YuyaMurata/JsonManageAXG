@@ -7,6 +7,7 @@ package extract;
 
 import file.ListToCSV;
 import file.MapToJSON;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -49,19 +50,23 @@ public class SyaryoObjectExtract {
         settingsCount = new HashMap<>();
 
         //車両IDに基づく削除
-        /*settings.entrySet().stream()
+        settings.entrySet().stream()
                 .filter(def -> def.getKey().contains("#DELOBJCT_"))
                 .forEach(def -> {
                     def.getValue().stream().forEach(defi -> {
                         List<String> delete = csvSettings(defi);
-                        if(delete == null)
+                        if(delete == null){
                             delete = dataCodeSettings(defi);
+                            delete = delete.stream()
+                                        .map(di -> di.split(",")[0])
+                                        .distinct().collect(Collectors.toList());
+                        }
                         
                         delete.stream().map(d -> transSID(d)).forEach(keyList::remove);
                         settingsCount.put(def.getKey(), delete.size());
                     });
                 });
-         */
+         
         //データIDに基づく削除
         settings.entrySet().stream()
                 .filter(def -> def.getKey().contains("#DELRECORD_"))
@@ -71,35 +76,43 @@ public class SyaryoObjectExtract {
                         if (delete == null) {
                             delete = dataCodeSettings(defi);
                         }
-
-                        settingsCount.put(def.getKey(), delete.size());
+                        
+                        List d = deleteRecord(delete);
+                        System.out.println(delete.size()+",z="+d.size());
+                        settingsCount.put(def.getKey(), d.size());
                     });
                 });
 
         System.out.println(settingsCount);
     }
 
-    private void deleteRecord(List<String> records) {
-        //削除ヘッダ SID+..
+    //SID+KEYで対象データレコードを削除
+    private List<String> deleteRecord(List<String> records) {
         List<String> recHeader = Arrays.asList(records.get(0).split(","));
         int idx = recHeader.indexOf("SID");
+        String key = recHeader.get(idx+1).split("\\.")[0];
 
+        List<String> deleteKey = new ArrayList<>();
         records.stream().map(rec -> rec.split(","))
                 .filter(rec -> keyList.contains(transSID(rec[idx])))
                 .forEach(rec -> {
                     //車両の抽出
                     MSyaryoObject s = db.getObj(transSID(rec[idx]));
-
-                    //データ削除
-                    List<String> delkey = recHeader.stream()
-                                                .filter(rh -> !rh.contains("#"))
-                                                .filter(rh -> !rh.equals("SID"))
-                                                .collect(Collectors.toList());
                     
+                    //SID隣のキーを取得
+                    String id = rec[idx+1];
+                    
+                    //データ削除 SID+Key 
+                    if(s.getData(key).get(id) != null){
+                        deleteKey.add(s.getName()+","+id);
+                        s.getData(key).remove(id);
+                    }
                 });
-
+        
+        return deleteKey;
     }
 
+    //汎用のファイル情報取得メソッド SID+Keyを取得
     private List<String> csvSettings(String file) {
         if (!file.contains(".csv")) {
             return null;
@@ -121,21 +134,23 @@ public class SyaryoObjectExtract {
         return setting;
     }
 
+    //汎用のコードマッチング情報取得メソッド SID+Keyを取得
     private List<String> dataCodeSettings(String codes) {
         String key = codes.split("\\.")[0];
         int rowID = header.getHeaderIdx(key, codes.split("\\.")[1]);
         String code = codes.split("\\.")[2];
 
         //入力コードに合う車両IDを抽出
-        List<String> setting = keyList.stream()
+        List<String> setting = new ArrayList<>();
+        setting.add("SID,"+codes);
+        setting.addAll(keyList.stream()
                 .map(sid -> db.getObj(sid))
                 .filter(s -> s.getData(key) != null)
-                .filter(s -> s.getData(key).values().stream()
-                .filter(si -> si.get(rowID).equals(code))
-                .findFirst().isPresent())
-                .map(s -> s.getName())
-                .distinct()
-                .collect(Collectors.toList());
+                .flatMap(s -> s.getData(key).entrySet().stream()
+                                .filter(di -> di.getValue().get(rowID).equals(code))
+                                .map(di -> s.getName()+","+di.getKey()))
+                .collect(Collectors.toList()));
+        
         return setting;
     }
 

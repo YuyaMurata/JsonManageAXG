@@ -40,26 +40,27 @@ public class MSyaryoAnalizer {
     public String type = "";
     public String no = "";
     public String mcompany = "";
+    public String dealer = "";
     public Boolean used = false;
     public Boolean komtrax = false;
     public Boolean allsupport = false;
     public String lifedead = "";
     public String lifestart = "";
     public String lifestop = "";
-    public List<String> usedlife = null;
-    public Integer numOwners = -1;
-    public Integer numOrders = -1;
-    public Integer numParts = -1;
-    public Integer numWorks = -1;
-    public Integer acmLCC = -1;
-    public Integer maxSMR = -1;
+    public List<String> usedlife = new ArrayList<>();
+    public Integer numOwners = 0;
+    public Integer numOrders = 0;
+    public Integer numParts = 0;
+    public Integer numWorks = 0;
+    public Integer acmLCC = 0;
+    public Integer maxSMR = 0;
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
     private static int D_SMR = 10;
     private static int R = 10;
     public static String LEAST_DATE = "20170501";
-    private List<String[]> termAllSupport;
+    private List<String[]> termAllSupport = new ArrayList<>();
 
     public static Boolean DISP_COUNT = true;
 
@@ -130,9 +131,9 @@ public class MSyaryoAnalizer {
         }
 
         //KUECでの中古売買のみ
-        if (get("中古") != null) {
+        if (get("中古車") != null) {
             used = true;
-            usedlife = new ArrayList<>(get("中古").keySet());
+            usedlife = new ArrayList<>(get("中古車").keySet());
         }
 
         //オールサポート
@@ -200,6 +201,9 @@ public class MSyaryoAnalizer {
 
             //主要な代理店
             mcompany = getValue("顧客", "顧客.会社コード", false).stream().filter(c -> c.length() > 1).findFirst().get();
+            
+            if(get("分類") != null)
+                dealer = getValue("分類", "分類.担当ディーラポイントコード", false).stream().findFirst().get();
         }
 
     }
@@ -405,8 +409,9 @@ public class MSyaryoAnalizer {
             List list = get(key).keySet().stream().map(s -> s.split("#")[0]).collect(Collectors.toList());
             return list;
         }
-
+        
         int idx = header.getHeaderIdx(key, index);
+        
         //例外処理2
         if (idx == -1) {
             return null;
@@ -525,24 +530,40 @@ public class MSyaryoAnalizer {
         sb.append(" numWorks = " + numWorks + "\n");
         return sb.toString();
     }
+    
+    public Map<String, String> toStringMap() {
+        Map<String, String> strMap = new HashMap<>();
+        strMap.put("SID", syaryo.getName());
+        strMap.put("機種", kind);strMap.put("型小変形", type);strMap.put("機番", no);
+        strMap.put("カンパニ", mcompany);strMap.put("担当ディーラ", dealer);
+        strMap.put("登録顧客数", numOwners.toString());
+        strMap.put("納入年", lifestart);strMap.put("最新日付", lifestop);
+        strMap.put("中古", used.toString()); strMap.put("中古納入", usedlife.toString().replace(",", "_"));
+        strMap.put("KOMTRAX", komtrax.toString());
+        strMap.put("オールサポート", allsupport.toString());
+        strMap.put("オールサポート期間", termAllSupport.stream().map(s -> Arrays.asList(s).toString().replace(",", "_")).collect(Collectors.joining()));
+        strMap.put("最大SMR(2017/05 推定値も含む)", maxSMR.toString());
+        strMap.put("受注数", numOrders.toString());strMap.put("作業数", numWorks.toString());strMap.put("部品数", numParts.toString());
+        strMap.put("LCC", acmLCC.toString());
+        
+        return strMap;
+    }
 
-    public static String getHeader() {
-        //基本情報
-        String header = "機種,型/小変形,機番,会社,KOMTRAX,中古,廃車,オールサポート,レンタル,SMR最終更新日,SMR,KOMTRAX_SMR最終更新日,KOMTRAX_SMR,経過日,納入日,最終更新日,廃車日,中古日,";
+    public static List<String> getHeader() {
+        List<String> mapHeader = new ArrayList<>();
+        mapHeader.add("SID");
+        mapHeader.add("機種");mapHeader.add("型小変形");mapHeader.add("機番");
+        mapHeader.add("カンパニ");mapHeader.add("担当ディーラ");
+        mapHeader.add("登録顧客数");
+        mapHeader.add("納入年");mapHeader.add("最新日付");
+        mapHeader.add("中古"); mapHeader.add("中古納入");
+        mapHeader.add("KOMTRAX");
+        mapHeader.add("オールサポート");mapHeader.add("オールサポート期間");
+        mapHeader.add("最大SMR(2017/05 推定値も含む)");
+        mapHeader.add("受注数");mapHeader.add("作業数");mapHeader.add("部品数");
+        mapHeader.add("LCC");
 
-        //保証情報
-        header += "AS期間,";
-
-        //事故情報
-        header += "事故,事故受注費計,";
-
-        //受注情報
-        header += "顧客数,受注数,作業発注数,部品発注数,ライフサイクルコスト,受注情報1,受注情報2,";
-
-        //評価情報
-        header += "使われ方,経年/SMR,メンテナンス";
-
-        return header;
+        return mapHeader;
     }
 
     public static void main(String[] args) {
