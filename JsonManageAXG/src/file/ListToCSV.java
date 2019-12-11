@@ -19,20 +19,15 @@ import java.util.stream.Collectors;
  */
 public class ListToCSV {
     public static List<String> toList(String csv){
-        List<String> list = new ArrayList<>();
         try(BufferedReader br = CSVFileReadWrite.readerSJIS(csv)){
+            List<String> list = new ArrayList<>();
             String line;
             while((line = br.readLine()) != null){
-                //コメント除外
-                if(line.charAt(0) == '#')
-                    continue;
-                
                 list.add(line);
             }
             
             return list;
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException | NullPointerException ne) {
             return null;
         }
     }
