@@ -47,10 +47,17 @@ public abstract class EvaluateTemplate {
         _eval.put(s.getName(), trans(s));
     };
     
-    public List<String> dateSeq(MSyaryoAnalizer a, int idx, List<String> sv){
+    public List<String> dateSeq(MSyaryoAnalizer a, List<String> sv){
         return sv.stream()
-                .map(d -> a.getSBNToDate(d.split(",")[idx], true))
+                .map(d -> checkSV(a, d))
                 .collect(Collectors.toList());
+    }
+    
+    private String checkSV(MSyaryoAnalizer a, String sv){
+        if(sv.contains("部品") || sv.contains("受注") || sv.contains("作業"))
+            return a.getSBNToDate(sv.split(",")[1].split("\\.")[1], true);
+        else
+            return sv.split(",")[1].split("\\.")[1];
     }
     
     public abstract ESyaryoObject trans(MSyaryoObject s);

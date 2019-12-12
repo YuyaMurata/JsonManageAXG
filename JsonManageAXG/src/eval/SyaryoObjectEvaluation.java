@@ -13,14 +13,11 @@ import eval.item.MainteEvaluate;
 import eval.item.UseEvaluate;
 import eval.obj.ESyaryoObject;
 import eval.survive.SurvivalESyaryo;
+import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
-import file.ListToCSV;
 import file.MapToJSON;
 import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
@@ -34,25 +31,27 @@ import py.PythonCommand;
 public class SyaryoObjectEvaluation {
 
     public static MongoDBPOJOData db;
-    private Map<String, List<String>> def;
+    private SyaryoObjectExtract extract;
 
-    public SyaryoObjectEvaluation(String dbn, String collection, String userDefine) {
+    public SyaryoObjectEvaluation(String dbn, String collection, SyaryoObjectExtract extract) {
         db = MongoDBPOJOData.create();
         db.set(dbn, collection, MSyaryoObject.class);
         MSyaryoAnalizer.initialize(dbn, collection);
 
+        /*
         Map<String, String> temp = MapToJSON.toMap(userDefine);
         def = new HashMap<>();
         temp.entrySet().stream().forEach(d -> {
             def.put(d.getKey(), ListToCSV.toList(d.getValue()));
             def.put(d.getKey() + "#H", Arrays.asList(new String[]{ListToCSV.toList(d.getValue()).get(0)}));
-        });
+        });*/
+        this.extract = extract;
     }
 
     public void scoring(Map<String, MSyaryoObject> map, String mainteSettingFile, String useSettingFile, String agesmrSettingFile, String outPath) {
         //メンテナンス分析
         Map mainteSettings = MapToJSON.toMap(mainteSettingFile);
-        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, def);
+        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
         
         //使われ方分析
         Map useSettings = MapToJSON.toMap(useSettingFile);
@@ -60,7 +59,7 @@ public class SyaryoObjectEvaluation {
         
         //経年/SMR分析
         Map agesmrSettings = MapToJSON.toMap(agesmrSettingFile);
-        EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, def);
+        EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
         
         
         map.values().parallelStream().forEach(s -> {
@@ -98,16 +97,15 @@ public class SyaryoObjectEvaluation {
     }
 
     public static void main(String[] args) {
-        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", "settings\\user\\PC200_parts_userdefine.json");
-        Map<String, MSyaryoObject> map = eval.db.getKeyList().stream()
-                .map(s -> eval.db.getObj(s))
-                .collect(Collectors.toMap(s -> s.getName(), s -> s));
+        SyaryoObjectExtract soe = new SyaryoObjectExtract("json", "komatsuDB_PC200_Form");
+        soe.setUserDefine("config\\PC200_user_define.json");
         
+        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", soe);
         System.out.println("スコアリング開始");
-        eval.scoring(map, 
-                "settings\\user\\PC200_mainteparts_interval.json", 
-                "settings\\user\\PC200_use_pumpmax.json", 
-                "settings\\user\\PC200_agesmr.json", 
+        eval.scoring(soe.getObjMap(), 
+                "config\\PC200_maintenance.json", 
+                "config\\PC200_use.json", 
+                "config\\PC200_agesmr.json", 
                 "out");
         
         //比較

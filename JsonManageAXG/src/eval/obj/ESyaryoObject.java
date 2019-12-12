@@ -91,7 +91,7 @@ public class ESyaryoObject implements Clusterable {
         return pointList;
     }
 
-    //経年/SMR専用のメソッド
+    //経年/SMR専用のメソッド MTBFの計算
     public Double getMTBF(int xidx, int svidx) {
         Map<String, List<Double>> fail = new HashMap<>();
         data.entrySet().stream()

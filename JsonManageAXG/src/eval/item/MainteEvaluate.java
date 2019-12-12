@@ -77,9 +77,7 @@ public class MainteEvaluate extends EvaluateTemplate {
 
         //時系列情報の取得
         MAINTE_INTERVAL.entrySet().stream().forEach(e -> {
-            int idx = Arrays.asList(PARTS_DEF.get(e.getKey() + "#H").get(0).split(",")).indexOf("部品.作番");
-
-            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, idx, sv.get(e.getKey())));
+            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, sv.get(e.getKey())));
 
             //最大SMRからSMR系列を取得
             Integer len = s.a.maxSMR / Integer.valueOf(e.getValue());

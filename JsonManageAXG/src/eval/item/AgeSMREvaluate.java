@@ -83,9 +83,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
         //時系列情報の取得
         AGE_SMR_PARTS.keySet().stream().forEach(k -> {
-            int idx = Arrays.asList(PARTS_DEF.get(k + "#H").get(0).split(",")).indexOf("部品.作番");
-
-            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, idx, sv.get(k)));
+            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, sv.get(k)));
 
             //生存解析のデータ作成
             if (!t.series.isEmpty()) {

@@ -12,9 +12,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -59,7 +61,7 @@ public class SurvivalESyaryo {
 
     //故障解析
     public static void analize(String gkey, List<ESyaryoObject> g) {
-        TreeMap<Double, Integer> fail = new TreeMap<>();
+        TreeMap<Double, Set<String>> fail = new TreeMap<>();
         TreeMap<Double, Integer> count = new TreeMap<>();
 
         int xidx = 2;
@@ -70,12 +72,12 @@ public class SurvivalESyaryo {
             gs.getPoints().stream()
                     .filter(d -> {
                         if (fail.get(d[xidx]) == null) {
-                            fail.put(d[xidx], 0);
+                            fail.put(d[xidx], new HashSet<>());
                         }
                         return d[svidx] == 1d;
                     }).map(d -> d[xidx])
                     .forEach(d -> {
-                        fail.put(d, fail.get(d) + 1);
+                        fail.get(d).add(gs.a.syaryo.getName());
                     });
         });
 
@@ -92,7 +94,7 @@ public class SurvivalESyaryo {
         Map<Double, Double> prob = new HashMap();
         Double before = 1d;
         for (Double smr : fail.keySet()) {
-            Integer failCnt = fail.get(smr);
+            Integer failCnt = fail.get(smr).size();
             Integer remN = count.get(smr);
 
             Double surv = before * (remN - failCnt) / remN;
@@ -207,7 +209,7 @@ public class SurvivalESyaryo {
 
         //カプラン・マイヤー法
         Map<Double, Double> fail = new TreeMap<>();
-        Map<Double, Integer> failcnt = new TreeMap<>();
+        Map<Double, Set<String>> failcnt = new TreeMap<>();
         Map<Double, Integer> count = new TreeMap<>();
         Double before = 1d;
         for (Double smr : m.keySet()) {
@@ -215,25 +217,25 @@ public class SurvivalESyaryo {
                 fail.put(smr, 0d);
             }
 
-            Double dead = Double.valueOf(m.get(smr).stream()
+            Set<String> dead = m.get(smr).stream()
                     .filter(sid -> g.get(sid).get(1).equals("1"))
-                    .count());
+                    .collect(Collectors.toSet());
 
             Double total = Double.valueOf(m.entrySet().stream()
                     .filter(e -> e.getKey() >= smr)
                     .mapToInt(e -> e.getValue().size())
                     .sum());
 
-            Double surv = before * (total - dead) / total;
+            Double surv = before * (total - dead.size()) / total;
             before = surv;
 
-            failcnt.put(smr, dead.intValue());
+            failcnt.put(smr, dead);
             fail.put(smr, 1d - surv);
             count.put(smr, total.intValue());
         }
 
         int totalSyaryo = g.size();
-        int totalFail = failcnt.values().stream().mapToInt(v -> v).sum();
+        int totalFail = failcnt.values().stream().mapToInt(v -> v.size()).sum();
         
         //故障率データ出力
         printCSV(totalSyaryo, totalFail, failcnt, count, fail, PATH + gkey + "_FR.csv");
@@ -276,7 +278,7 @@ public class SurvivalESyaryo {
     }
     
     //解析結果のCSV出力
-    private static void printCSV(int totalSyaryo, long totalFail, Map<Double, Integer> failur, Map<Double, Integer> remain, Map<Double, Double> result, String filename){
+    private static void printCSV(int totalSyaryo, long totalFail, Map<Double, Set<String>> failur, Map<Double, Integer> remain, Map<Double, Double> result, String filename){
         //故障率データ出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)) {
             //分析情報
@@ -289,7 +291,7 @@ public class SurvivalESyaryo {
             Optional<Integer> st = remain.values().stream().findFirst();
             pw.println("0,"+(st.isPresent()?st.get():0)+",0,0");
             failur.entrySet().stream()
-                    .map(df -> (df.getKey()*DELTA) + "," + remain.get(df.getKey()) + "," + df.getValue() + "," + result.get(df.getKey()))
+                    .map(df -> (df.getKey()*DELTA) + "," + remain.get(df.getKey()) + "," + df.getValue().size() + "," + result.get(df.getKey()))
                     .forEach(pw::println);
         }
     }
