@@ -22,7 +22,7 @@ import obj.MHeaderObject;
 import obj.MSyaryoObject;
 
 /**
- *
+ * 車両データの抽出
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {
@@ -39,6 +39,7 @@ public class SyaryoObjectExtract {
         header = db.getHeader();
     }
 
+    //ユーザー定義ファイルの適用
     public void setUserDefine(String settingFile){
         settingsCount = new HashMap();
         deleteSet = new HashSet<>();
