@@ -3,15 +3,17 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import sys
 
+from distributed.utils_test import cluster
+
 file = 'file/PC200_mainte_eval.csv'
 
 g = 'SCORE'
 xs = 'AGE'
 ys = 'AVG'
 
-
 args = sys.argv
 #引数の処理
+
 if len(args) <= 1:
     print("参照するファイルが見つかりません！")
     exit(0)
@@ -26,12 +28,12 @@ if len(args) > 4:
 
 data = pd.read_csv(file, index_col='SID', delimiter=',', encoding='SJIS')
 
-print(data)
+#print(data)
 n = int(max(data[g]))
 
-clusters = data.iloc[:,11].values
-axdata = data.iloc[:,[1,10]]
-print([clusters.tolist()])
+#clusters = data.iloc[:,len(data.columns)-1].values
+#axdata = data.iloc[:,[1,len(data.columns)-2]]
+#print([clusters.tolist()])
 
 cl =data[g].tolist()
 
@@ -40,7 +42,7 @@ for i in range(0,n+1):
     name = 'C'+str(i)
     plt.scatter(c[xs], c[ys], c = cm.cmaps_listed.get(cl.index(i)), s=5,  label=name)
 
-print('cluster:'+str(len(set(data[g].values))))
+#print('cluster:'+str(len(set(data[g].values))))
 
 plt.xlabel(xs)
 plt.ylabel(ys)

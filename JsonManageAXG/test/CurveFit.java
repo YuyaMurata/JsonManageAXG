@@ -34,7 +34,7 @@ public class CurveFit {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
 
-        MSyaryoAnalizer.initialize("json", "komatsuDB_PC200_Form");
+        MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
         MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj("PC200-8- -305679")); //test:"PC200-8-N1-314804"
         System.out.println(sa.toString());
 

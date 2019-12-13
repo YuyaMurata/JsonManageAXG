@@ -6,6 +6,7 @@
 package eval.item;
 
 import axg.shuffle.form.util.FormalizeUtils;
+import eval.analizer.MSyaryoAnalizer;
 import eval.obj.ESyaryoObject;
 import eval.time.TimeSeriesObject;
 import java.util.ArrayList;
@@ -28,13 +29,16 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     private Map<String, String> AGE_SMR_SETTING;
     private Map<String, List<String>> PARTS_DEF;
 
-    public AgeSMREvaluate(Map<String, String> setting, Map<String, List<String>> def) {
+    public AgeSMREvaluate(Map<String, String> settings, Map<String, List<String>> def) {
+        super.enable = settings.get("#EVALUATE").equals("ENABLE");
+        settings.remove("#EVALUATE");
+        
         super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT"}));
-        AGE_SMR_SETTING = setting.entrySet().stream()
+        AGE_SMR_SETTING = settings.entrySet().stream()
                 .filter(e -> e.getKey().contains("#"))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        AGE_SMR_SETTING.keySet().stream().forEach(setting::remove);
-        AGE_SMR_PARTS = setting;
+        AGE_SMR_SETTING.keySet().stream().forEach(settings::remove);
+        AGE_SMR_PARTS = settings;
 
         super._settings = AGE_SMR_SETTING;
 
@@ -42,8 +46,8 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public ESyaryoObject trans(MSyaryoObject syaryo) {
-        ESyaryoObject s = new ESyaryoObject(syaryo);
+    public ESyaryoObject trans(MSyaryoAnalizer sa) {
+        ESyaryoObject s = new ESyaryoObject(sa);
 
         //評価対象データの抽出
         Map<String, List<String>> sv = extract(s);
@@ -162,6 +166,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     
     @Override
     public void scoring() {
+        //評価適用　無効
+        if(!super.enable) return ;
+        
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     

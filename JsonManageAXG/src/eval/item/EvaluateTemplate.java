@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import obj.MSyaryoObject;
 
 /**
  *
@@ -23,6 +22,7 @@ public abstract class EvaluateTemplate {
     public Map<String, List<String>> _header;
     public Map<String, ESyaryoObject> _eval; 
     public Map<String, String> _settings; 
+    public Boolean enable;
 
     public EvaluateTemplate() {
         _eval = new ConcurrentHashMap();
@@ -43,8 +43,8 @@ public abstract class EvaluateTemplate {
         return _header.get(key);
     }
     
-    public void add(MSyaryoObject s){
-        _eval.put(s.getName(), trans(s));
+    public void add(MSyaryoAnalizer a){
+        _eval.put(a.syaryo.getName(), trans(a));
     };
     
     public List<String> dateSeq(MSyaryoAnalizer a, List<String> sv){
@@ -60,7 +60,7 @@ public abstract class EvaluateTemplate {
             return sv.split(",")[1].split("\\.")[1];
     }
     
-    public abstract ESyaryoObject trans(MSyaryoObject s);
+    public abstract ESyaryoObject trans(MSyaryoAnalizer a);
     
     public abstract Map<String, List<String>> extract(ESyaryoObject s);
     

@@ -23,7 +23,7 @@ public class ExtractSPSyaryo {
         shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         
-        MSyaryoAnalizer.initialize("json", "komatsuDB_PC200_Form");
+        MSyaryoAnalizer.initialize(shDB.getHeader(), shDB.getObjMap());
         
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("syaryoanalizer_print.csv")) {
             pw.println(String.join(",", MSyaryoAnalizer.getHeader()));

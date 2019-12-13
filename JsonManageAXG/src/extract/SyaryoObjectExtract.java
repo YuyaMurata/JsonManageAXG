@@ -5,6 +5,7 @@
  */
 package extract;
 
+import eval.analizer.MSyaryoAnalizer;
 import file.ListToCSV;
 import file.MapToJSON;
 import java.io.File;
@@ -26,19 +27,29 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {
-    private MongoDBPOJOData db;
     public Map<String, Integer> settingsCount;
+    private List<String> master;
     private Map<String, MSyaryoObject> extractMap;
+    private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
     private Set<String> deleteSet;
     private Map<String, List<String>> define;
 
     public SyaryoObjectExtract(String dbn, String collection) {
-        db = MongoDBPOJOData.create();
+        MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set(dbn, collection, MSyaryoObject.class);
+        master = db.getKeyList();
         header = db.getHeader();
+        
+        extractMap = master.parallelStream()
+                .collect(Collectors.toMap(k -> k, k -> db.getObj(k)));
     }
-
+    
+    private void setSyaryoAnalizer(){
+        MSyaryoAnalizer.initialize(header, extractMap);
+        analizeMap = null;
+    }
+    
     //ユーザー定義ファイルの適用
     public void setUserDefine(String settingFile){
         settingsCount = new HashMap();
@@ -47,11 +58,12 @@ public class SyaryoObjectExtract {
         Map<String, List<String>> settings = MapToJSON.toMap(settingFile);
         errorCheck(settings);
         
-        extractMap = db.getKeyList().parallelStream().collect(Collectors.toMap(k -> k, k -> db.getObj(k)));
-        
         deleteSettings(settings);
         importSettings(settings);
         printSummary();
+        
+        //車両分析器の作成
+        setSyaryoAnalizer();
     }
 
     //設定ファイルからデータ削除
@@ -94,7 +106,7 @@ public class SyaryoObjectExtract {
     
     //分析対象データのインポート
     private void importSettings(Map<String, List<String>> settings) {        
-        Map<String, List<String>> defineData = settings.entrySet().stream()
+        Map<String, List<String>> defineData = settings.entrySet().parallelStream()
                 .filter(set -> set.getKey().charAt(0) != '#')
                 .flatMap(set -> {
                     Map<String, List<String>> map = new HashMap();
@@ -109,7 +121,7 @@ public class SyaryoObjectExtract {
                     return map.entrySet().stream();
                 }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         
-        defineData.entrySet().stream().forEach(System.out::println);
+        //defineData.entrySet().stream().forEach(System.out::println);
         
         define = defineData;
     }
@@ -128,12 +140,10 @@ public class SyaryoObjectExtract {
 
     //SID+KEYで対象データレコードの削除と登録
     private void deleteRecord(Map<String, List<String>> records) {
-        extractMap.keySet().stream()
-                .forEach(sid -> {
-                    //車両の抽出
-                    MSyaryoObject s = extractMap.get(sid);
-                    if (records.get(sid) != null) {
-                        records.get(sid).stream()
+        extractMap.values().parallelStream()
+                .forEach(s -> {
+                    if (records.get(s.getName()) != null) {
+                        records.get(s.getName()).parallelStream()
                                 .map(reci -> reci.split(",")[1])
                                 .forEach(id -> {
                                     s.getData(id.split("\\.")[0]).remove(id.split("\\.")[1]);
@@ -141,7 +151,7 @@ public class SyaryoObjectExtract {
                                 });
                     }
 
-                    extractMap.put(sid, s);
+                    extractMap.put(s.getName(), s);
                 });
     }
 
@@ -190,7 +200,7 @@ public class SyaryoObjectExtract {
             return sid;
         } else {
             String kisyukiban = sid.split("-")[0] + "-" + sid.split("-")[sid.split("-").length - 1];
-            Optional<String> id = extractMap.keySet().stream()
+            Optional<String> id = extractMap.keySet().parallelStream()
                     .filter(s -> kisyukiban.equals(s.split("-")[0] + "-" + s.split("-")[s.split("-").length - 1]))
                     .findFirst();
 
@@ -234,34 +244,37 @@ public class SyaryoObjectExtract {
 
     //要約出力
     public void printSummary() {
-        System.out.println("Map Size : " + db.getKeyList().size() + " -> " + extractMap.size());
+        System.out.println("Map Size : " + master.size() + " -> " + extractMap.size());
         System.out.println("Delete/Import");
         settingsCount.entrySet().forEach(System.out::println);
-        /*
+        
         deleteSet.stream().map(h -> h.split("\\.")[0]).distinct()
                 .map(h -> "  Data Size : " + h + " "
-                + extractMap.keySet().parallelStream()
-                        .map(sid -> db.getObj(sid))
-                        .filter(s -> s.getData(h) != null)
-                        .mapToInt(s -> s.getData(h).size()).sum()
+                + extractMap.values().parallelStream()
+                        .filter(s -> s.getCount(h) != null)
+                        .mapToInt(s -> s.getCount(h)).sum()
                 + " -> "
-                + extractMap.values().parallelStream().filter(s -> s.getData(h) != null).mapToInt(s -> s.getData(h).size()).sum())
+                + extractMap.values().parallelStream()
+                        .filter(s -> s.getData(h) != null)
+                        .mapToInt(s -> s.getData(h).size()).sum())
                 .forEach(System.out::println);
-        */
-    }
-    
-    //MongoDBPOJOの呼び出しを模倣
-    public MSyaryoObject getObj(String sid){
-        return extractMap.get(sid);
+        
     }
     
     public MHeaderObject getHeader(){
         return header;
     }
     
-    //抽出処理適用後の車両マップを取得
-    public Map<String, MSyaryoObject> getObjMap(){
-        return extractMap;
+    //抽出処理適用後の車両分析器を取得
+    public Map<String, MSyaryoAnalizer> getObjMap(){
+        if(analizeMap == null){
+            System.out.println("Setting Syaryo Analizer!");
+            analizeMap = extractMap.values().parallelStream()
+                            .map(s -> new MSyaryoAnalizer(s))
+                            .collect(Collectors.toMap(sa -> sa.syaryo.getName(), sa -> sa));
+        }
+        
+        return analizeMap;
     }
     
     //抽出処理適用後の定義ファイルを取得

@@ -5,6 +5,7 @@
  */
 package eval.item;
 
+import eval.analizer.MSyaryoAnalizer;
 import eval.cluster.ClusteringESyaryo;
 import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
@@ -30,12 +31,15 @@ public class UseEvaluate extends EvaluateTemplate {
     private Map<String, Map<String, Map<String, String>>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
 
-    public UseEvaluate(Map<String, Map<String, Map<String, String>>> settings, MHeaderObject h) {
-        USE_DATAKEYS = settings;
+    public UseEvaluate(Map settings, MHeaderObject h) {
+        super.enable = ((Map<String, String>)settings).get("#EVALUATE").equals("ENABLE");
+        settings.remove("#EVALUATE");
+        
+        USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>)settings;
         HEADER_OBJ = h;
 
         //設定ファイルのヘッダ変換　データ項目.行.列
-        settings.entrySet().forEach(e -> {
+        USE_DATAKEYS.entrySet().forEach(e -> {
             List<String> hlist = e.getValue().entrySet().stream()
                     .flatMap(d -> {
                         if (!d.getValue().containsKey("SUM")) {
@@ -68,8 +72,8 @@ public class UseEvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public ESyaryoObject trans(MSyaryoObject syaryo) {
-        ESyaryoObject s = new ESyaryoObject(syaryo);
+    public ESyaryoObject trans(MSyaryoAnalizer sa) {
+        ESyaryoObject s = new ESyaryoObject(sa);
 
         //評価対象データキーの抽出
         Map<String, List<String>> sv = extract(s);
@@ -272,6 +276,9 @@ public class UseEvaluate extends EvaluateTemplate {
 
     @Override
     public void scoring() {
+        //評価適用　無効
+        if(!super.enable) return ;
+        
         Map<Integer, List<ESyaryoObject>> cids = new LinkedHashMap<>();
         
         //CIDで集計

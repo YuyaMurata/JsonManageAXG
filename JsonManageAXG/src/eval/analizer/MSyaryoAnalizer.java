@@ -66,20 +66,16 @@ public class MSyaryoAnalizer {
 
     //初期設定
     private static MHeaderObject header;
-
     private static int CNT;
 
-    public static void initialize(String db, String collection) {
+    public static void initialize(MHeaderObject h, Map<String, MSyaryoObject> map) {
         CNT = 0;
-        MongoDBPOJOData mdb = MongoDBPOJOData.create();
-        mdb.set(db, collection, MSyaryoObject.class);
-        header = mdb.getHeader();
+        header = h;
 
         //受注情報の最大日付
         int idx = header.getHeaderIdx("受注", "受注.作業完了日");
         LEAST_DATE = String.valueOf(
-                mdb.getKeyList().parallelStream()
-                    .map(s -> mdb.getObj(s))
+                map.values().parallelStream()
                     .filter(s -> s.getData("KOMTRAX_SMR") != null)
                     .map(s -> s.getData("受注"))
                     .filter(odr -> odr != null)
@@ -569,12 +565,12 @@ public class MSyaryoAnalizer {
     public static void main(String[] args) {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-
+        
         Random r = new Random();
         String sid = "PC200-10- -454702";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
         System.out.println(sid);
 
-        MSyaryoAnalizer.initialize("json", "komatsuDB_PC200_Form");
+        MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
         MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj(sid));
         System.out.println(sa.toString());
 

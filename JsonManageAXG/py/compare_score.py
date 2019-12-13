@@ -42,9 +42,12 @@ def kstest(frdata, ax):
                         s = "{0:.3f} *".format(p)
                 r.append(n)
                 v.append(s)
-        ax.table(cellText=[r, v], rowLabels=['Compare', 'p'],loc="center", cellLoc='center')
+        #ax.table(cellText=[r, v], rowLabels=['Compare', 'p'],loc="center", cellLoc='center')
+        print(r)
+        print(v)
     else:
-        ax.table(cellText=[['None'], ['None']], rowLabels=['Compare', 'p'], loc="center", cellLoc='center')
+        print()
+        #ax.table(cellText=[['None'], ['None']], rowLabels=['Compare', 'p'], loc="center", cellLoc='center')
 
 #データのグラフ化
 def graph(info, data, ax1, ax2):
@@ -56,7 +59,7 @@ def graph(info, data, ax1, ax2):
 
 def process_file(fs, xmax):
     fig = plt.figure()
-    fig.subplots_adjust(left=0.11, bottom=0.11, right=0.9, top=0.95, wspace=0.05, hspace=0.05)
+    fig.subplots_adjust(left=0.11, bottom=0.11, right=0.89, top=0.95, wspace=0.05, hspace=0.05)
 
     ax = fig.add_subplot(1, 1, 1)
     #ax = fig.add_axes((0.1, 0.3, 0.75, 0.65))
@@ -91,8 +94,8 @@ def process_file(fs, xmax):
     ax2.set_ylabel('Failure Rate', fontsize=12)
     ax.set_xlabel(info.split(',')[1] + '(dx' + info.split(',')[3] + ')', fontsize=12)
 
-    #KS検定
-    #kstest(frdata, ax3)
+    #KS検定 (frdata, ax3)
+    kstest(frdata, ax)
 
     plt.legend()
     #plt.show()

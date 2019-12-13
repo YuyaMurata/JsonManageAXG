@@ -36,19 +36,10 @@ public class SyaryoObjectEvaluation {
     public SyaryoObjectEvaluation(String dbn, String collection, SyaryoObjectExtract extract) {
         db = MongoDBPOJOData.create();
         db.set(dbn, collection, MSyaryoObject.class);
-        MSyaryoAnalizer.initialize(dbn, collection);
-
-        /*
-        Map<String, String> temp = MapToJSON.toMap(userDefine);
-        def = new HashMap<>();
-        temp.entrySet().stream().forEach(d -> {
-            def.put(d.getKey(), ListToCSV.toList(d.getValue()));
-            def.put(d.getKey() + "#H", Arrays.asList(new String[]{ListToCSV.toList(d.getValue()).get(0)}));
-        });*/
         this.extract = extract;
     }
 
-    public void scoring(Map<String, MSyaryoObject> map, String mainteSettingFile, String useSettingFile, String agesmrSettingFile, String outPath) {
+    public void scoring(Map<String, MSyaryoAnalizer> map, String mainteSettingFile, String useSettingFile, String agesmrSettingFile, String outPath) {
         //メンテナンス分析
         Map mainteSettings = MapToJSON.toMap(mainteSettingFile);
         EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());

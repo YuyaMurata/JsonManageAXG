@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 
 /**
@@ -37,8 +36,8 @@ public class ESyaryoObject implements Clusterable {
     public Integer smr;
     private Boolean errflg;
 
-    public ESyaryoObject(MSyaryoObject syaryo) {
-        this.a = new MSyaryoAnalizer(syaryo);
+    public ESyaryoObject(MSyaryoAnalizer syaryo) {
+        this.a = syaryo;
         date = a.LEAST_DATE;
         smr = a.maxSMR;
     }

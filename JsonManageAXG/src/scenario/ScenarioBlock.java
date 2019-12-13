@@ -5,9 +5,11 @@
  */
 package scenario;
 
+import eval.analizer.MSyaryoAnalizer;
 import extract.SyaryoObjectExtract;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * シナリオブロック
@@ -15,9 +17,14 @@ import java.util.Map;
  * @author kaeru
  */
 public class ScenarioBlock {
-    public static SyaryoObjectExtract extract;
+    private static SyaryoObjectExtract extract;
+    private static Map<String, MSyaryoAnalizer> analize;
     public static void setSyaryoObjectExtract(SyaryoObjectExtract ex){
         extract = ex;
+        analize = extract.getObjMap().entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey(), 
+                        e -> e.getValue()));
     }
     
     public String item;

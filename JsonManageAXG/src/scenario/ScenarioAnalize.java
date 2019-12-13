@@ -22,19 +22,20 @@ public class ScenarioAnalize {
         
         ScenarioBlock.setSyaryoObjectExtract(soe);
         ScenarioBlock sc = new ScenarioBlock("root");
-        ScenarioBlock sc1 = new ScenarioBlock("冷却水オーバーヒート");
-        ScenarioBlock sc11 = new ScenarioBlock("エンジンオイル");
-        ScenarioBlock sc12 = new ScenarioBlock("エンジンオイルフィルタ");
-        ScenarioBlock sc2 = new ScenarioBlock("エンジンOH(C1-1)");
-        sc1.setAND(sc11);
-        sc1.setOR(sc12);
-        sc1.setNEXT(sc2);
+        ScenarioBlock sc1 = new ScenarioBlock("ベルト(C1-10)");
+        ScenarioBlock sc2 = new ScenarioBlock("冷却水オーバーヒート");
+        ScenarioBlock sc3 = new ScenarioBlock("エンジンOH(C1-1)");
         sc.setNEXT(sc1);
+        sc1.setNEXT(sc2);
+        sc2.setNEXT(sc3);
         testPrint(sc);
     }
     
+    public void time(ScenarioBlock start){
+        
+    }
+    
     public static void testPrint(ScenarioBlock sc){
-        ScenarioBlock start = sc;
         getBlock("", sc);
     }
     

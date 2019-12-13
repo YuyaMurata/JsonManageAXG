@@ -5,11 +5,11 @@
  */
 package eval.item;
 
+import eval.analizer.MSyaryoAnalizer;
 import eval.cluster.ClusteringESyaryo;
 import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
 import eval.time.TimeSeriesObject;
-import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import py.PythonCommand;
 
@@ -32,15 +31,18 @@ public class MainteEvaluate extends EvaluateTemplate {
     private Map<String, String> MAINTE_INTERVAL;
     private Map<String, List<String>> PARTS_DEF;
 
-    public MainteEvaluate(Map<String, String> setting, Map<String, List<String>> def) {
-        MAINTE_INTERVAL = setting;
+    public MainteEvaluate(Map<String, String> settings, Map<String, List<String>> def) {
+        super.enable = settings.get("#EVALUATE").equals("ENABLE");
+        settings.remove("#EVALUATE");
+        
+        MAINTE_INTERVAL = settings;
         PARTS_DEF = def;
         super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
     }
 
     @Override
-    public ESyaryoObject trans(MSyaryoObject syaryo) {
-        ESyaryoObject s = new ESyaryoObject(syaryo);
+    public ESyaryoObject trans(MSyaryoAnalizer sa) {
+        ESyaryoObject s = new ESyaryoObject(sa);
 
         //評価対象データの抽出
         Map<String, List<String>> sv = extract(s);
@@ -122,6 +124,9 @@ public class MainteEvaluate extends EvaluateTemplate {
 
     @Override
     public void scoring() {
+        //評価適用　無効
+        if(!super.enable) return ;
+        
         Map<Integer, List<ESyaryoObject>> cids = new LinkedHashMap<>();
 
         //CIDで集計

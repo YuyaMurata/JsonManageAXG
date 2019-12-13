@@ -32,7 +32,7 @@ public class AttachedSyaryoInfo {
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         keyList = db.getKeyList();
         
-        MSyaryoAnalizer.initialize("json", "komatsuDB_PC200_Form");
+        MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
         
         //add
         addInfo("PC200_エンジンOV.csv", "AttachedInfo_PC200_エンジンOV.csv");

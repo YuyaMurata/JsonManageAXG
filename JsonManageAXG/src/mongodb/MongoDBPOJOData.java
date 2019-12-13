@@ -13,9 +13,13 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
 import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import org.bson.codecs.configuration.CodecRegistry;
@@ -29,6 +33,7 @@ public class MongoDBPOJOData {
     private MongoClient client;
     private MongoDatabase db;
     public MongoCollection coll;
+    private transient Map<String, MSyaryoObject> map;
     
     private MongoDBPOJOData(){
         Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
@@ -78,6 +83,14 @@ public class MongoDBPOJOData {
     
     public MSyaryoObject getObj(String name){
         return (MSyaryoObject) this.coll.find(eq("name", name)).first();
+    }
+    
+    public Map<String, MSyaryoObject> getObjMap(){
+        if(map == null)
+            map = getKeyList().parallelStream().map(sid -> getObj(sid))
+                        .collect(Collectors.toMap(s -> s.getName(), s -> s));
+        
+        return map;
     }
     
     public void clear(){
