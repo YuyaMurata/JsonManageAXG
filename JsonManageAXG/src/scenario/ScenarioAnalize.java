@@ -5,7 +5,10 @@
  */
 package scenario;
 
+import eval.time.TimeSeriesObject;
 import extract.SyaryoObjectExtract;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -22,17 +25,27 @@ public class ScenarioAnalize {
         
         ScenarioBlock.setSyaryoObjectExtract(soe);
         ScenarioBlock sc = new ScenarioBlock("root");
-        ScenarioBlock sc1 = new ScenarioBlock("ベルト(C1-10)");
-        ScenarioBlock sc2 = new ScenarioBlock("冷却水オーバーヒート");
-        ScenarioBlock sc3 = new ScenarioBlock("エンジンOH(C1-1)");
+        ScenarioBlock sc1 = new ScenarioBlock("エンジンオイル");
+        ScenarioBlock sc2 = new ScenarioBlock("エンジンオイルフィルタ");
+        ScenarioBlock sc3 = new ScenarioBlock("燃料メインフィルタ");
         sc.setNEXT(sc1);
         sc1.setNEXT(sc2);
         sc2.setNEXT(sc3);
         testPrint(sc);
+        
+        time(sc);
     }
     
-    public void time(ScenarioBlock start){
-        
+    public static void time(ScenarioBlock start){
+        while((start = start.getNEXT()) != null){
+            System.out.println(start.item);
+            extract(start);
+        }
+    }
+    
+    private static Map<String, List<String>> extract(ScenarioBlock block){
+        block.data.forEach(System.out::println);
+        return null;
     }
     
     public static void testPrint(ScenarioBlock sc){

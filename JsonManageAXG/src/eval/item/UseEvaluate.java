@@ -16,8 +16,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
@@ -32,10 +34,10 @@ public class UseEvaluate extends EvaluateTemplate {
     private MHeaderObject HEADER_OBJ;
 
     public UseEvaluate(Map settings, MHeaderObject h) {
-        super.enable = ((Map<String, String>)settings).get("#EVALUATE").equals("ENABLE");
+        super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
         settings.remove("#EVALUATE");
-        
-        USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>)settings;
+
+        USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>) settings;
         HEADER_OBJ = h;
 
         //設定ファイルのヘッダ変換　データ項目.行.列
@@ -97,7 +99,6 @@ public class UseEvaluate extends EvaluateTemplate {
                 .collect(Collectors.toMap(
                         ld -> ld.getKey(),
                         ld -> ld.getValue().keySet().stream()
-                                .map(dkey -> s.a.get(dkey) != null ? dkey : "")
                                 .collect(Collectors.toList())
                 ));
 
@@ -112,45 +113,57 @@ public class UseEvaluate extends EvaluateTemplate {
                         e -> e.getValue().stream().filter(d -> !d.isEmpty()).flatMap(d -> { //データ項目
                             Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
                             List<String> h = HEADER_OBJ.getHeader(d);
-                            
-                            if (!setting.containsKey("SUM")) {
-                                return s.a.get(d).entrySet().stream()
-                                        .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
-                                        .flatMap(di -> h.stream()
-                                            .map(hi -> {
-                                                String[] set = setting.get("INDEX")!= null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
-                                                int idx = HEADER_OBJ.getHeaderIdx(d, hi);
-                                                return mask(set[idx], di.getValue().get(idx));
-                                            })
-                                        );
-                            }else{
-                                return sum(setting, h, s.a.get(d)).stream();
-                            }
+                            if(h != null)
+                                return inData(setting, h, s, d);
+                            else
+                                return outData(setting, h, s, d);
                         }).collect(Collectors.toList())
-                ));        
+                ));
         return data;
     }
+
+    private Stream<String> inData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d) {
+        if (!setting.containsKey("SUM")) {
+            return s.a.get(d).entrySet().stream()
+                    .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
+                    .flatMap(di -> h.stream()
+                    .map(hi -> {
+                        String[] set = setting.get("INDEX") != null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
+                        int idx = HEADER_OBJ.getHeaderIdx(d, hi);
+                        return mask(set[idx], di.getValue().get(idx));
+                    })
+                    );
+        } else {
+            return sum(setting, h, s.a.get(d)).stream();
+        }
+    }
+    
+    private Stream<String> outData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d){
+        System.out.println(setting);
+        return null;
+    }
+    
 
     private String mask(String m, String ij) {
         return String.valueOf(Double.valueOf(m) * Double.valueOf(ij));
     }
 
-    private List<String> sum(Map<String, String> setting, List<String> h, Map<String, List<String>> d) {   
-        if(setting.get("SUM").equals("COLUMN")){
+    private List<String> sum(Map<String, String> setting, List<String> h, Map<String, List<String>> d) {
+        if (setting.get("SUM").equals("COLUMN")) {
             return h.stream()
                     .map(hj -> h.indexOf(hj))
                     .map(hj -> d.entrySet().stream()
-                                    .map(di -> mask(setting.get(di.getKey()).split(",")[hj], di.getValue().get(hj)))
-                                    .mapToDouble(di -> Double.valueOf(di)).sum())
-                                    .map(sum -> String.valueOf(sum))
+                    .map(di -> mask(setting.get(di.getKey()).split(",")[hj], di.getValue().get(hj)))
+                    .mapToDouble(di -> Double.valueOf(di)).sum())
+                    .map(sum -> String.valueOf(sum))
                     .collect(Collectors.toList());
-        }else{
-           return setting.keySet().stream().filter(hi -> !hi.equals("HEADER") && !hi.equals("SUM"))
+        } else {
+            return setting.keySet().stream().filter(hi -> !hi.equals("HEADER") && !hi.equals("SUM"))
                     .map(hi -> h.stream().map(hj -> h.indexOf(hj))
-                                            .map(hj -> mask(setting.get(hi).split(",")[hj], d.get(hi).get(hj)))
-                                            .mapToDouble(dj -> Double.valueOf(dj)).sum())
-                                    .map(sum -> String.valueOf(sum))
-                    .collect(Collectors.toList()); 
+                    .map(hj -> mask(setting.get(hi).split(",")[hj], d.get(hi).get(hj)))
+                    .mapToDouble(dj -> Double.valueOf(dj)).sum())
+                    .map(sum -> String.valueOf(sum))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -159,19 +172,20 @@ public class UseEvaluate extends EvaluateTemplate {
         int smridx = 1; //LOADMAP_DATE_SMR Value
         String date = s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").keySet().stream().findFirst().get() : "-1";
         Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
-        
+
         s.setDateSMR(date, smr.intValue());
-        
+
         Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
-            _header.get(e.getKey()).stream().forEach(h ->{
-                int i= _header.get(e.getKey()).indexOf(h);
+            _header.get(e.getKey()).stream().forEach(h -> {
+                int i = _header.get(e.getKey()).indexOf(h);
                 //System.out.println("  "+h+"["+i+"]:"+e.getValue().get(i));
-                
-                if(data.get(e.getKey()).isEmpty())
-                    norm.put(e.getKey()+"."+h, -1d);
-                else
-                    norm.put(e.getKey()+"."+h, Double.valueOf(e.getValue().get(i))/smr);
+
+                if (data.get(e.getKey()).isEmpty()) {
+                    norm.put(e.getKey() + "." + h, -1d);
+                } else {
+                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr);
+                }
             });
         });
 
@@ -273,14 +287,15 @@ public class UseEvaluate extends EvaluateTemplate {
 
         return mat;
     }*/
-
     @Override
     public void scoring() {
         //評価適用　無効
-        if(!super.enable) return ;
-        
+        if (!super.enable) {
+            return;
+        }
+
         Map<Integer, List<ESyaryoObject>> cids = new LinkedHashMap<>();
-        
+
         //CIDで集計
         super._eval.values().stream().forEach(e -> {
             if (!e.norm.values().stream().filter(ed -> ed > 0d).findFirst().isPresent()) {
@@ -293,21 +308,21 @@ public class UseEvaluate extends EvaluateTemplate {
                 cids.get(e.cid).add(e);
             }
         });
-        
+
         //cidごとの分割値の差分
         List<DataVector> cidavg = cids.entrySet().stream()
                 .map(cid
                         -> new DataVector(cid.getKey(),
                         cid.getValue().stream()
                                 .mapToDouble(e -> {
-                                        int s = e.norm.size();
-                                        double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
-                                        double r = IntStream.range(3*s/4, s).mapToDouble(i -> e.getPoint()[i]).sum();
-                                        return r-l;
-                                    })
+                                    int s = e.norm.size();
+                                    double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    return r - l;
+                                })
                                 .average().getAsDouble()))
                 .collect(Collectors.toList());
-        
+
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
