@@ -60,7 +60,7 @@ public class CalculateBearingLife {
         data.entrySet().stream().forEach(e -> {
             int col = colID.indexOf(e.getKey()) + 1;
             d[col][0] = Double.valueOf(e.getKey().replace("_", ""));
-            h.stream().forEach(hi -> d[col][rowID.indexOf(hi)+1] = Double.valueOf(e.getValue().get(h.indexOf(hi)))/5/3600);
+            h.stream().forEach(hi -> d[col][rowID.indexOf(hi)+1] = Double.valueOf(e.getValue().get(h.indexOf(hi))));
             d[col][h.size()+1] = Arrays.stream(d[col]).skip(1).mapToDouble(dcj -> dcj).sum();
             IntStream.range(1, d[col].length).boxed().forEach(i -> d[d.length-1][i] += d[col][i]);
         });
