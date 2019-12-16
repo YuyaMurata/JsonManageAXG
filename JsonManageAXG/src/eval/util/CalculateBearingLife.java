@@ -22,23 +22,22 @@ import obj.MSyaryoObject;
  *
  * @author kaeru
  */
-public class BearingEvaluation {
+public class CalculateBearingLife {
     Double[][] engine;
     Double[][] temprature;
     
     MHeaderObject header;
     ESyaryoObject syaryo;
     
-    public BearingEvaluation(ESyaryoObject s, MHeaderObject h){
+    public CalculateBearingLife(ESyaryoObject s, MHeaderObject h){
         this.header = h;
         this.syaryo = s;
         //エンジン回転数VSトルク
         engine = toMatrix("LOADMAP_実エンジン回転VSエンジントルク");
         //エンジン水温VS作動
         temprature = toMatrix("LOADMAP_エンジン水温VS作動油温");
-        life();
         
-        System.out.println(s.a.get("LOADMAP_DATE_SMR"));
+        //System.out.println(s.a.get("LOADMAP_DATE_SMR"));
     }
     
     private Double[][] toMatrix(String dkey){
@@ -67,23 +66,36 @@ public class BearingEvaluation {
         });
         d[colID.size()][0] += 1d;
         
-        printMatrix(d);
+        //printMatrix(d);
         
         return d;
     }
     
     public Double life(){
+        //平均回転
         Double avgR = IntStream.range(1, engine.length-1).boxed()
                                     .mapToDouble(i -> engine[i][0] * engine[i][engine[0].length-1] / engine[engine.length-1][engine[0].length-1])
                                     .sum();
-        System.out.println(avgR);
+        //System.out.println(avgR);
         
+        //平均1ポンプトルク
         Double avgT = IntStream.range(1, engine[0].length-1).boxed()
                                     .mapToDouble(j -> engine[0][j] * engine[engine.length-1][j] / engine[engine.length-1][engine[0].length-1])
                                     .sum() / 2;
-        System.out.println(avgT);
+        //System.out.println(avgT);
         
-        return L();
+        //ポンプ全ラジアル荷重
+        Double radial = Math.PI * avgT / 102 * Math.pow(10, 3);
+        //System.out.println(radial);
+        
+        //ニードルBrg.荷重
+        Double needleBrg = 75.5d / (75.5d + 95.5) * radial;
+        //System.out.println(needleBrg);
+        
+        Double lifeBrg = (Math.pow(10, 6) / (60 * avgR)) * Math.pow((4850 / needleBrg), 3.33) * L() * 4.5 * 0.8 * 0.62;
+        System.out.println(lifeBrg);
+        
+        return lifeBrg;
     }
     
     private Double L(){
@@ -115,13 +127,13 @@ public class BearingEvaluation {
         
         List<MSyaryoObject> slist = db.getObjMap().values().stream()
                     .filter(s -> s.getData("LOADMAP_実エンジン回転VSエンジントルク")!=null)
-                    .filter(s -> s.getName().equals("PC200-10- -450879"))
+                    .filter(s -> s.getName().equals("PC200-10- -454756"))
                     .collect(Collectors.toList());
         
         MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
         List<ESyaryoObject> elist = slist.stream().map(s -> new ESyaryoObject(new MSyaryoAnalizer(s))).collect(Collectors.toList());
         
-        BearingEvaluation be = new BearingEvaluation(elist.get(0), db.getHeader());
-        
+        CalculateBearingLife be = new CalculateBearingLife(elist.get(0), db.getHeader());
+        be.life();
     }
 }

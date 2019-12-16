@@ -9,6 +9,7 @@ import eval.analizer.MSyaryoAnalizer;
 import eval.cluster.ClusteringESyaryo;
 import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
+import eval.util.CalculateBearingLife;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -76,7 +77,13 @@ public class UseEvaluate extends EvaluateTemplate {
     @Override
     public ESyaryoObject trans(MSyaryoAnalizer sa) {
         ESyaryoObject s = new ESyaryoObject(sa);
-
+        
+        //LOADMAPデータが存在しない場合は評価しない
+        if(sa.get("LOADMAP_DATE_SMR") == null){
+            s.setData();
+            return s;
+        }
+        
         //評価対象データキーの抽出
         Map<String, List<String>> sv = extract(s);
 
@@ -113,10 +120,11 @@ public class UseEvaluate extends EvaluateTemplate {
                         e -> e.getValue().stream().filter(d -> !d.isEmpty()).flatMap(d -> { //データ項目
                             Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
                             List<String> h = HEADER_OBJ.getHeader(d);
-                            if(h != null)
+                            if (h != null) {
                                 return inData(setting, h, s, d);
-                            else
+                            } else {
                                 return outData(setting, h, s, d);
+                            }
                         }).collect(Collectors.toList())
                 ));
         return data;
@@ -137,12 +145,15 @@ public class UseEvaluate extends EvaluateTemplate {
             return sum(setting, h, s.a.get(d)).stream();
         }
     }
-    
-    private Stream<String> outData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d){
-        System.out.println(setting);
-        return null;
+
+    private Stream<String> outData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d) {
+        List<String> list = new ArrayList<>();
+        if (d.equals("ベアリング寿命")) {
+            CalculateBearingLife be = new CalculateBearingLife(s, HEADER_OBJ);
+            list.add(be.life().toString());
+        }
+        return list.stream();
     }
-    
 
     private String mask(String m, String ij) {
         return String.valueOf(Double.valueOf(m) * Double.valueOf(ij));
@@ -184,7 +195,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 if (data.get(e.getKey()).isEmpty()) {
                     norm.put(e.getKey() + "." + h, -1d);
                 } else {
-                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr);
+                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i))); // /smr
                 }
             });
         });
@@ -298,7 +309,7 @@ public class UseEvaluate extends EvaluateTemplate {
 
         //CIDで集計
         super._eval.values().stream().forEach(e -> {
-            if (!e.norm.values().stream().filter(ed -> ed > 0d).findFirst().isPresent()) {
+            if (e.none()) {
                 e.score = 0;
             } else {
                 if (cids.get(e.cid) == null) {
@@ -316,9 +327,9 @@ public class UseEvaluate extends EvaluateTemplate {
                         cid.getValue().stream()
                                 .mapToDouble(e -> {
                                     int s = e.norm.size();
-                                    double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    return r - l;
+                                    //double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    //double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    return e.getPoint()[0];
                                 })
                                 .average().getAsDouble()))
                 .collect(Collectors.toList());

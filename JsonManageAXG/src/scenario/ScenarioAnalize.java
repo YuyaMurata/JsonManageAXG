@@ -5,7 +5,6 @@
  */
 package scenario;
 
-import eval.time.TimeSeriesObject;
 import extract.SyaryoObjectExtract;
 import java.util.List;
 import java.util.Map;

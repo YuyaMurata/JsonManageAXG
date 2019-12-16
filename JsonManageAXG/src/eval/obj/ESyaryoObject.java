@@ -54,6 +54,14 @@ public class ESyaryoObject implements Clusterable {
             this.cid = 0;
         }
     }
+    
+    public void setData(){
+        //データ欠損確認フラグ
+        this.errflg = true;
+        if (errflg) {
+            this.cid = 0;
+        }
+    }
 
     public Boolean none() {
         return errflg;
@@ -71,9 +79,12 @@ public class ESyaryoObject implements Clusterable {
     }
 
     public String check() {
-        String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
-        String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
-
+        String p ="";
+        String avg = "";
+        if(!none()){
+            p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
+            avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
+        }
         return a.syaryo.getName() + "," + date + "," + a.age(date) + "," + smr + "," + p + "," + avg + "," + cid + "," + score;
     }
 
