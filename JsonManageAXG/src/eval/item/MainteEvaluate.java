@@ -132,7 +132,7 @@ public class MainteEvaluate extends EvaluateTemplate {
         //CIDで集計
         super._eval.values().stream().forEach(e -> {
             if (!e.norm.values().stream().filter(ed -> ed > 0d).findFirst().isPresent()) {
-                e.score = 0;
+                e.score = 1;
             } else {
                 if (cids.get(e.cid) == null) {
                     cids.put(e.cid, new ArrayList<>());

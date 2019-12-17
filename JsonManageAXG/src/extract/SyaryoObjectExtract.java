@@ -41,7 +41,7 @@ public class SyaryoObjectExtract {
         master = db.getKeyList();
         header = db.getHeader();
         
-        extractMap = master.parallelStream().filter(sid -> sid.contains("-10-"))
+        extractMap = master.parallelStream()
                 .collect(Collectors.toMap(k -> k, k -> db.getObj(k)));
     }
     

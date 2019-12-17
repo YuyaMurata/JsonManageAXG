@@ -22,7 +22,7 @@ import org.apache.commons.math3.random.RandomGenerator;
  * @author ZZ17807
  */
 public class ClusteringESyaryo {
-    static int C = 9;
+    static int C = 3;
     static int N = 10000;
     static RandomGenerator rg = new JDKRandomGenerator(1);
     static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N, new EuclideanDistance(), rg);

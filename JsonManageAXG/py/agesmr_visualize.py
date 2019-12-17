@@ -123,6 +123,7 @@ def process_file(pmax, rmax, xmax):
     for f in root:
         file = path+'/'+f
         data = pd.read_csv(file, index_col=0, delimiter=',', header = 2, encoding='SJIS')
+        data = data[data.index <= xmax]
 
         lines = codecs.open(file, encoding='SJIS').readlines()
         setting_info = lines[0].strip()

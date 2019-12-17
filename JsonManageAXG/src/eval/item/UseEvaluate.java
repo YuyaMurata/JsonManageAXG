@@ -195,7 +195,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 if (data.get(e.getKey()).isEmpty()) {
                     norm.put(e.getKey() + "." + h, -1d);
                 } else {
-                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i))); // /smr
+                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i))/smr); // /smr
                 }
             });
         });
@@ -335,7 +335,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 .collect(Collectors.toList());
 
         //スコアリング用にデータを3分割
-        List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        /*List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
                 .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.reverseOrder()))
                 .map(i -> i).collect(Collectors.toList());
@@ -349,6 +349,6 @@ public class UseEvaluate extends EvaluateTemplate {
                             e.score = sort.indexOf(i) + 1;
                         });
                     });
-        });
+        });*/
     }
 }

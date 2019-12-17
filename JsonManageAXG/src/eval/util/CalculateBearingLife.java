@@ -5,7 +5,6 @@
  */
 package eval.util;
 
-import static eval.SyaryoObjectEvaluation.db;
 import eval.analizer.MSyaryoAnalizer;
 import eval.obj.ESyaryoObject;
 import java.util.Arrays;

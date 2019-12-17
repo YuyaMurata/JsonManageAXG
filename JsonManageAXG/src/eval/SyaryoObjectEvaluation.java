@@ -52,7 +52,6 @@ public class SyaryoObjectEvaluation {
         Map agesmrSettings = MapToJSON.toMap(agesmrSettingFile);
         EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
         
-        
         map.values().parallelStream().forEach(s -> {
             evalMainte.add(s);
             evalUse.add(s);
