@@ -43,6 +43,13 @@ public abstract class EvaluateTemplate {
         return _header.get(key);
     }
     
+    //getPoint用ヘッダ取得
+    public List<String> headers() {
+        return _header.entrySet().stream()
+                .flatMap(h -> h.getValue().stream().map(hi -> h.getKey()+"."+hi))
+                .collect(Collectors.toList());
+    }
+    
     public void add(MSyaryoAnalizer a){
         _eval.put(a.syaryo.getName(), trans(a));
     };

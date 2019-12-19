@@ -6,17 +6,22 @@
 package eval.item;
 
 import eval.analizer.MSyaryoAnalizer;
+import eval.cluster.ClusteringESyaryo;
 import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
 import eval.util.CalculateBearingLife;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import obj.MHeaderObject;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 /**
  *
@@ -26,13 +31,14 @@ public class UseEvaluate extends EvaluateTemplate {
 
     private Map<String, Map<String, Map<String, String>>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
-    private String TARGET = "";
+    private List<String> SCORE_TARGET;
 
     public UseEvaluate(Map settings, MHeaderObject h) {
         super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
-        TARGET = ((Map<String, String>) settings).get("#SCORE_TARGET");
         settings.remove("#EVALUATE");
-        settings.remove("#SCORE_TARGET");
+
+        //スコア基準値の取得
+        SCORE_TARGET = new ArrayList();
 
         USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>) settings;
         HEADER_OBJ = h;
@@ -40,34 +46,54 @@ public class UseEvaluate extends EvaluateTemplate {
         //設定ファイルのヘッダ変換　データ項目.行.列
         USE_DATAKEYS.entrySet().forEach(e -> {
             List<String> hlist = e.getValue().entrySet().stream()
-                    .flatMap(d -> {
-                        if (!d.getValue().containsKey("SUM")) {
-                            return d.getValue().entrySet().stream()
-                                    .filter(di -> !di.getKey().equals("HEADER"))
-                                    .flatMap(di -> Arrays.stream(d.getValue().get("HEADER").split(",")).map(dj -> d.getKey() + "." + di.getKey() + "." + dj));
-                        } else {
-                            if (d.getValue().get("SUM").equals("COLUMN")) {
-                                return Arrays.stream(d.getValue().get("HEADER").split(","))
-                                        .map(dj -> d.getKey() + ".SUM("
-                                        + d.getValue().keySet().stream()
-                                                .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
-                                                .collect(Collectors.joining(".")) + ")."
-                                        + dj);
-                            } else {
-                                return d.getValue().keySet().stream()
-                                        .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
-                                        .map(di -> d.getKey() + "."
-                                        + di + ".SUM("
-                                        + Arrays.stream(d.getValue().get("HEADER").split(","))
-                                                .collect(Collectors.joining(".")) + ")"
-                                        );
-                            }
-                        }
-                    })
+                    .flatMap(d -> createHeader(e.getKey(), d).stream())
                     .collect(Collectors.toList());
             super.setHeader(e.getKey(), hlist);
         }
         );
+    }
+
+    //設定ファイルからヘッダを作成
+    private List<String> createHeader(String item, Map.Entry<String, Map<String, String>> d) {
+        List itemHeader;
+        if (!d.getValue().containsKey("SUM")) {
+            //通常のヘッダ処理
+            itemHeader = d.getValue().entrySet().stream()
+                    .filter(di -> di.getKey().charAt(0) != '#') //設定情報を読み込まない
+                    .filter(di -> !di.getKey().equals("HEADER"))
+                    .flatMap(di -> Arrays.stream(d.getValue().get("HEADER").split(",")).map(dj -> d.getKey() + "." + di.getKey() + "." + dj))
+                    .collect(Collectors.toList());
+        } else {
+            //行和を計算する場合のヘッダ処理
+            if (d.getValue().get("SUM").equals("COLUMN")) {
+                itemHeader = Arrays.stream(d.getValue().get("HEADER").split(","))
+                        .map(dj -> d.getKey() + ".SUM("
+                        + d.getValue().keySet().stream()
+                                .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
+                                .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                                .collect(Collectors.joining(".")) + ")."
+                        + dj).collect(Collectors.toList());
+            } else {
+                //列和を計算する場合のヘッダ処理
+                itemHeader = d.getValue().keySet().stream()
+                        .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
+                        .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                        .map(di -> d.getKey() + "."
+                        + di + ".SUM("
+                        + Arrays.stream(d.getValue().get("HEADER").split(","))
+                                .collect(Collectors.joining(".")) + ")"
+                        ).collect(Collectors.toList());
+            }
+        }
+
+        //スコアのターゲットデータ用処理
+        if (d.getValue().containsKey("#SCORE")) {
+            itemHeader.stream().forEach(h -> {
+                SCORE_TARGET.add(item + "." + h);
+            });
+        }
+
+        return itemHeader;
     }
 
     @Override
@@ -231,9 +257,9 @@ public class UseEvaluate extends EvaluateTemplate {
 
         //cidごとの分割値の差分
         List<DataVector> cidavg = cidScore(cids);
-
         //スコアリング用にデータを3分割
-        /*List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
                 .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.reverseOrder()))
                 .map(i -> i).collect(Collectors.toList());
@@ -247,27 +273,44 @@ public class UseEvaluate extends EvaluateTemplate {
                             e.score = sort.indexOf(i) + 1;
                         });
                     });
-        });*/
+        });
     }
 
     private List<DataVector> cidScore(Map<Integer, List<ESyaryoObject>> cids) {
-        String item = TARGET.split("\\.")[0];
-        String dkey = TARGET.split("\\.")[1];
+        List<String> h = super.headers();
 
-        //評価方法の判定
-        cids.entrySet().stream()
+        //全体平均
+        List<Double> avg = SCORE_TARGET.stream()
+                .map(t -> cids.values().stream()
+                .flatMap(v -> v.stream().map(vi -> vi.getPoint()[h.indexOf(t)]))
+                .mapToDouble(cij -> cij).average().getAsDouble())
+                .collect(Collectors.toList());
+        System.out.println("AVG:" + avg);
+        
+        //各CID平均
+        Map<Integer, List<Double>> cidAvg = cids.entrySet().stream()
+                .collect(Collectors.toMap(
+                        cid -> cid.getKey(),
+                        cid -> SCORE_TARGET.stream()
+                                .map(t -> cid.getValue().stream()
+                                .map(ci -> ci.getPoint()[h.indexOf(t)])
+                                .mapToDouble(cij -> cij).average().getAsDouble())
+                                .collect(Collectors.toList())
+                ));
+        cidAvg.entrySet().stream().forEach(System.out::println);
+        
+        //CIDと平均の比率を計算
+        List<DataVector> vec = cidAvg.entrySet().stream()
                 .map(cid
                         -> new DataVector(cid.getKey(),
-                        cid.getValue().stream()
-                                .mapToDouble(e -> {
-                                    int s = e.norm.size();
-                                    //double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    //double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    return e.getPoint()[0];
-                                })
+                        IntStream.range(0, cid.getValue().size()).boxed()
+                                .mapToDouble(i -> cid.getValue().get(i) / avg.get(i))
                                 .average().getAsDouble()))
                 .collect(Collectors.toList());
 
-        return null;
+        
+        System.out.println(vec);
+
+        return vec;
     }
 }
