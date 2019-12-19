@@ -6,24 +6,17 @@
 package eval.item;
 
 import eval.analizer.MSyaryoAnalizer;
-import eval.cluster.ClusteringESyaryo;
 import eval.cluster.DataVector;
 import eval.obj.ESyaryoObject;
 import eval.util.CalculateBearingLife;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import obj.MHeaderObject;
-import obj.MSyaryoObject;
-import org.apache.commons.math3.ml.clustering.CentroidCluster;
 
 /**
  *
@@ -33,10 +26,13 @@ public class UseEvaluate extends EvaluateTemplate {
 
     private Map<String, Map<String, Map<String, String>>> USE_DATAKEYS;
     private MHeaderObject HEADER_OBJ;
+    private String TARGET = "";
 
     public UseEvaluate(Map settings, MHeaderObject h) {
         super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
+        TARGET = ((Map<String, String>) settings).get("#SCORE_TARGET");
         settings.remove("#EVALUATE");
+        settings.remove("#SCORE_TARGET");
 
         USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>) settings;
         HEADER_OBJ = h;
@@ -77,13 +73,13 @@ public class UseEvaluate extends EvaluateTemplate {
     @Override
     public ESyaryoObject trans(MSyaryoAnalizer sa) {
         ESyaryoObject s = new ESyaryoObject(sa);
-        
+
         //LOADMAPデータが存在しない場合は評価しない
-        if(sa.get("LOADMAP_DATE_SMR") == null){
+        if (sa.get("LOADMAP_DATE_SMR") == null) {
             s.setData();
             return s;
         }
-        
+
         //評価対象データキーの抽出
         Map<String, List<String>> sv = extract(s);
 
@@ -131,18 +127,13 @@ public class UseEvaluate extends EvaluateTemplate {
     }
 
     private Stream<String> inData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d) {
+        List<String> setH = Arrays.asList(setting.get("HEADER").split(","));
+        List<String> dataH = h.stream().map(hi -> hi.split("\\.")[1]).collect(Collectors.toList());
+
         if (!setting.containsKey("SUM")) {
-            return s.a.get(d).entrySet().stream()
-                    .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
-                    .flatMap(di -> h.stream()
-                    .map(hi -> {
-                        String[] set = setting.get("INDEX") != null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
-                        int idx = HEADER_OBJ.getHeaderIdx(d, hi);
-                        return mask(set[idx], di.getValue().get(idx));
-                    })
-                    );
+            return nosum(setting, setH, dataH, s.a.get(d)).stream();
         } else {
-            return sum(setting, h, s.a.get(d)).stream();
+            return sum(setting, setH, dataH, s.a.get(d)).stream();
         }
     }
 
@@ -159,20 +150,33 @@ public class UseEvaluate extends EvaluateTemplate {
         return String.valueOf(Double.valueOf(m) * Double.valueOf(ij));
     }
 
-    private List<String> sum(Map<String, String> setting, List<String> h, Map<String, List<String>> d) {
+    private List<String> nosum(Map<String, String> setting, List<String> setH, List<String> dataH, Map<String, List<String>> d) {
+        return d.entrySet().stream()
+                .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
+                .flatMap(di
+                        -> setH.stream()
+                        .map(hi -> {
+                            String[] set = setting.get("INDEX") != null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
+                            return mask(set[setH.indexOf(hi)], di.getValue().get(dataH.indexOf(hi)));
+                        })
+                ).collect(Collectors.toList());
+    }
+
+    private List<String> sum(Map<String, String> setting, List<String> setH, List<String> dataH, Map<String, List<String>> d) {
         if (setting.get("SUM").equals("COLUMN")) {
-            return h.stream()
-                    .map(hj -> h.indexOf(hj))
-                    .map(hj -> d.entrySet().stream()
-                    .map(di -> mask(setting.get(di.getKey()).split(",")[hj], di.getValue().get(hj)))
-                    .mapToDouble(di -> Double.valueOf(di)).sum())
+            return setH.stream()
+                    .map(hj
+                            -> d.entrySet().stream()
+                            .map(di -> mask(setting.get(di.getKey()).split(",")[setH.indexOf(hj)], di.getValue().get(dataH.indexOf(hj))))
+                            .mapToDouble(di -> Double.valueOf(di)).sum())
                     .map(sum -> String.valueOf(sum))
                     .collect(Collectors.toList());
         } else {
             return setting.keySet().stream().filter(hi -> !hi.equals("HEADER") && !hi.equals("SUM"))
-                    .map(hi -> h.stream().map(hj -> h.indexOf(hj))
-                    .map(hj -> mask(setting.get(hi).split(",")[hj], d.get(hi).get(hj)))
-                    .mapToDouble(dj -> Double.valueOf(dj)).sum())
+                    .map(hi
+                            -> setH.stream()
+                            .map(hj -> mask(setting.get(hi).split(",")[setH.indexOf(hj)], d.get(hi).get(dataH.indexOf(hj))))
+                            .mapToDouble(dj -> Double.valueOf(dj)).sum())
                     .map(sum -> String.valueOf(sum))
                     .collect(Collectors.toList());
         }
@@ -195,7 +199,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 if (data.get(e.getKey()).isEmpty()) {
                     norm.put(e.getKey() + "." + h, -1d);
                 } else {
-                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i))/smr); // /smr
+                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr); // /smr
                 }
             });
         });
@@ -203,101 +207,6 @@ public class UseEvaluate extends EvaluateTemplate {
         return norm;
     }
 
-    /*
-    @Override
-    public Map<String, Integer> scoring(Map<String, Integer> cluster, String key, Map<String, List<Double>> data) {
-        int maxCluster = cluster.values().stream().distinct().mapToInt(c -> c).max().getAsInt();
-        //Average
-        Map<Integer, Double> avg = IntStream.range(0, maxCluster + 1).boxed()
-                .collect(Collectors.toMap(
-                        i -> i,
-                        i -> cluster.entrySet().stream()
-                                .filter(c -> c.getValue().equals(i))
-                                .flatMap(c -> data.get(c.getKey()).stream()
-                                .filter(d -> d == 1d)
-                                .map(d -> data.get(c.getKey()).indexOf(d))
-                                ).map(d -> header(key).get(d).split("_"))
-                                .mapToDouble(h -> -Double.valueOf(h[0]) * Double.valueOf(h[1])) //ヘッダ情報を利用し右下に行くほど評価値が下がる用に評価
-                                .average().getAsDouble()
-                ));
-
-        //Sort
-        List<Integer> sort = avg.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .map(a -> a.getKey())
-                .collect(Collectors.toList());
-
-        //Scoring
-        Map score = cluster.entrySet().stream()
-                .collect(Collectors.toMap(c -> c.getKey(), c -> 3 - sort.indexOf(c.getValue())));
-
-        return score;
-    }
-
-   
-    public static void main(String[] args) {
-        LOADER.setFile("PC200_form");
-        SyaryoAnalizer.rejectSettings(false, false, false);
-        SyaryoAnalizer s = new SyaryoAnalizer(LOADER.getSyaryoMap().get("PC200-8N1-352999"), true);
-
-        UseEvaluate use = new UseEvaluate();
-
-        String testkey = "LOADMAP_実エンジン回転VSエンジントルク";
-        //Map<String, List<String>> data = use.getdata(s);
-        Map<String, Double> result = use.evaluate(testkey, s);
-
-        //クラスタ用データ
-        System.out.println("\n" + use.header(testkey));
-        System.out.println(use.getClusterData(testkey));
-    }
-
-    private static void evalCSV_P1(SyaryoAnalizer s, String key, PrintWriter pw) {
-        UseEvaluate use = new UseEvaluate();
-        use.evaluate(key, s);
-
-        try (PrintWriter csv = CSVFileReadWrite.writerSJIS("data\\" + s.name + "_" + key + ".csv")) {
-            csv.println(s.name);
-
-            csv.println("元データ");
-            String[][] mat1 = matrix(use.header(key), use.getdata(key, s));
-            IntStream.range(0, mat1.length).boxed().map(i -> String.join(",", mat1[i])).forEach(csv::println);
-            csv.println();
-
-            csv.println("正規化(ランク)");
-            String[][] mat2 = matrix(use.header(key), use.getClusterData(key).get(s.name));
-            IntStream.range(0, mat2.length).boxed().map(i -> String.join(",", mat2[i])).forEach(csv::println);
-            csv.println();
-
-            csv.println("正規化(エンジン回転数集約)");
-            List<String> mat3 = IntStream.range(1, mat1[0].length).boxed()
-                    .map(i -> IntStream.range(1, mat1.length).boxed().mapToInt(j -> Integer.valueOf(mat1[j][i])).sum())
-                    .map(d -> d.toString())
-                    .collect(Collectors.toList());
-            csv.println(String.join(",", mat1[0]));
-            csv.println("," + String.join(",", mat3));
-        }
-    }
-
-    private static String[][] matrix(List<String> h, List<Double> d) {
-        List<String> x = h.stream().map(i -> Integer.valueOf(i.split("_")[0])).distinct().sorted().map(i -> i.toString()).collect(Collectors.toList());
-        List<String> y = h.stream().map(i -> Integer.valueOf(i.split("_")[1])).distinct().sorted().map(i -> i.toString()).collect(Collectors.toList());
-        String[][] mat = new String[x.size() + 1][y.size() + 1];
-        mat[0][0] = "";
-
-        IntStream.range(0, h.size()).forEach(i -> {
-            String hi = h.get(i);
-            String di = String.valueOf(d.get(i).intValue());
-
-            int xi = x.indexOf(hi.split("_")[0]) + 1;
-            int yi = y.indexOf(hi.split("_")[1]) + 1;
-
-            mat[xi][0] = hi.split("_")[0];
-            mat[0][yi] = hi.split("_")[1];
-            mat[xi][yi] = di;
-        });
-
-        return mat;
-    }*/
     @Override
     public void scoring() {
         //評価適用　無効
@@ -321,18 +230,7 @@ public class UseEvaluate extends EvaluateTemplate {
         });
 
         //cidごとの分割値の差分
-        List<DataVector> cidavg = cids.entrySet().stream()
-                .map(cid
-                        -> new DataVector(cid.getKey(),
-                        cid.getValue().stream()
-                                .mapToDouble(e -> {
-                                    int s = e.norm.size();
-                                    //double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    //double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
-                                    return e.getPoint()[0];
-                                })
-                                .average().getAsDouble()))
-                .collect(Collectors.toList());
+        List<DataVector> cidavg = cidScore(cids);
 
         //スコアリング用にデータを3分割
         /*List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
@@ -350,5 +248,26 @@ public class UseEvaluate extends EvaluateTemplate {
                         });
                     });
         });*/
+    }
+
+    private List<DataVector> cidScore(Map<Integer, List<ESyaryoObject>> cids) {
+        String item = TARGET.split("\\.")[0];
+        String dkey = TARGET.split("\\.")[1];
+
+        //評価方法の判定
+        cids.entrySet().stream()
+                .map(cid
+                        -> new DataVector(cid.getKey(),
+                        cid.getValue().stream()
+                                .mapToDouble(e -> {
+                                    int s = e.norm.size();
+                                    //double l = 0;//IntStream.range(0, s/2).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    //double r = IntStream.range(3 * s / 4, s).mapToDouble(i -> e.getPoint()[i]).sum();
+                                    return e.getPoint()[0];
+                                })
+                                .average().getAsDouble()))
+                .collect(Collectors.toList());
+
+        return null;
     }
 }

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.commons.math3.exception.NumberIsTooSmallException;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
@@ -22,7 +23,7 @@ import org.apache.commons.math3.random.RandomGenerator;
  * @author ZZ17807
  */
 public class ClusteringESyaryo {
-    static int C = 3;
+    static int C = 9;
     static int N = 10000;
     static RandomGenerator rg = new JDKRandomGenerator(1);
     static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N, new EuclideanDistance(), rg);
@@ -51,6 +52,21 @@ public class ClusteringESyaryo {
         long stop = System.currentTimeMillis();
         System.out.println("clustering time = "+(stop-start)+"ms");
     }
+    /*
+    private List<ESyaryoObject> dimReduction(Collection<ESyaryoObject> data){
+        //データの存在しない車両の除外
+        List<ESyaryoObject> exists = data.stream()
+                                            .filter(d -> !d.none())
+                                            .collect(Collectors.toList());
+        
+        //全車両で評価されない項目の確認
+        List<Double> check = IntStream.range(0, exists.get(0).getPoint().length).boxed()
+                                    .map(i -> exists.stream().mapToDouble(e -> e.getPoint()[i]).sum())
+                                    .collect(Collectors.toList());
+        
+        //0の評価項目を除外してリスト化
+        
+    }*/
     
     static KMeansPlusPlusClusterer<DataVector> spcluster = new KMeansPlusPlusClusterer(3, N, new EuclideanDistance(), rg);
     public static List<CentroidCluster<DataVector>> splitor(Collection<DataVector> data){    
