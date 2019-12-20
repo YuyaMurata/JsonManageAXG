@@ -27,7 +27,7 @@ public class ESyaryoObject implements Clusterable {
     public MSyaryoAnalizer a;
 
     double[] points;
-    public Integer cid = -1;
+    public Integer cid = 0;
     public Integer score = 0;
     public Map<String, List<String>> sv;
     public Map<String, List<String>> data;
@@ -42,25 +42,25 @@ public class ESyaryoObject implements Clusterable {
         smr = a.maxSMR;
     }
 
-    public void setData(Map<String, List<String>> sv, Map<String, List<String>> data, Map<String, Double> norm) {
+    public void setData(List<String> h, Map<String, List<String>> sv, Map<String, List<String>> data, Map<String, Double> norm) {
         this.sv = sv;
         this.data = data;
         this.norm = norm;
-        this.points = norm.values().stream().mapToDouble(v -> v).toArray();
-
+        
         //データ欠損確認フラグ
         this.errflg = !norm.values().stream().filter(v -> v > 0).findFirst().isPresent();
         if (errflg) {
-            this.cid = 0;
+            this.norm = h.stream().collect(Collectors.toMap(hi -> hi, hi -> 0d));
         }
+        
+        this.points = norm.values().stream().mapToDouble(v -> v).toArray();
     }
     
-    public void setData(){
+    public void setData(List<String> h){
         //データ欠損確認フラグ
         this.errflg = true;
-        if (errflg) {
-            this.cid = 0;
-        }
+        this.norm = h.stream().collect(Collectors.toMap(hi -> hi, hi -> 0d));
+        this.points = norm.values().stream().mapToDouble(v -> v).toArray();
     }
 
     public Boolean none() {
@@ -79,12 +79,9 @@ public class ESyaryoObject implements Clusterable {
     }
 
     public String check() {
-        String p ="";
-        String avg = "";
-        if(!none()){
-            p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
-            avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
-        }
+        String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
+        String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
+        
         return a.syaryo.getName() + "," + date + "," + a.age(date) + "," + smr + "," + p + "," + avg + "," + cid + "," + score;
     }
 

@@ -3,9 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import sys
 
-from distributed.utils_test import cluster
-
-file = 'file/PC200_mainte_eval.csv'
+file = 'out/mainte_score.csv'
 
 g = 'SCORE'
 xs = 'AGE'
@@ -39,8 +37,9 @@ cl =data[g].tolist()
 
 for i in range(0,n+1):
     c = data[data[g] == i]
+    print(c)
     name = 'C'+str(i)
-    plt.scatter(c[xs], c[ys], c = cm.cmaps_listed.get(cl.index(i)), s=5,  label=name)
+    plt.scatter(c[xs], c[ys], c = cm.cmaps_listed.get(cl[i]), s=5,  label=name)
 
 #print('cluster:'+str(len(set(data[g].values))))
 

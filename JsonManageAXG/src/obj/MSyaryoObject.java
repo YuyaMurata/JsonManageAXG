@@ -5,6 +5,7 @@
  */
 package obj;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,7 +15,8 @@ import org.bson.types.ObjectId;
  *
  * @author ZZ17807
  */
-public class MSyaryoObject {
+public class MSyaryoObject implements Serializable{
+    private static final long serialVersionUID = 1L;
     private ObjectId id;
     private String name;
     private Map<String, Map<String, List<String>>> map;

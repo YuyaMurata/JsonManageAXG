@@ -67,7 +67,30 @@ public abstract class EvaluateTemplate {
             return sv.split(",")[1].split("\\.")[1];
     }
     
-    public abstract ESyaryoObject trans(MSyaryoAnalizer a);
+    public ESyaryoObject trans(MSyaryoAnalizer a){
+        ESyaryoObject s = new ESyaryoObject(a);
+        
+        if(check(s)){
+            s.setData(headers());
+            return s;
+        }
+        
+        //評価対象データの抽出
+        Map<String, List<String>> sv = extract(s);
+
+        //評価対象データをSMRで集約
+        Map<String, List<String>> data = aggregate(s, sv);
+
+        //評価対象データの正規化
+        Map<String, Double> norm = normalize(s, data);
+
+        //各データを検証にセット
+        s.setData(headers(), sv, data, norm);
+        
+        return s;
+    };
+    
+    public abstract Boolean check(ESyaryoObject s);
     
     public abstract Map<String, List<String>> extract(ESyaryoObject s);
     

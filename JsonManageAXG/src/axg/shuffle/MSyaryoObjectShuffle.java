@@ -27,7 +27,7 @@ public class MSyaryoObjectShuffle {
 
     public static void main(String[] args) {
         //シャッフル+整形処理
-        shuffle("json", "komatsuDB_PC200", "config\\shuffle_mongo_syaryo.json", "config\\layout_mongo_syaryo.json");
+        shuffle("json", "PC200_DB", "config\\shuffle_mongo_syaryo.json", "config\\layout_mongo_syaryo.json");
     }
 
     //シャッフリング実行

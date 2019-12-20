@@ -40,25 +40,6 @@ public class MainteEvaluate extends EvaluateTemplate {
         super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
     }
 
-    @Override
-    public ESyaryoObject trans(MSyaryoAnalizer sa) {
-        ESyaryoObject s = new ESyaryoObject(sa);
-
-        //評価対象データの抽出
-        Map<String, List<String>> sv = extract(s);
-
-        //評価対象データをSMRで集約
-        Map<String, List<String>> data = aggregate(s, sv);
-
-        //評価対象データの正規化
-        Map<String, Double> norm = normalize(s, data);
-
-        //各データを検証にセット
-        s.setData(sv, data, norm);
-
-        return s;
-    }
-
     //対象サービスの抽出
     @Override
     public Map<String, List<String>> extract(ESyaryoObject s) {
@@ -173,5 +154,10 @@ public class MainteEvaluate extends EvaluateTemplate {
     
     public static void printImage(String file, String x, String y, String c){
         PythonCommand.py("py\\mainte_visualize.py", new String[]{file});
+    }
+
+    @Override
+    public Boolean check(ESyaryoObject s) {
+        return s.a.get("受注") == null;
     }
 }

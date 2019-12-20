@@ -96,31 +96,6 @@ public class UseEvaluate extends EvaluateTemplate {
         return itemHeader;
     }
 
-    @Override
-    public ESyaryoObject trans(MSyaryoAnalizer sa) {
-        ESyaryoObject s = new ESyaryoObject(sa);
-
-        //LOADMAPデータが存在しない場合は評価しない
-        if (sa.get("LOADMAP_DATE_SMR") == null) {
-            s.setData();
-            return s;
-        }
-
-        //評価対象データキーの抽出
-        Map<String, List<String>> sv = extract(s);
-
-        //評価対象データを集約
-        Map<String, List<String>> data = aggregate(s, sv);
-
-        //評価対象データの正規化
-        Map<String, Double> norm = normalize(s, data);
-
-        //各データを検証にセット
-        s.setData(sv, data, norm);
-
-        return s;
-    }
-
     //対象データキーの抽出
     @Override
     public Map<String, List<String>> extract(ESyaryoObject s) {
@@ -210,7 +185,7 @@ public class UseEvaluate extends EvaluateTemplate {
 
     @Override
     public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
-        int smridx = 1; //LOADMAP_DATE_SMR Value
+        int smridx = HEADER_OBJ.getHeaderIdx("LOADMAP_DATE_SMR", "SMR"); //LOADMAP_DATE_SMR Value
         String date = s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").keySet().stream().findFirst().get() : "-1";
         Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
 
@@ -220,12 +195,14 @@ public class UseEvaluate extends EvaluateTemplate {
         data.entrySet().stream().forEach(e -> {
             _header.get(e.getKey()).stream().forEach(h -> {
                 int i = _header.get(e.getKey()).indexOf(h);
-                //System.out.println("  "+h+"["+i+"]:"+e.getValue().get(i));
-
+                
                 if (data.get(e.getKey()).isEmpty()) {
                     norm.put(e.getKey() + "." + h, -1d);
                 } else {
-                    norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr); // /smr
+                    if(s.a.get(h.split("\\.")[0]) != null)
+                        norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr); // /smr
+                    else
+                        norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)));
                 }
             });
         });
@@ -285,7 +262,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 .flatMap(v -> v.stream().map(vi -> vi.getPoint()[h.indexOf(t)]))
                 .mapToDouble(cij -> cij).average().getAsDouble())
                 .collect(Collectors.toList());
-        System.out.println("AVG:" + avg);
+        //System.out.println("AVG:" + avg);
         
         //各CID平均
         Map<Integer, List<Double>> cidAvg = cids.entrySet().stream()
@@ -297,7 +274,7 @@ public class UseEvaluate extends EvaluateTemplate {
                                 .mapToDouble(cij -> cij).average().getAsDouble())
                                 .collect(Collectors.toList())
                 ));
-        cidAvg.entrySet().stream().forEach(System.out::println);
+        //cidAvg.entrySet().stream().forEach(System.out::println);
         
         //CIDと平均の比率を計算
         List<DataVector> vec = cidAvg.entrySet().stream()
@@ -309,8 +286,14 @@ public class UseEvaluate extends EvaluateTemplate {
                 .collect(Collectors.toList());
 
         
-        System.out.println(vec);
+        //System.out.println(vec);
 
         return vec;
+    }
+
+    @Override
+    public Boolean check(ESyaryoObject s) {
+        //LOADMAP_DATE_SMRのデータが存在しないとき評価しない
+        return s.a.get("LOADMAP_DATE_SMR") == null;
     }
 }

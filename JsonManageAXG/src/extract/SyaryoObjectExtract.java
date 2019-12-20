@@ -5,6 +5,7 @@
  */
 package extract;
 
+import compress.SnappyMap;
 import eval.analizer.MSyaryoAnalizer;
 import file.ListToCSV;
 import file.MapToJSON;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,7 +30,8 @@ import obj.MSyaryoObject;
  */
 public class SyaryoObjectExtract {
     public Map<String, Integer> settingsCount;
-    private List<String> master;
+    private int masterSize;
+    private Map<String, byte[]> compressMap;
     private Map<String, MSyaryoObject> extractMap;
     private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
@@ -38,11 +41,14 @@ public class SyaryoObjectExtract {
     public SyaryoObjectExtract(String dbn, String collection) {
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set(dbn, collection, MSyaryoObject.class);
-        master = db.getKeyList();
+        
         header = db.getHeader();
         
-        extractMap = master.parallelStream()
-                .collect(Collectors.toMap(k -> k, k -> db.getObj(k)));
+        compressMap = db.getKeyList().parallelStream()
+                                .map(sid -> db.getObj(sid))
+                                .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
+        
+        masterSize = compressMap.size();
     }
     
     private void setSyaryoAnalizer(){
@@ -52,8 +58,15 @@ public class SyaryoObjectExtract {
     
     //ユーザー定義ファイルの適用
     public void setUserDefine(String settingFile){
+        System.out.println("ユーザー定義ファイルの読み込み.");
         settingsCount = new HashMap();
         deleteSet = new HashSet<>();
+        
+        //解凍
+        extractMap = compressMap.values().parallelStream()
+                        .map(s -> decompress(s))
+                        .collect(Collectors.toMap(s -> s.getName(), s -> s));
+        System.out.println("車両オブジェクトの解凍.");
         
         Map<String, List<String>> settings = MapToJSON.toMap(settingFile);
         errorCheck(settings);
@@ -244,7 +257,7 @@ public class SyaryoObjectExtract {
 
     //要約出力
     public void printSummary() {
-        System.out.println("Map Size : " + master.size() + " -> " + extractMap.size());
+        System.out.println("Map Size : " + masterSize + " -> " + extractMap.size());
         System.out.println("Delete/Import");
         settingsCount.entrySet().forEach(System.out::println);
         
@@ -280,6 +293,20 @@ public class SyaryoObjectExtract {
     //抽出処理適用後の定義ファイルを取得
     public Map<String, List<String>> getDefine(){
         return define;
+    }
+    
+    /**
+     * データ圧縮
+     */
+    private byte[] compress(Object obj) {
+        return SnappyMap.toSnappy(obj);
+    }
+    
+    /**
+     * データ解凍
+     */
+    private MSyaryoObject decompress(byte[] b) {
+        return (MSyaryoObject) SnappyMap.toMap(b);
     }
     
     public static void main(String[] args) {

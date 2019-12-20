@@ -34,7 +34,7 @@ public class MSyaryoObjectCleansing {
     static Map<String, List<String>> removeLog;
 
     public static void main(String[] args) {
-        clean("json", "komatsuDB_PC200", "config\\cleansing_settings.json");
+        clean("json", "PC200_DB", "config\\cleansing_settings.json");
         System.out.println(cleansingResults);
         logPrint("log");
     }
@@ -45,7 +45,7 @@ public class MSyaryoObjectCleansing {
 
         //元マスタデータのレイアウト出力
         String layoutpath = cleanSetting.substring(0, cleanSetting.lastIndexOf("\\"));
-        createTemplate("json", "komatsuDB_PC200", layoutpath + "\\master_layout.json");
+        createTemplate(db, collection, layoutpath + "\\master_layout.json");
 
         //設定ファイルとヘッダ読み込み
         ruleMap = new MapToJSON().toMap(cleanSetting);

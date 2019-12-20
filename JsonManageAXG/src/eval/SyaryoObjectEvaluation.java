@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
+import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import py.PythonCommand;
 
@@ -29,13 +30,9 @@ import py.PythonCommand;
  * @author ZZ17807
  */
 public class SyaryoObjectEvaluation {
-
-    public static MongoDBPOJOData db;
     private SyaryoObjectExtract extract;
 
-    public SyaryoObjectEvaluation(String dbn, String collection, SyaryoObjectExtract extract) {
-        db = MongoDBPOJOData.create();
-        db.set(dbn, collection, MSyaryoObject.class);
+    public SyaryoObjectEvaluation(SyaryoObjectExtract extract) {
         this.extract = extract;
     }
 
@@ -46,7 +43,7 @@ public class SyaryoObjectEvaluation {
         
         //使われ方分析
         Map useSettings = MapToJSON.toMap(useSettingFile);
-        EvaluateTemplate evalUse = new UseEvaluate(useSettings, db.getHeader());
+        EvaluateTemplate evalUse = new UseEvaluate(useSettings, extract.getHeader());
         
         //経年/SMR分析
         Map agesmrSettings = MapToJSON.toMap(agesmrSettingFile);
@@ -87,10 +84,10 @@ public class SyaryoObjectEvaluation {
     }
 
     public static void main(String[] args) {
-        SyaryoObjectExtract soe = new SyaryoObjectExtract("json", "komatsuDB_PC200_Form");
+        SyaryoObjectExtract soe = new SyaryoObjectExtract("json", "PC200_DB_Form"); //"PC200_DB_Form" with GPS "komatsuDB_PC200_Form"
         soe.setUserDefine("config\\PC200_user_define.json");
         
-        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation("json", "komatsuDB_PC200_Form", soe);
+        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(soe);
         System.out.println("スコアリング開始");
         eval.scoring(soe.getObjMap(), 
                 "config\\PC200_maintenance.json", 
@@ -115,7 +112,7 @@ public class SyaryoObjectEvaluation {
     }
 
     //メンテナンスのみ
-    private static void print(EvaluateTemplate evtemp, ESyaryoObject eval) {
+    private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) {
         String file = "file\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             //評価結果
@@ -135,7 +132,7 @@ public class SyaryoObjectEvaluation {
 
             //評価利用サービス
             pw.println("評価対象となったサービス群");
-            pw.println("評価対象,SID,作番," + String.join(",", db.getHeader().getHeader("部品"))+",日付,SMR");
+            pw.println("評価対象,SID,作番," + String.join(",", header.getHeader("部品"))+",日付,SMR");
             eval.sv.entrySet().stream()
                                 .flatMap(e -> e.getValue().stream()
                                             .map(d -> e.getKey() + "," + d+","+eval.a.getSBNToDate(d.split(",")[1], true)+","+eval.a.getDateToSMR(eval.a.getSBNToDate(d.split(",")[1], true))))
@@ -144,7 +141,7 @@ public class SyaryoObjectEvaluation {
 
             //評価に利用されなかったサービス
             pw.println("評価に利用されなかったサービス");
-            pw.println("作番," + String.join(",", db.getHeader().getHeader("部品"))+",日付,SMR");
+            pw.println("作番," + String.join(",", header.getHeader("部品"))+",日付,SMR");
             if (eval.a.syaryo.getData("部品") != null) {
                 eval.a.syaryo.getData("部品").entrySet().stream()
                         .filter(e -> !eval.sv.values().stream()

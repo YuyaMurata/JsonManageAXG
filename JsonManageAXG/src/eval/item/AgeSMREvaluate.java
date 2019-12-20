@@ -46,28 +46,6 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public ESyaryoObject trans(MSyaryoAnalizer sa) {
-        ESyaryoObject s = new ESyaryoObject(sa);
-
-        //評価対象データの抽出
-        Map<String, List<String>> sv = extract(s);
-
-        //評価対象データをSMRで集約
-        Map<String, List<String>> data = aggregate(s, sv);
-
-        //評価対象データの正規化
-        Map<String, Double> norm = normalize(s, data);
-        
-        //各データを検証にセット
-        s.setData(sv, data, norm);
-        
-        //テスト出力
-        //testPrint(data, norm, s);
-        
-        return s;
-    }
-
-    @Override
     public Map<String, List<String>> extract(ESyaryoObject s) {
         Map<String, List<String>> map = AGE_SMR_PARTS.keySet().stream()
                 .collect(Collectors.toMap(iv -> iv,
@@ -179,5 +157,11 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         
         //正規化データのテスト出力
         norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
+    }
+
+    @Override
+    public Boolean check(ESyaryoObject s) {
+        //すべての車両を評価
+        return false;
     }
 }

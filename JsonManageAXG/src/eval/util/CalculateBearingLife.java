@@ -92,7 +92,7 @@ public class CalculateBearingLife {
         //System.out.println(needleBrg);
         
         Double lifeBrg = (Math.pow(10, 6) / (60 * avgR)) * Math.pow((4850 / needleBrg), 3.33) * L() * 4.5 * 0.8 * 0.62;
-        System.out.println(lifeBrg);
+        //System.out.println(lifeBrg);
         
         return lifeBrg;
     }
@@ -110,7 +110,7 @@ public class CalculateBearingLife {
                             temp < 120 ? -0.076*temp+9.36:
                             -0.006*temp+0.96;
         
-        System.out.println(temp+","+lublicator);
+        //System.out.println(temp+","+lublicator);
         
         return lublicator;
     }
@@ -122,17 +122,12 @@ public class CalculateBearingLife {
     
     public static void main(String[] args){
         MongoDBPOJOData db = MongoDBPOJOData.create();
-        db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-        
-        List<MSyaryoObject> slist = db.getObjMap().values().stream()
-                    .filter(s -> s.getData("LOADMAP_実エンジン回転VSエンジントルク")!=null)
-                    .filter(s -> s.getName().equals("PC200-10- -454756"))
-                    .collect(Collectors.toList());
+        db.set("json", "PC200_DB_Form", MSyaryoObject.class);
         
         MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
-        List<ESyaryoObject> elist = slist.stream().map(s -> new ESyaryoObject(new MSyaryoAnalizer(s))).collect(Collectors.toList());
+        ESyaryoObject esyaryo =  new ESyaryoObject(new MSyaryoAnalizer(db.getObj("PC200-10- -451749")));
         
-        CalculateBearingLife be = new CalculateBearingLife(elist.get(0), db.getHeader());
-        be.life();
+        CalculateBearingLife be = new CalculateBearingLife(esyaryo, db.getHeader());
+        System.out.println(be.life());
     }
 }
