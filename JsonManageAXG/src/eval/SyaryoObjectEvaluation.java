@@ -36,20 +36,18 @@ public class SyaryoObjectEvaluation {
         this.extract = extract;
     }
 
-    public void scoring(Map<String, MSyaryoAnalizer> map, String mainteSettingFile, String useSettingFile, String agesmrSettingFile, String outPath) {
+    public void scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) {
         //メンテナンス分析
-        Map mainteSettings = MapToJSON.toMap(mainteSettingFile);
+        
         EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
         
         //使われ方分析
-        Map useSettings = MapToJSON.toMap(useSettingFile);
         EvaluateTemplate evalUse = new UseEvaluate(useSettings, extract.getHeader());
         
         //経年/SMR分析
-        Map agesmrSettings = MapToJSON.toMap(agesmrSettingFile);
         EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
         
-        map.values().parallelStream().forEach(s -> {
+        extract.getObjMap().values().parallelStream().forEach(s -> {
             evalMainte.add(s);
             evalUse.add(s);
             evalAgeSMR.add(s);
@@ -79,7 +77,7 @@ public class SyaryoObjectEvaluation {
         */
     }
     
-    public static void compare(String[] pathScore){
+    public void compare(String[] pathScore){
         PythonCommand.py("py\\compare_score.py", pathScore);
     }
 
@@ -89,14 +87,18 @@ public class SyaryoObjectEvaluation {
         
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(soe);
         System.out.println("スコアリング開始");
-        eval.scoring(soe.getObjMap(), 
-                "config\\PC200_maintenance.json", 
-                "config\\PC200_use.json", 
-                "config\\PC200_agesmr.json", 
+        
+        Map mainte = MapToJSON.toMap("config\\PC200_maintenance.json");
+        Map use = MapToJSON.toMap("config\\PC200_use.json");
+        Map agesmr = MapToJSON.toMap("config\\PC200_agesmr.json");
+        eval.scoring(
+                mainte, 
+                use, 
+                agesmr, 
                 "out");
         
         //比較
-        SyaryoObjectEvaluation.compare(new String[]{"out", "1_0", "2_0", "3_0"});
+        eval.compare(new String[]{"out", "1_0", "2_0", "3_0"});
     }
 
     private static void print(EvaluateTemplate eval, String file) {

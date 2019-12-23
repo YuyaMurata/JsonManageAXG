@@ -26,26 +26,33 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class MSyaryoObjectCleansing {
-
+    String db;
+    String collection;
+    
     //Header
     static MHeaderObject hobj;
     static Map<String, Map<String, List<String>>> ruleMap;
     static Map<String, Map<String, Integer>> cleansingResults;
     static Map<String, List<String>> removeLog;
 
+    public MSyaryoObjectCleansing(String db, String collection){
+        this.db = db;
+        this.collection = collection;
+    }
+    
     public static void main(String[] args) {
-        clean("json", "PC200_DB", "config\\cleansing_settings.json");
-        System.out.println(cleansingResults);
-        logPrint("log");
+        //clean("json", "PC200_DB", "config\\cleansing_settings.json");
+        //System.out.println(cleansingResults);
+        //logPrint("log");
     }
 
-    public static void clean(String db, String collection, String cleanSetting) {
+    public void clean(String cleanSetting) {
         MongoDBData originDB = MongoDBData.create();
         originDB.set(db, collection);
 
         //元マスタデータのレイアウト出力
         String layoutpath = cleanSetting.substring(0, cleanSetting.lastIndexOf("\\"));
-        createTemplate(db, collection, layoutpath + "\\master_layout.json");
+        createMaterLayout(layoutpath + "\\master_layout.json");
 
         //設定ファイルとヘッダ読み込み
         ruleMap = new MapToJSON().toMap(cleanSetting);
@@ -77,7 +84,7 @@ public class MSyaryoObjectCleansing {
     }
 
     //1台のクレンジング
-    public static MSyaryoObject cleanOne(MSyaryoObject obj) {
+    public MSyaryoObject cleanOne(MSyaryoObject obj) {
         Map<String, Integer> check = new HashMap<>();
 
         ruleMap.entrySet().stream().forEach(c -> {
@@ -112,7 +119,7 @@ public class MSyaryoObjectCleansing {
     }
 
     //データの削除
-    private static List<String> removeData(String key, Map<String, List<String>> data, Map<String, List<String>> rule) {
+    private List<String> removeData(String key, Map<String, List<String>> data, Map<String, List<String>> rule) {
         if (data == null) {
             //System.out.print(",,,,");
             return new ArrayList<>();
@@ -129,7 +136,7 @@ public class MSyaryoObjectCleansing {
         return removeSubKey;
     }
 
-    private static Boolean removeLogic(Map.Entry<String, List<String>> unirule, List<String> data, MHeaderObject hobj) {
+    private Boolean removeLogic(Map.Entry<String, List<String>> unirule, List<String> data, MHeaderObject hobj) {
 
         if (!unirule.getValue().get(0).contains(".")) {
             //単純比較
@@ -144,7 +151,7 @@ public class MSyaryoObjectCleansing {
         }
     }
 
-    private static Integer num(String d1, String d2) {
+    private Integer num(String d1, String d2) {
         if (d1.contains("/")) {
             return Math.abs(FormalizeUtils.dsub(
                     FormalizeUtils.dateFormalize(d1),
@@ -155,7 +162,7 @@ public class MSyaryoObjectCleansing {
         }
     }
 
-    public static void logPrint(String logFilePath) {
+    public void logPrint(String logFilePath) {
         removeLog.entrySet().stream().forEach(s -> {
             try (PrintWriter pw = CSVFileReadWrite.writerSJIS(logFilePath+"\\cleansing_log_"+s.getKey()+".csv")) {
                 pw.println("SID,"+String.join(",", hobj.getHeader(s.getKey()))); 
@@ -164,8 +171,12 @@ public class MSyaryoObjectCleansing {
         });
     }
     
+    public String getSummary() {
+        return null;
+    }
+    
     //テンプレート生成
-    public static void createTemplate(String db, String collection, String file) {
+    private void createMaterLayout(String file) {
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
 
@@ -198,5 +209,9 @@ public class MSyaryoObjectCleansing {
 
         System.out.println(hin);
         mongo.close();
+    }
+    
+    public String createTemplate(String tempaletPath){
+        return null;
     }
 }

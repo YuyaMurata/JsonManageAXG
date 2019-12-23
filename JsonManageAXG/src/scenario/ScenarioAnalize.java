@@ -37,7 +37,19 @@ public class ScenarioAnalize {
 
         time(sc);
     }
-
+    
+    public void analize(){
+        
+    }
+    
+    public void similar(List<String> syaryoList){
+        
+    }
+    
+    public Map<String, List<String>> getResults(){
+        return null;
+    }
+    
     public static void time(ScenarioBlock start) {
         //車両ID + シナリオ(各部品のリスト)
         Map<String, List<List<String>>> sidTimes = extract(start);
