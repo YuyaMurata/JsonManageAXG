@@ -14,11 +14,10 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormSMR {
+public class FormSMR extends FormItem{
     //サービスのSMRを整形
-    public static Map form(Map<String, List<String>> smr, List indexList, String checkNumber) {
-        if (smr == null) {
-            //System.out.println("Not found Work!");
+    public static Map form(Map<String, List<String>> data, List indexList, String checkNumber) {
+        if (check(data)) {
             return null;
         }
         
@@ -26,7 +25,7 @@ public class FormSMR {
         int smridx = indexList.indexOf("SMR.サービスメータ");
 
         //日付重複除去
-        List<String> dateList = smr.keySet().stream()
+        List<String> dateList = data.keySet().stream()
                 .filter(s -> !s.equals("")) //日付が存在しない
                 .map(s -> s.split("#")[0])
                 .distinct()
@@ -38,12 +37,12 @@ public class FormSMR {
             String stdate = date;
 
             //重複日付を取り出す
-            List<String> dateGroup = smr.keySet().stream()
+            List<String> dateGroup = data.keySet().stream()
                     .filter(s -> s.contains(stdate))
-                    .filter(s -> !smr.get(s).get(smridx).equals("")) //SMRが存在しない
-                    .filter(s -> !smr.get(s).get(smridx).equals("999")) //怪しい数値の削除
-                    .filter(s -> !smr.get(s).get(smridx).equals("9999")) //怪しい数値の削除
-                    .filter(s -> !smr.get(s).get(smridx).equals(checkNumber)) //怪しい数値の削除
+                    .filter(s -> !data.get(s).get(smridx).equals("")) //SMRが存在しない
+                    .filter(s -> !data.get(s).get(smridx).equals("999")) //怪しい数値の削除
+                    .filter(s -> !data.get(s).get(smridx).equals("9999")) //怪しい数値の削除
+                    .filter(s -> !data.get(s).get(smridx).equals(checkNumber)) //怪しい数値の削除
                     .collect(Collectors.toList());
 
             //欠損データのみのため
@@ -56,7 +55,7 @@ public class FormSMR {
             }
 
             for (String dg : dateGroup) {
-                List<String> list = smr.get(dg);
+                List<String> list = data.get(dg);
                 //if(list.get(db).contains("KOMTRAX")){
                 //    list.set(smridx, String.valueOf(Double.valueOf(list.get(smridx))/60));
                 //}

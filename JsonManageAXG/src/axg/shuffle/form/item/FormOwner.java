@@ -5,6 +5,7 @@
  */
 package axg.shuffle.form.item;
 
+import static axg.shuffle.form.item.FormItem.check;
 import axg.shuffle.form.rule.DataRejectRule;
 import axg.shuffle.form.util.FormalizeUtils;
 import java.util.List;
@@ -16,19 +17,20 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormOwner {
+public class FormOwner extends FormItem{
 
-    public static Map form(Map<String, List<String>> owner, List indexList, DataRejectRule reject) {
-        if (owner == null) {
-            //System.out.println("Not found owner!");
+    public static Map form(Map<String, List<String>> data, List indexList, DataRejectRule reject) {
+        if (check(data)) {
             return null;
         }
         
         Integer ownerID = indexList.indexOf("顧客.納入先コード");
+        if (ownerID < 0) {
+            return null;
+        }
 
         //ID重複排除 ##排除
-        //System.out.println(owner.values().stream().map(l -> l.get(ownerID)).collect(Collectors.toList()));
-        List owners = owner.values().stream()
+        List owners = data.values().stream()
                 .map(l -> l.get(ownerID))
                 .filter(id -> !id.contains("##")) //工場IDが振られていない
                 .filter(id -> !id.equals("")) //IDが存在する
@@ -43,11 +45,11 @@ public class FormOwner {
 
         Map<String, List<String>> map = new TreeMap();
         int i = 0;
-        for (String date : owner.keySet()) {
+        for (String date : data.keySet()) {
             if (date.length() >= 8) {
-                String id = owner.get(date).get(ownerID);
+                String id = data.get(date).get(ownerID);
                 if (id.equals(owners.get(i))) {
-                    map.put(date, owner.get(date));
+                    map.put(date, data.get(date));
                     i++;
                     if (owners.size() <= i) {
                         break;

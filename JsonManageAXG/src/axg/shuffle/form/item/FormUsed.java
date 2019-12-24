@@ -14,18 +14,19 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormUsed {
-    public static Map form(Map<String, List<String>> used, List indexList, String newd) {
-        if (used == null) {
-            //System.out.println("Not found Used");
+public class FormUsed extends FormItem{
+    public static Map form(Map<String, List<String>> data, List indexList, String newd) {
+        if (check(data)) {
             return null;
         }
         
         newd = newd.split("#")[0];
         
         //NU区分でUだけ残す
-        int nu = indexList.indexOf("中古車.ＮＵ区分");
-        used = used.entrySet().stream()
+        int nu = indexList.indexOf("中古車.ＮＵ区分") >= 0?indexList.indexOf("中古車.ＮＵ区分"):indexList.indexOf("中古車.NU区分");
+        if(nu < 0)
+            return null;
+        data = data.entrySet().stream()
                     .filter(e -> e.getValue().get(nu).equals("U"))
                     .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         
@@ -37,25 +38,25 @@ public class FormUsed {
         Map<String, List<String>> map = new TreeMap();
 
         //修正しない
-        if (used.size() == 1) {
+        if (data.size() == 1) {
             //KUEC売却後、使用ユーザー存在しない
             //if (kuec.size() > 0 || (Integer.valueOf(used.keySet().stream().findFirst().get().split("#")[0]) <= Integer.valueOf(newd))) {
             //    return null;
             //}
 
-            List<String> list = used.values().stream().findFirst().get();
+            List<String> list = data.values().stream().findFirst().get();
             if (list.get(hyomen).contains("+") || list.get(hyomen).contains("_")) {
                 for (int i = hyomen; i < list.size(); i++) {
                     list.set(i, String.valueOf(Double.valueOf(list.get(i).replace("_", "")).intValue()));
                 }
             }
-            return used;
+            return data;
         }
 
         //複数存在するときの処理
         String key = "";
-        for (String date : used.keySet()) {
-            List list = used.get(date);
+        for (String date : data.keySet()) {
+            List list = data.get(date);
             String d = date.split("#")[0].replace("/", "");
             
             //空日付を除外

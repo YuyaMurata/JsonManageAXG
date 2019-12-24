@@ -5,6 +5,7 @@
  */
 package mongodb;
 
+import com.mongodb.BasicDBObject;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import com.mongodb.MongoClientSettings;
@@ -13,6 +14,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
+import com.mongodb.client.model.IndexOptions;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -89,6 +91,10 @@ public class MongoDBPOJOData {
                         .collect(Collectors.toMap(s -> s.getName(), s -> s));
         
         return map;
+    }
+    
+    public void createIndexes(){
+        this.coll.createIndex(new BasicDBObject().append("name", 1), new IndexOptions().unique(true));
     }
     
     public void clear(){

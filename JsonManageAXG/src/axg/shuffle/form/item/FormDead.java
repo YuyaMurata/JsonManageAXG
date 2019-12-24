@@ -13,16 +13,15 @@ import java.util.TreeMap;
  *
  * @author ZZ17807
  */
-public class FormDead {
-    public static Map form(Map<String, List<String>> dead, String leastdate, List indexList) {
-        if (dead == null) {
-            //System.out.println("Not found Dead");
+public class FormDead extends FormItem{
+    public static Map form(Map<String, List<String>> data, String leastdate, List indexList) {
+        if (check(data)) {
             return null;
         }
 
         Map<String, List<String>> map = new TreeMap();
         String date = "0";
-        for (String d : dead.keySet()) {
+        for (String d : data.keySet()) {
             if (d.length() > 7) {
                 //System.out.println(d);
                 if (Integer.valueOf(date) < Integer.valueOf(d.split("#")[0])) {
@@ -32,7 +31,7 @@ public class FormDead {
         }
 
         if (!date.equals("0") && Integer.valueOf(leastdate) <= Integer.valueOf(date)) {
-            map.put(date, dead.get(date));
+            map.put(date, data.get(date));
             return map;
         } else {
             return null;

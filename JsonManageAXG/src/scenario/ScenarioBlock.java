@@ -5,7 +5,7 @@
  */
 package scenario;
 
-import eval.analizer.MSyaryoAnalizer;
+import score.analizer.MSyaryoAnalizer;
 import extract.SyaryoObjectExtract;
 import java.util.List;
 import java.util.Map;

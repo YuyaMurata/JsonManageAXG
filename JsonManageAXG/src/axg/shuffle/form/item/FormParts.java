@@ -5,6 +5,7 @@
  */
 package axg.shuffle.form.item;
 
+import static axg.shuffle.form.item.FormItem.check;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,12 +17,14 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormParts {
+public class FormParts extends FormItem{
 
     //部品明細を整形
-    public static Map form(Map<String, List<String>> parts, List<String> odrSBN, List indexList) {
-        if (parts == null || odrSBN == null) {
-            //System.out.println("Not found Parts!");
+    public static Map form(Map<String, List<String>> data, List<String> odrSBN, List indexList) {
+        if (check(data)) {
+            return null;
+        }
+        if (odrSBN == null) {
             return null;
         }
 
@@ -34,30 +37,30 @@ public class FormParts {
 
         for (String sbn : odrSBN) {
             //重複作番を取り出す
-            List<String> sbnGroup = parts.keySet().stream()
+            List<String> sbnGroup = data.keySet().stream()
                     .filter(s -> s.split("#")[0].equals(sbn))
                     .collect(Collectors.toList());
 
             //KOMPAS 部品情報が存在するときは取り出す
             Optional<List<String>> kom = sbnGroup.stream()
-                    .map(s -> parts.get(s))
+                    .map(s -> data.get(s))
                     .filter(l -> l.get(db).equals("部品(KOMPAS)"))
                     .findFirst();
             if (kom.isPresent()) {
                 sbnGroup.stream()
-                        .filter(s -> !parts.get(s).get(db).equals("サービス経歴(KOMPAS)"))
+                        .filter(s -> !data.get(s).get(db).equals("サービス経歴(KOMPAS)"))
                         .forEach(s -> {
                             //作番に明細番号を付加 明細+追番
-                            String id = s.split("#")[0]+"#"+parts.get(s).get(partsMeisai)+parts.get(s).get(partsMeisaiadd);
-                            map.put(id, parts.get(s));
+                            String id = s.split("#")[0]+"#"+data.get(s).get(partsMeisai)+data.get(s).get(partsMeisaiadd);
+                            map.put(id, data.get(s));
                         });
             } else {
                 sbnGroup.stream()
-                        .filter(s -> !parts.get(s).get(cd).equals(""))
+                        .filter(s -> !data.get(s).get(cd).equals(""))
                         .forEach(s -> {
                             //作番に明細番号を付加 明細+追番
-                            String id = s.split("#")[0]+"#"+parts.get(s).get(partsMeisai)+parts.get(s).get(partsMeisaiadd);
-                            map.put(s, parts.get(s));
+                            String id = s.split("#")[0]+"#"+data.get(s).get(partsMeisai)+data.get(s).get(partsMeisaiadd);
+                            map.put(s, data.get(s));
                         });
             }
         }

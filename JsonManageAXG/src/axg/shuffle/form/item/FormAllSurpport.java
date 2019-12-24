@@ -13,20 +13,22 @@ import java.util.TreeMap;
  *
  * @author ZZ17807
  */
-public class FormAllSurpport {
+public class FormAllSurpport extends FormItem{
 
     //オールサポートの整形　(解約日を終了日とする)
-    public static Map form(Map<String, List<String>> as, List indexList) {
-        if (as == null) {
+    public static Map form(Map<String, List<String>> data, List indexList) {
+        if (check(data)) {
             return null;
         }
 
         int finDate = indexList.indexOf("オールサポート.契約満了日");
         int kaiDate = indexList.indexOf("オールサポート.解約日");
+        if(finDate < 0)
+            return null;
 
         Map newMap = new TreeMap();
-        for (String date : as.keySet()) {
-            List<String> aslist = as.get(date);
+        for (String date : data.keySet()) {
+            List<String> aslist = data.get(date);
             String findt = aslist.get(finDate);
             String kykdt = aslist.get(kaiDate);
             if (!(kykdt.equals("0") || kykdt.equals(""))) {

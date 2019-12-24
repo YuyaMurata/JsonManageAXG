@@ -16,36 +16,32 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormNew {
+public class FormNew extends FormItem {
 
-    public static Map form(Map<String, List<String>> news, Map<String, List<String>> born, Map<String, List<String>> deploy, List indexList) {
+    public static Map form(Map<String, List<String>> data, Map<String, List<String>> born, Map<String, List<String>> deploy, List indexList) {
+        if(check(data) || check(deploy))
+            return null;
+        
         Map<String, List<String>> map = new TreeMap();
 
         Integer deff = 0;
 
         //NU区分でNだけ残す
         int nu = indexList.indexOf("新車.ＮＵ区分");
-        news = news.entrySet().stream()
+        data = data.entrySet().stream()
                 .filter(e -> e.getValue().get(nu).equals("N"))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
-        if (news != null && deploy != null) {
-            try {
-                //なぜか空が存在した場合
-                if (news.isEmpty()) {
-                    news = null;
-                } else {
-                    deff = Math.abs(FormalizeUtils.dsub(news.keySet().stream().findFirst().get(), deploy.keySet().stream().findFirst().get())) / 30;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.err.println(news);
-                System.err.println(deploy);
-                System.exit(0);
+        if (data != null && deploy != null) {
+            //なぜか空が存在した場合
+            if (data.isEmpty()) {
+                data = null;
+            } else {
+                deff = Math.abs(FormalizeUtils.dsub(data.keySet().stream().findFirst().get(), deploy.keySet().stream().findFirst().get())) / 30;
             }
         }
 
-        if (news == null || deff > 6) {
+        if (data == null || deff > 6) {
             //出荷情報を取得する処理
             String date = "";
             if (deploy != null) {
@@ -68,14 +64,14 @@ public class FormNew {
         int hyojun = indexList.indexOf("新車.標準仕様価格");
 
         //修正しない
-        if (news.size() == 1) {
-            List<String> list = news.values().stream().findFirst().get();
+        if (data.size() == 1) {
+            List<String> list = data.values().stream().findFirst().get();
             if (list.get(hyomen).contains("+")) {
                 for (int i = hyomen; i < list.size(); i++) {
                     list.set(i, String.valueOf(Double.valueOf(list.get(i)).intValue()));
                 }
             }
-            return news;
+            return data;
         }
 
         //複数存在するときの処理
@@ -83,8 +79,8 @@ public class FormNew {
         String key = "";
         String[] price = new String[3];
         Boolean flg = true;
-        for (String date : news.keySet()) {
-            list = news.get(date);
+        for (String date : data.keySet()) {
+            list = data.get(date);
             if (flg) {
                 key = date.split("#")[0];
                 price[0] = list.get(hyomen).toString();

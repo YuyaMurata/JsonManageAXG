@@ -14,17 +14,21 @@ import java.util.TreeMap;
  *
  * @author ZZ17807
  */
-public class FormDeploy {
+public class FormDeploy extends FormItem{
 
-    public static Map form(Map<String, List<String>> deploy, String pdate, String name) {
+    public static Map form(Map<String, List<String>> data, String pdate, String name) {
+        if (check(data)) {
+            return null;
+        }
+        
         Map<String, List<String>> map = new TreeMap();
         String id = name.split("-")[0] + "-" + name.split("-")[2];
 
-        if (deploy != null) {
-            if (deploy.equals("")) {
+        if (!data.isEmpty()) {
+            if (data.equals("")) {
                 map.put(pdate, Arrays.asList(new String[]{pdate}));
             } else {
-                map.putAll(deploy);
+                map.putAll(data);
             }
         } else {
             map.put(pdate, Arrays.asList(new String[]{pdate}));

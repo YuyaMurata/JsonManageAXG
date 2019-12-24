@@ -5,7 +5,7 @@
  */
 package tools;
 
-import eval.analizer.MSyaryoAnalizer;
+import score.analizer.MSyaryoAnalizer;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import java.io.PrintWriter;

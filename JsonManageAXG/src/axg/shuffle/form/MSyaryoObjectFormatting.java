@@ -60,11 +60,13 @@ public class MSyaryoObjectFormatting {
         
         long stop = System.currentTimeMillis();
         System.out.println("FormattingTime="+(stop-start)+"ms");
-
+        
+        formDB.createIndexes();
+        
         formDB.close();
         
         //中間コレクション削除
-        shuffleDB.clear();
+        //shuffleDB.clear();
         shuffleDB.close();
         
     }

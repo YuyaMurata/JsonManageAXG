@@ -5,6 +5,7 @@
  */
 package axg.shuffle.form.item;
 
+import static axg.shuffle.form.item.FormItem.check;
 import axg.shuffle.form.rule.DataRejectRule;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,12 +17,11 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormOrder {
+public class FormOrder extends FormItem{
 
     //受注情報を整形
-    public static Map form(Map<String, List<String>> order, List indexList, DataRejectRule rule) {
-        if (order == null) {
-            //System.out.println("Not found Order!");
+    public static Map form(Map<String, List<String>> data, List indexList, DataRejectRule rule) {
+        if (check(data)) {
             return null;
         }
 
@@ -29,7 +29,7 @@ public class FormOrder {
         int date = indexList.indexOf("受注.受注日");
         //System.out.println(order);
         
-        Map<String, Integer> sortMap = order.entrySet().stream()
+        Map<String, Integer> sortMap = data.entrySet().stream()
                 .filter(e -> !e.getValue().get(date).equals(""))  //受注日が空の場合無視
                 //.filter(e -> Integer.valueOf(rule.getNew()) <= Integer.valueOf(e.getValue().get(date)))  //納入前受注情報の削除 <- 納入情報が異常な車両(KR車両)が存在するため
                 .collect(Collectors.toMap(e -> e.getKey(), e -> Integer.valueOf(e.getValue().get(date))));
@@ -48,15 +48,18 @@ public class FormOrder {
         int price = indexList.indexOf("受注.請求金額");
         int fin_date = indexList.indexOf("受注.作業完了日");
         
+        if(db < 0)
+            return null;
+        
         for (String sbn : sbnList) {
             //重複作番を取り出す
-            List<String> sbnGroup = order.keySet().stream()
+            List<String> sbnGroup = data.keySet().stream()
                     .filter(s -> s.split("#")[0].equals(sbn))
                     .collect(Collectors.toList());
 
             //KOMPAS 受注テーブル情報が存在するときは取り出す
             Optional<List<String>> kom = sbnGroup.stream()
-                    .map(s -> order.get(s))
+                    .map(s -> data.get(s))
                     .filter(l -> l.get(db).equals("受注(KOMPAS)"))
                     .findFirst();
 
@@ -64,7 +67,7 @@ public class FormOrder {
                 map.put(sbn, kom.get());
             } else {
                 for (String sg : sbnGroup) {
-                    List<String> list = order.get(sg);
+                    List<String> list = data.get(sg);
                     if (map.get(sbn) == null) {
                         map.put(sbn, list);
                     } else {

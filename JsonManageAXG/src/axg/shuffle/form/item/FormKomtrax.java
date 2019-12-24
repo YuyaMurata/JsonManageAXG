@@ -21,19 +21,21 @@ import obj.MHeaderObject;
  *
  * @author ZZ17807
  */
-public class FormKomtrax {
+public class FormKomtrax extends FormItem{
 
     //KOMTRAXデータの整形 (値の重複除去、日付の整形、小数->整数)
     public static void form(MSyaryoObject syaryo, MHeaderObject header) {
-        //List<String> kmList = syaryo.getMap().keySet().stream().filter(k -> k.contains("KOMTRAX_")).collect(Collectors.toList());
-        if (syaryo.getData("KOMTRAX_SMR") == null) {
-            return;
-        }
-        
         syaryo.setData("KOMTRAX_SMR", formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR"), syaryo.getData("生産")));
     }
 
-    private static Map formKMSMR(Map<String, List<String>> smr, List<String> index, Map<String, List<String>> product) {
+    private static Map formKMSMR(Map<String, List<String>> data, List<String> index, Map<String, List<String>> product) {
+        if(check(data))
+            return null;
+        
+        if(check(product))
+            return null;
+        
+        
         TreeMap<Integer, List<String>> map = new TreeMap<>();
 
         int dbIdx = index.indexOf("KOMTRAX_SMR.DB");
@@ -44,7 +46,7 @@ public class FormKomtrax {
         String initDate = product.keySet().stream().findFirst().get().split("#")[0];
         
         //KOMTRAX_ACT を取得
-        Map<String, List<String>> actSMR = smr.entrySet().parallelStream()
+        Map<String, List<String>> actSMR = data.entrySet().parallelStream()
                 .filter(e -> e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
                 .sorted(Comparator.comparing(e -> Integer.valueOf(e.getKey().split("#")[0]), Comparator.naturalOrder()))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (e1,e2) -> e1, LinkedHashMap::new));
@@ -54,7 +56,7 @@ public class FormKomtrax {
         String initSMR = "0";
         if (actStartDate.isPresent()) {
             Integer stdate = Integer.valueOf(actStartDate.get().split("#")[0]);
-            smr.entrySet().stream()
+            data.entrySet().stream()
                     .filter(e -> Integer.valueOf(e.getKey().split("#")[0]) <= stdate)
                     .filter(e -> !e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
                     .forEach(e -> map.put(Integer.valueOf(e.getKey().split("#")[0]), e.getValue()));

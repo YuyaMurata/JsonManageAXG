@@ -15,6 +15,7 @@ import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,15 +26,15 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class MSyaryoObjectCleansing {
-    String db;
-    String collection;
+    private String db;
+    private String collection;
     
     //Header
-    MHeaderObject hobj;
-    Map<String, Map<String, List<String>>> ruleMap;
-    Map<String, Map<String, Integer>> previousMap;
-    Map<String, Map<String, Integer>> cleansingResults;
-    Map<String, List<String>> removeLog;
+    private MHeaderObject hobj;
+    private Map<String, Map<String, List<String>>> ruleMap;
+    private Map<String, Map<String, Integer>> previousMap;
+    private Map<String, Map<String, Integer>> cleansingResults;
+    private Map<String, List<String>> removeLog;
 
     public MSyaryoObjectCleansing(String db, String collection){
         this.db = db;
@@ -44,8 +45,8 @@ public class MSyaryoObjectCleansing {
         //clean("json", "PC200_DB", "config\\cleansing_settings.json");
         //System.out.println(cleansingResults);
         //logPrint("log");
-        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing("json", "komatsuDB_TEST");
-        clean.createTemplate("test");
+        //MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing("json", "komatsuDB_TEST");
+        //clean.createTemplate("test");
     }
 
     public void clean(String cleanSetting) {
@@ -59,7 +60,9 @@ public class MSyaryoObjectCleansing {
         //設定ファイルとヘッダ読み込み
         ruleMap = new MapToJSON().toMap(cleanSetting);
         hobj = originDB.getHeaderObj();
+        previousMap = new HashMap<>();
         cleansingResults = new HashMap<>();
+        
         removeLog = ruleMap.keySet().stream().collect(Collectors.toMap(r -> r, r -> new ArrayList<>(), (r1, r2) -> r2, ConcurrentHashMap::new));
 
         //クレンジング用Mongoコレクション作成
@@ -86,7 +89,7 @@ public class MSyaryoObjectCleansing {
     }
 
     //1台のクレンジング
-    public MSyaryoObject cleanOne(MSyaryoObject obj) {
+    private MSyaryoObject cleanOne(MSyaryoObject obj) {
         Map<String, Integer> check = new HashMap<>();
 
         ruleMap.entrySet().stream().forEach(c -> {
@@ -141,7 +144,9 @@ public class MSyaryoObjectCleansing {
     }
 
     private Boolean removeLogic(Map.Entry<String, List<String>> unirule, List<String> data, MHeaderObject hobj) {
-
+        if(unirule.getValue().isEmpty())
+            return false;
+        
         if (!unirule.getValue().get(0).contains(".")) {
             //単純比較
             return !unirule.getValue().contains(data.get(hobj.getHeaderIdx(unirule.getKey().split("\\.")[0], unirule.getKey())));
@@ -173,9 +178,12 @@ public class MSyaryoObjectCleansing {
                 s.getValue().stream().forEach(pw::println);
             }
         });
+        System.out.println("クレンジング　ログ出力");
     }
     
     public String getSummary() {
+        System.out.println(previousMap);
+        System.out.println(cleansingResults);
         return null;
     }
     
@@ -211,22 +219,24 @@ public class MSyaryoObjectCleansing {
 
         MapToJSON.toJSON(file, head);
 
-        System.out.println(hin);
+        //System.out.println(hin);
         mongo.close();
     }
     
     //テンプレート生成
-    public String createTemplate(String templatePath){
+    public static String createTemplate(String db, String collection, String templatePath){
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
-        hobj = mongo.getHeaderObj();
+        MHeaderObject hobj = mongo.getHeaderObj();
         
-        String fileName = templatePath+"\\cleansing_setting_template.json";
-        Map<String, Map<String, List<String>>> map = new HashMap<>();
+        String fileName = templatePath+"\\cleansing_template.json";
+        Map<String, Map<String, List<String>>> map = new LinkedHashMap();
         System.out.println(hobj.getHeaderMap());
         hobj.getHeaderMap().entrySet().stream().forEach(h ->{
             map.put(h.getKey(), 
-                h.getValue().stream().distinct().collect(Collectors.toMap(hi -> hi, hi -> new ArrayList()))
+                h.getValue().stream()
+                        .distinct()
+                        .collect(Collectors.toMap(hi -> hi, hi -> new ArrayList(), (hi1, hi2) -> hi1, LinkedHashMap::new))
             );
         });
         

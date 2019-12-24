@@ -15,11 +15,15 @@ import java.util.stream.Collectors;
  *
  * @author ZZ17807
  */
-public class FormWork {
+public class FormWork extends FormItem{
 
     //作業明細を整形
-    public static Map form(Map<String, List<String>> work, List<String> odrSBN, List indexList) {
-        if (work == null || odrSBN == null) {
+    public static Map form(Map<String, List<String>> data, List<String> odrSBN, List indexList) {
+        if (check(data)) {
+            return null;
+        }
+        
+        if (odrSBN == null) {
             //System.out.println("Not found Work!");
             return null;
         }
@@ -32,29 +36,29 @@ public class FormWork {
 
         for (String sbn : odrSBN) {
             //重複作番を取り出す
-            List<String> sbnGroup = work.keySet().stream()
+            List<String> sbnGroup = data.keySet().stream()
                     .filter(s -> s.split("#")[0].equals(sbn.toString()))
                     .collect(Collectors.toList());
 
             //KOMPAS 作業情報が存在するときは取り出す
             Optional<List<String>> kom = sbnGroup.stream()
-                    .map(s -> work.get(s))
+                    .map(s -> data.get(s))
                     .filter(l -> l.get(db).equals("作業(KOMPAS)"))
                     .findFirst();
 
             if (kom.isPresent()) {
                 sbnGroup.stream()
-                        .filter(s -> !work.get(s).get(db).equals("サービス経歴(KOMPAS)"))
+                        .filter(s -> !data.get(s).get(db).equals("サービス経歴(KOMPAS)"))
                         .forEach(s -> {
-                            String id = s.split("#")[0] + "#" + work.get(s).get(workMeisai);
-                            map.put(id, work.get(s));
+                            String id = s.split("#")[0] + "#" + data.get(s).get(workMeisai);
+                            map.put(id, data.get(s));
                         });
             } else {
                 sbnGroup.stream()
-                        .filter(s -> !work.get(s).get(cd).equals("")) //作業コードが存在しないときは削除
+                        .filter(s -> !data.get(s).get(cd).equals("")) //作業コードが存在しないときは削除
                         .forEach(s -> {
-                            String id = s.split("#")[0] + "#" + work.get(s).get(workMeisai);
-                            map.put(id, work.get(s));
+                            String id = s.split("#")[0] + "#" + data.get(s).get(workMeisai);
+                            map.put(id, data.get(s));
                         });
             }
         }

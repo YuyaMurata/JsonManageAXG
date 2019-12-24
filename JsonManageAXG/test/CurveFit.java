@@ -1,5 +1,5 @@
 
-import eval.analizer.MSyaryoAnalizer;
+import score.analizer.MSyaryoAnalizer;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.text.ParseException;

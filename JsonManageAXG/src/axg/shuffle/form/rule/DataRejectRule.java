@@ -20,6 +20,10 @@ public class DataRejectRule {
     }
     
     public void addNew(String nd){
+        if(nd == null){
+            this.newd = "0";
+            return ;
+        }
         this.newd = nd.split("#")[0];
     }
     

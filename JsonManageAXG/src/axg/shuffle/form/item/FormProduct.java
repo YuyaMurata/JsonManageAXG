@@ -13,14 +13,18 @@ import java.util.TreeMap;
  *
  * @author ZZ17807
  */
-public class FormProduct {
+public class FormProduct extends FormItem{
 
-    public static Map form(Map<String, List<String>> product, String name) {
+    public static Map form(Map<String, List<String>> data, String name) {
+        if (check(data)) {
+            return null;
+        }
+        
         Map<String, List<String>> map = new TreeMap();
         String id = name.split("-")[0] + "-" + name.split("-")[2];
-        String date = product.keySet().stream().findFirst().get();
+        String date = data.keySet().stream().findFirst().get();
         
-        map.put(date, product.get(date));
+        map.put(date, data.get(date));
 
         return map;
     }

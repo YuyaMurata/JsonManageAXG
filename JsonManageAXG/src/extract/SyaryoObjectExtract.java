@@ -6,7 +6,7 @@
 package extract;
 
 import compress.SnappyMap;
-import eval.analizer.MSyaryoAnalizer;
+import score.analizer.MSyaryoAnalizer;
 import file.ListToCSV;
 import file.MapToJSON;
 import java.io.File;

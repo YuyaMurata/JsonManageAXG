@@ -37,7 +37,7 @@ cl =data[g].tolist()
 
 for i in range(0,n+1):
     c = data[data[g] == i]
-    print(c)
+    #print(c)
     name = 'C'+str(i)
     plt.scatter(c[xs], c[ys], c = cm.cmaps_listed.get(cl[i]), s=5,  label=name)
 
