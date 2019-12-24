@@ -76,6 +76,10 @@ public class MHeaderObject {
         this.header = header;
     }
     
+    public Map<String, List<String>> getHeaderMap(){
+        return map;
+    }
+    
     public Boolean getIsCompleted(){
         return isCompleted;
     }

@@ -15,7 +15,6 @@ import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,10 +29,11 @@ public class MSyaryoObjectCleansing {
     String collection;
     
     //Header
-    static MHeaderObject hobj;
-    static Map<String, Map<String, List<String>>> ruleMap;
-    static Map<String, Map<String, Integer>> cleansingResults;
-    static Map<String, List<String>> removeLog;
+    MHeaderObject hobj;
+    Map<String, Map<String, List<String>>> ruleMap;
+    Map<String, Map<String, Integer>> previousMap;
+    Map<String, Map<String, Integer>> cleansingResults;
+    Map<String, List<String>> removeLog;
 
     public MSyaryoObjectCleansing(String db, String collection){
         this.db = db;
@@ -44,6 +44,8 @@ public class MSyaryoObjectCleansing {
         //clean("json", "PC200_DB", "config\\cleansing_settings.json");
         //System.out.println(cleansingResults);
         //logPrint("log");
+        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing("json", "komatsuDB_TEST");
+        clean.createTemplate("test");
     }
 
     public void clean(String cleanSetting) {
@@ -110,7 +112,9 @@ public class MSyaryoObjectCleansing {
         if (obj.getData("車両") == null) {
             return null;
         }
-
+        
+        previousMap.put(obj.getName(), obj.getCount());
+        
         obj.recalc();
 
         cleansingResults.put(obj.getName(), obj.getCount());
@@ -211,7 +215,24 @@ public class MSyaryoObjectCleansing {
         mongo.close();
     }
     
-    public String createTemplate(String tempaletPath){
-        return null;
+    //テンプレート生成
+    public String createTemplate(String templatePath){
+        MongoDBData mongo = MongoDBData.create();
+        mongo.set(db, collection);
+        hobj = mongo.getHeaderObj();
+        
+        String fileName = templatePath+"\\cleansing_setting_template.json";
+        Map<String, Map<String, List<String>>> map = new HashMap<>();
+        System.out.println(hobj.getHeaderMap());
+        hobj.getHeaderMap().entrySet().stream().forEach(h ->{
+            map.put(h.getKey(), 
+                h.getValue().stream().distinct().collect(Collectors.toMap(hi -> hi, hi -> new ArrayList()))
+            );
+        });
+        
+        MapToJSON.toJSON(fileName, map);
+        
+        mongo.close();
+        return fileName;
     }
 }
