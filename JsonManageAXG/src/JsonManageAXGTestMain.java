@@ -16,7 +16,7 @@ import java.util.Arrays;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "testDB";
+    static String col = "komatsuDB_PC200";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();

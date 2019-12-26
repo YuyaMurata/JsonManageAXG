@@ -80,14 +80,14 @@ public class SyaryoObjectEvaluation {
 
     public static void main(String[] args) {
         SyaryoObjectExtract soe = new SyaryoObjectExtract("json", "komatsuDB_PC200_Form"); //"PC200_DB_Form" with GPS "komatsuDB_PC200_Form"
-        soe.setUserDefine("config\\PC200_user_define.json");
+        soe.setUserDefine("project\\komatsuDB_PC200\\config\\PC200_user_define.json");
         
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(soe);
         System.out.println("スコアリング開始");
         
-        Map mainte = MapToJSON.toMap("config\\PC200_maintenance.json");
-        Map use = MapToJSON.toMap("config\\PC200_use.json");
-        Map agesmr = MapToJSON.toMap("config\\PC200_agesmr.json");
+        Map mainte = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_maintenance.json");
+        Map use = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_use.json");
+        Map agesmr = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_agesmr.json");
         eval.scoring(
                 mainte, 
                 use, 

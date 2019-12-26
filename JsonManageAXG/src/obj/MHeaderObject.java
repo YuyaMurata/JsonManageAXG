@@ -88,7 +88,7 @@ public class MHeaderObject {
         this.isCompleted = isCompleted;
     }
     
-    public void print(){
-        map.entrySet().stream().map(e -> e.getKey()+":"+e.getValue()).forEach(System.out::println);
-    }
+    //public void print(){
+    //    map.entrySet().stream().map(e -> e.getKey()+":"+e.getValue()).forEach(System.out::println);
+    //}
 }
