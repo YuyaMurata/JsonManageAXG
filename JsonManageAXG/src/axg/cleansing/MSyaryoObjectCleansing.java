@@ -5,7 +5,9 @@
  */
 package axg.cleansing;
 
+import axg.check.CheckSettings;
 import axg.shuffle.form.util.FormalizeUtils;
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import mongodb.MongoDBPOJOData;
 import mongodb.MongoDBData;
@@ -18,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -26,9 +29,10 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class MSyaryoObjectCleansing {
+
     private String db;
     private String collection;
-    
+
     //Header
     private MHeaderObject hobj;
     private Map<String, Map<String, List<String>>> ruleMap;
@@ -36,20 +40,17 @@ public class MSyaryoObjectCleansing {
     private Map<String, Map<String, Integer>> cleansingResults;
     private Map<String, List<String>> removeLog;
 
-    public MSyaryoObjectCleansing(String db, String collection){
+    public MSyaryoObjectCleansing(String db, String collection) {
         this.db = db;
         this.collection = collection;
     }
     
-    public static void main(String[] args) {
-        //clean("json", "PC200_DB", "config\\cleansing_settings.json");
-        //System.out.println(cleansingResults);
-        //logPrint("log");
-        //MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing("json", "komatsuDB_TEST");
-        //clean.createTemplate("test");
+    //例外処理
+    private void checkSettings(MHeaderObject h, Map<String, Map<String, List<String>>> cleanSetting) throws AISTProcessException {
+        CheckSettings.check(h, "クレンジング", cleanSetting);
     }
 
-    public void clean(String cleanSetting) {
+    public void clean(String cleanSetting) throws AISTProcessException {
         MongoDBData originDB = MongoDBData.create();
         originDB.set(db, collection);
 
@@ -58,11 +59,14 @@ public class MSyaryoObjectCleansing {
         createMaterLayout(layoutpath + "\\master_layout.json");
 
         //設定ファイルとヘッダ読み込み
-        ruleMap = new MapToJSON().toMap(cleanSetting);
+        ruleMap = MapToJSON.toMapSJIS(cleanSetting);
         hobj = originDB.getHeaderObj();
-        previousMap = new HashMap<>();
-        cleansingResults = new HashMap<>();
+        previousMap = new LinkedHashMap<>();
+        cleansingResults = new LinkedHashMap<>();
         
+        //検証
+        checkSettings(hobj, ruleMap);
+
         removeLog = ruleMap.keySet().stream().collect(Collectors.toMap(r -> r, r -> new ArrayList<>(), (r1, r2) -> r2, ConcurrentHashMap::new));
 
         //クレンジング用Mongoコレクション作成
@@ -101,26 +105,25 @@ public class MSyaryoObjectCleansing {
             //SID,Records_N,Remove_N,remove_key List
             int n = obj.getData(key) == null ? 0 : obj.getData(key).size();
             check.put(key, removeKey.size());
-            
+
             //logging
             removeKey.stream()
-                    .map(skey -> obj.getName()+","+String.join(",", obj.getData(key).get(skey)))
+                    .map(skey -> obj.getName() + "," + String.join(",", obj.getData(key).get(skey)))
                     .forEach(str -> removeLog.get(key).add(str));
 
             obj.removeAll(key, removeKey);
             //System.out.println(obj.get(key));
         });
-
-        //System.out.println(obj.getName()+" - "+check);
-        if (obj.getData("車両") == null) {
-            return null;
-        }
         
         previousMap.put(obj.getName(), obj.getCount());
-        
+
         obj.recalc();
 
         cleansingResults.put(obj.getName(), obj.getCount());
+        
+        if (obj.getData("車両") == null) {
+            return null;
+        }
 
         return obj;
     }
@@ -144,9 +147,10 @@ public class MSyaryoObjectCleansing {
     }
 
     private Boolean removeLogic(Map.Entry<String, List<String>> unirule, List<String> data, MHeaderObject hobj) {
-        if(unirule.getValue().isEmpty())
+        if (unirule.getValue().isEmpty()) {
             return false;
-        
+        }
+
         if (!unirule.getValue().get(0).contains(".")) {
             //単純比較
             return !unirule.getValue().contains(data.get(hobj.getHeaderIdx(unirule.getKey().split("\\.")[0], unirule.getKey())));
@@ -173,20 +177,63 @@ public class MSyaryoObjectCleansing {
 
     public void logPrint(String logFilePath) {
         removeLog.entrySet().stream().forEach(s -> {
-            try (PrintWriter pw = CSVFileReadWrite.writerSJIS(logFilePath+"\\cleansing_log_"+s.getKey()+".csv")) {
-                pw.println("SID,"+String.join(",", hobj.getHeader(s.getKey()))); 
-                s.getValue().stream().forEach(pw::println);
+
+            if (hobj.getHeader(s.getKey()) != null) {
+                try (PrintWriter pw = CSVFileReadWrite.writerSJIS(logFilePath + "\\cleansing_log_" + s.getKey() + ".csv")) {
+                    pw.println("SID," + String.join(",", hobj.getHeader(s.getKey())));
+                    s.getValue().stream().forEach(pw::println);
+                }
+            } else {
+                System.err.println(s.getKey() + "データがインポートされていません");
             }
         });
         System.out.println("クレンジング　ログ出力");
     }
-    
+
     public String getSummary() {
-        System.out.println(previousMap);
-        System.out.println(cleansingResults);
-        return null;
+        Map<String, Integer> sumBefore = new LinkedHashMap<>();
+        Map<String, Integer> sumAfter = new LinkedHashMap<>();
+        Map<String, Integer> sum = new HashMap<>();
+        sum.put("クレンジング対象台数", 0);
+        sum.put("クレンジング対象件数", 0);
+        
+        previousMap.keySet().stream().forEach(k -> {
+            Map<String, Integer> before = previousMap.get(k);
+            Map<String, Integer> after = cleansingResults.get(k);
+            before.keySet().stream().forEach(d -> {
+                if (sumBefore.get(d) == null) {
+                    sumBefore.put(d, 0);
+                    sumAfter.put(d, 0);
+                }
+                
+                sumBefore.put(d, sumBefore.get(d) + before.get(d));
+                sumAfter.put(d, sumAfter.get(d) + (after.get(d)!=null?after.get(d):0));
+            });
+
+            Optional<String> diff = before.keySet().stream()
+                    .filter(d -> !before.get(d).equals(after.get(d)))
+                    .findFirst();
+
+            if (diff.isPresent()) {
+                sum.put("クレンジング対象台数", sum.get("クレンジング対象台数") + 1);
+            }
+        });
+
+        sum.put("クレンジング対象件数", removeLog.values().stream().mapToInt(l -> l.size()).sum());
+
+        StringBuilder sb = new StringBuilder();
+
+        //データ全体のサマリ
+        sb.append(sum.entrySet().stream().map(s -> s.getKey() + ":" + s.getValue()).collect(Collectors.joining("   ")));
+
+        //データの各項目のサマリ
+        sb.append("\nデータIDごとのクレンジング件数\n");
+        //項目名
+        sb.append(sumBefore.keySet().stream().sorted().map(s -> s + " : " + sumBefore.get(s) + "  ->  " + sumAfter.get(s)).collect(Collectors.joining("\n")));
+
+        return sb.toString();
     }
-    
+
     //テンプレート生成
     private void createMaterLayout(String file) {
         MongoDBData mongo = MongoDBData.create();
@@ -200,7 +247,7 @@ public class MSyaryoObjectCleansing {
                 continue;
             }
 
-            System.out.println(s);
+            //System.out.println(s);
 
             String k = s.split("\\.")[0];
 
@@ -222,26 +269,26 @@ public class MSyaryoObjectCleansing {
         //System.out.println(hin);
         mongo.close();
     }
-    
+
     //テンプレート生成
-    public static String createTemplate(String db, String collection, String templatePath){
+    public static String createTemplate(String db, String collection, String templatePath) {
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
         MHeaderObject hobj = mongo.getHeaderObj();
-        
-        String fileName = templatePath+"\\cleansing_template.json";
+
+        String fileName = templatePath + "\\cleansing_template.json";
         Map<String, Map<String, List<String>>> map = new LinkedHashMap();
         System.out.println(hobj.getHeaderMap());
-        hobj.getHeaderMap().entrySet().stream().forEach(h ->{
-            map.put(h.getKey(), 
-                h.getValue().stream()
-                        .distinct()
-                        .collect(Collectors.toMap(hi -> hi, hi -> new ArrayList(), (hi1, hi2) -> hi1, LinkedHashMap::new))
+        hobj.getHeaderMap().entrySet().stream().forEach(h -> {
+            map.put(h.getKey(),
+                    h.getValue().stream()
+                            .distinct()
+                            .collect(Collectors.toMap(hi -> hi, hi -> new ArrayList(), (hi1, hi2) -> hi1, LinkedHashMap::new))
             );
         });
-        
+
         MapToJSON.toJSON(fileName, map);
-        
+
         mongo.close();
         return fileName;
     }

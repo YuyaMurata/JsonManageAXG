@@ -12,9 +12,11 @@ import com.google.gson.stream.JsonWriter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.util.Map;
 
@@ -25,14 +27,13 @@ import java.util.Map;
 public class MapToJSON {
 
     public static void toJSON(String filename, Map index) {
-        try (JsonWriter writer = new JsonWriter(new BufferedWriter(new FileWriter(filename)))) {
+        try (JsonWriter writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "SJIS")))) {
             writer.setIndent("  ");
 
             Gson gson = new Gson();
             gson.toJson(index, Map.class, writer);
 
         } catch (IOException e) {
-            e.printStackTrace();
             System.out.println(index);
         }
     }
@@ -47,7 +48,6 @@ public class MapToJSON {
             Gson gson = new Gson();
             index = gson.fromJson(reader, type);
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
 
@@ -65,7 +65,6 @@ public class MapToJSON {
             index = gson.fromJson(reader, type);
         } catch (Exception e) {
             System.err.println(filename);
-            e.printStackTrace();
             return null;
         }
 

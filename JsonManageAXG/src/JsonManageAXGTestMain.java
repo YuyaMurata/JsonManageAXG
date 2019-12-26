@@ -1,6 +1,7 @@
 
 import axg.cleansing.MSyaryoObjectCleansing;
 import axg.shuffle.MSyaryoObjectShuffle;
+import exception.AISTProcessException;
 import java.util.Arrays;
 
 /*
@@ -14,35 +15,38 @@ import java.util.Arrays;
  * @author ZZ17807
  */
 public class JsonManageAXGTestMain {
-    public static void main(String[] args) {
+    static String db = "json";
+    static String col = "testDB";
+    
+    public static void main(String[] args) throws AISTProcessException {
         //cleansing();
         shuffle();
     }
     
-    private static void cleansing(){
+    private static void cleansing() throws AISTProcessException{
         //テンプレート生成
-        String template = MSyaryoObjectCleansing.createTemplate("json", "komatsuDB_PC200", "project\\komatsuDB_PC200\\config");
+        String template = MSyaryoObjectCleansing.createTemplate(db, col, "project\\"+col+"\\config");
         System.out.println("テンプレートファイル:"+template);
         
         //クレンジング処理
-        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing("json", "komatsuDB_PC200");
+        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
         //clean.clean(template);
-        clean.clean("project\\komatsuDB_PC200\\config\\cleansing_settings.json");
+        clean.clean("project\\"+col+"\\config\\cleansing_settings.json");
         
         //クレンジングログ出力
-        clean.logPrint("project\\komatsuDB_PC200\\log");
+        clean.logPrint("project\\"+col+"\\log");
         
         //サマリの出力
-        clean.getSummary();
+        System.out.println(clean.getSummary());
     }
     
-    private static void shuffle(){
-        String[] templates = MSyaryoObjectShuffle.createTemplate("json", "komatsuDB_PC200", "project\\komatsuDB_PC200\\config");
+    private static void shuffle() throws AISTProcessException{
+        String[] templates = MSyaryoObjectShuffle.createTemplate(db, col, "project\\"+col+"\\config");
         System.out.println("テンプレートファイル:"+Arrays.toString(templates));
         
         //シャッフリング処理
-        MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle("json", "komatsuDB_PC200");
-        shuffle.shuffle(templates[0], templates[1]);
-        //shuffle.shuffle("project\\komatsuDB_PC200\\config\\shuffle_settings.json", "project\\komatsuDB_PC200\\config\\layout_settings.json");
+        MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle(db, col);
+        //shuffle.shuffle(templates[0], templates[1]);
+        shuffle.shuffle("project\\"+col+"\\config\\shuffle_settings.json", "project\\"+col+"\\config\\layout_settings.json");
     }
 }
