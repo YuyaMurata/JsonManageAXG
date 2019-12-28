@@ -5,6 +5,7 @@
  */
 package analizer;
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.time.LocalDate;
@@ -68,11 +69,12 @@ public class MSyaryoAnalizer {
     private static MHeaderObject header;
     private static int CNT;
 
-    public static void initialize(MHeaderObject h, Map<String, MSyaryoObject> map) {
+    public static void initialize(MHeaderObject h, Map<String, MSyaryoObject> map) throws AISTProcessException {
         CNT = 0;
         header = h;
 
         //受注情報の最大日付
+        try{
         int idx = header.getHeaderIdx("受注", "受注.作業完了日");
         LEAST_DATE = String.valueOf(
                 map.values().parallelStream()
@@ -81,6 +83,9 @@ public class MSyaryoAnalizer {
                     .filter(odr -> odr != null)
                     .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
                     .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
+        }catch(Exception e){
+            throw new AISTProcessException("分析用オブジェクト生成の初期化に失敗しました：整形設定で受注.作業完了日, KOMTRAX_SMRが定義されていない可能性があります．");
+        }
     }
 
     public MSyaryoAnalizer(MSyaryoObject obj) {

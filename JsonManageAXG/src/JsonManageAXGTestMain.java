@@ -133,7 +133,7 @@ public class JsonManageAXGTestMain {
         System.out.println(scenario.getSearchResults());
     }
     
-    public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex){
+    public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex) throws AISTProcessException{
         ScenarioBlock.setSyaryoObjectExtract(objex);
         
         ScenarioBlock start = new ScenarioBlock("テスト項目1");

@@ -58,7 +58,7 @@ public class SyaryoObjectExtract {
         masterSize = compressMap.size();
     }
     
-    private void setSyaryoAnalizer() {
+    private void setSyaryoAnalizer() throws AISTProcessException {
         MSyaryoAnalizer.initialize(header, extractMap);
         analizeMap = null;
     }
@@ -184,6 +184,8 @@ public class SyaryoObjectExtract {
                 .collect(Collectors.toList());
         
         List<String> exception = new ArrayList<>();
+        List<String> exceptionItem = new ArrayList<>();
+        
         Map<String, byte[]> csvSettings = new HashMap<>();
         
         for (String f : files) {
@@ -202,6 +204,12 @@ public class SyaryoObjectExtract {
                         .collect(Collectors.joining(",")))
                         .collect(Collectors.toList());
                 
+                //ヘッダが存在するか確認
+                listHeader.stream().filter(h -> !h.equals("SID"))
+                                        .peek(System.out::println)
+                                        .filter(h -> header.getHeaderIdx(h.split("\\.")[0], h.split("\\.")[1]) < 0)
+                                        .forEach(exceptionItem::add);
+                
                 csvSettings.put(f, compress(setting));
             } catch (AISTProcessException e) {
                 exception.add(f);
@@ -212,12 +220,17 @@ public class SyaryoObjectExtract {
             throw new AISTProcessException("定義ファイル内の設定ファイルが存在しません：" + exception);
         }
         
+        if (!exceptionItem.isEmpty()) {
+            throw new AISTProcessException("定義ファイルから参照されるファイルの設定項目が存在しません：" + exceptionItem);
+        }
+        
         return csvSettings;
     }
 
     //汎用のコードマッチング情報取得メソッド SID+Keyを取得
     private List<String> dataCodeSettings(String codes) {
         String key = codes.split("\\.")[0];
+        System.out.println(codes);
         int rowID = header.getHeaderIdx(key, codes.split("\\.")[1]);
         String code = codes.replace(codes.split("\\.")[0] + "." + codes.split("\\.")[1] + ".", "");
 

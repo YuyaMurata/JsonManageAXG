@@ -66,9 +66,13 @@ public class MHeaderObject {
     }
     
     public Integer getHeaderIdx(String key, String idxKey){
+        if(this.map.get(key) == null)
+            return -1;
+        
         String item = idxKey;
         if(!idxKey.contains("."))
             item = key+"."+idxKey;
+        
         return this.map.get(key).indexOf(item);
     }
     

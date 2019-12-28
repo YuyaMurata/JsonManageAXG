@@ -38,6 +38,9 @@ public class FormKomtrax extends FormItem{
         int smrIdx = index.indexOf("KOMTRAX_SMR.SMR_VALUE");
         int unitIdx = index.indexOf("KOMTRAX_SMR.DAILY_UNIT");
         
+        if(dbIdx < 0 || smrIdx < 0 || unitIdx < 0)
+            return null;
+        
         //KOMTRAX_ACT を取得
         Map<String, List<String>> actSMR = data.entrySet().parallelStream()
                 .filter(e -> e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
