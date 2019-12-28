@@ -562,24 +562,6 @@ public class MSyaryoAnalizer {
         return mapHeader;
     }
 
-    public static void main(String[] args) {
-        MongoDBPOJOData db = MongoDBPOJOData.create();
-        db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-        
-        Random r = new Random();
-        String sid = "PC200-10- -454702";//db.getKeyList().get(r.nextInt(db.getKeyList().size()));
-        System.out.println(sid);
-
-        MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
-        MSyaryoAnalizer sa = new MSyaryoAnalizer(db.getObj(sid));
-        System.out.println(sa.toString());
-
-        smrDictOut(sa);
-        //SMRチェック
-        System.out.println("2017/12/28:" + sa.getDateToSMR("20171228"));
-        System.out.println("7000:" + sa.getSMRToDate(7000));
-    }
-
     private static void smrDictOut(MSyaryoAnalizer sa) {
         //辞書の出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test_analize_dict.csv")) {

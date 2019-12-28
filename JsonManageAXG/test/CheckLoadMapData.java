@@ -1,7 +1,10 @@
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mongodb.MongoDBPOJOData;
@@ -21,7 +24,7 @@ import obj.MSyaryoObject;
 public class CheckLoadMapData {
     private static MongoDBPOJOData shDB;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         MHeaderObject h = shDB.getHeader();
@@ -80,11 +83,13 @@ public class CheckLoadMapData {
                                             .sorted(Comparator.comparing(d -> Integer.valueOf(d.getKey().replace("_",""))))
                                             .map(d -> d.getValue().stream().mapToInt(v -> smr(v)).sum()).map(sum -> sum.toString()).collect(Collectors.joining(","));
                              pw.println(","+str);
-                        }
+                        } catch (AISTProcessException ex) {
+                Logger.getLogger(CheckLoadMapData.class.getName()).log(Level.SEVERE, null, ex);
+            }
                     });
     }
     
-    private static void check(MHeaderObject h){
+    private static void check(MHeaderObject h) throws AISTProcessException{
         String key = "LOADMAP_実エンジン回転VSエンジントルク";
         String smrKey = "LOADMAP_DATE_SMR";
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS("loadmap_engine.csv")){

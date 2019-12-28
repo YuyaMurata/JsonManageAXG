@@ -1,4 +1,5 @@
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import file.MapToJSON;
@@ -8,6 +9,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
@@ -26,9 +29,9 @@ import obj.MSyaryoObject;
 public class CategoryExtract {
     private static MongoDBPOJOData shDB;
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
-        shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
+        shDB.set("json", "komatsuDB_PC200_ForSm", MSyaryoObject.class);
         
         //カテゴリ表の読み込み
         Map<String, String> category = categoryMapping(ListToCSV.toList("file\\PC200_部品カテゴリ表.csv"));
@@ -61,6 +64,8 @@ public class CategoryExtract {
                 pw.println("SID,#Category,部品.作番,"+h.getHeader("部品").stream().map(hi -> "#"+hi).collect(Collectors.joining(",")));
                 
                 e.getValue().stream().forEach(pw::println);
+            } catch (AISTProcessException ex) {
+                Logger.getLogger(CategoryExtract.class.getName()).log(Level.SEVERE, null, ex);
             }
         });
     }

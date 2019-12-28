@@ -47,6 +47,7 @@ public class SyaryoObjectExtract {
         
         MongoDBPOJOData db = MongoDBPOJOData.create();
         db.set(dbn, collection, MSyaryoObject.class);
+        db.check();
         
         header = db.getHeader();
         

@@ -5,6 +5,7 @@
  */
 package tools;
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import java.io.IOException;
@@ -15,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
@@ -28,7 +31,7 @@ public class PartsInfoExtract {
     public static MongoDBPOJOData db;
     private static String PATH = "settings\\user\\userparts\\";
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         
@@ -43,7 +46,12 @@ public class PartsInfoExtract {
         
         try {
             Files.list(Paths.get(PATH)).forEach(f ->{
-                List<String> line = ListToCSV.toList(f.toString());
+                List<String> line = null;
+                try {
+                    line = ListToCSV.toList(f.toString());
+                } catch (AISTProcessException ex) {
+                    Logger.getLogger(PartsInfoExtract.class.getName()).log(Level.SEVERE, null, ex);
+                }
                 List<String> h = Arrays.asList(line.get(0).split(","));
                 List<Integer> uid = Arrays.stream(uidNames).map(id -> h.indexOf(id)).collect(Collectors.toList());
                 line.stream().forEach(l ->{
@@ -58,7 +66,7 @@ public class PartsInfoExtract {
         return map;
     }
     
-    private static void notexists(Map<String, String> map, String[] uidNames){
+    private static void notexists(Map<String, String> map, String[] uidNames) throws AISTProcessException{
         String dkey = "部品";
         
         MHeaderObject h = db.getHeader();

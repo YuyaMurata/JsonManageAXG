@@ -1,4 +1,5 @@
 
+import exception.AISTProcessException;
 import mongodb.MongoDBPOJOData;
 import obj.MSyaryoObject;
 
@@ -13,7 +14,7 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public class MongoDBTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         MongoDBPOJOData shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         System.out.println(shDB.getObjMap());

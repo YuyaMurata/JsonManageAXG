@@ -5,6 +5,7 @@
  */
 package tools;
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import file.MapToJSON;
@@ -13,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MSyaryoObject;
@@ -25,7 +28,7 @@ public class MakeUserDefine {
     public static MongoDBPOJOData db;
     private static List<String> keyList;
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         keyList = db.getKeyList();
@@ -41,7 +44,11 @@ public class MakeUserDefine {
         //品番+品名ファイルから
         Map<String, String> data = MapToJSON.toMapSJIS("toolsettings\\PC200_parts_userdefine.json");
         data.entrySet().stream().forEach(d ->{
-            partsNameNo(d.getValue(), "PC200_"+d.getKey()+".csv");
+            try {
+                partsNameNo(d.getValue(), "PC200_"+d.getKey()+".csv");
+            } catch (AISTProcessException ex) {
+                Logger.getLogger(MakeUserDefine.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
         
         //作番から
@@ -49,7 +56,7 @@ public class MakeUserDefine {
     }
     
     //品番
-    private static void partsNo(String rep, String out){
+    private static void partsNo(String rep, String out) throws AISTProcessException{
         String dkey = "部品";
         int idx = db.getHeader().getHeaderIdx(dkey, dkey+".品番");
         
@@ -68,7 +75,7 @@ public class MakeUserDefine {
     }
     
     //品名+品番
-    private static void partsNameNo(String file, String out){
+    private static void partsNameNo(String file, String out) throws AISTProcessException{
         String dkey = "部品";
         int idx1 = db.getHeader().getHeaderIdx(dkey, dkey+".部品名称");
         int idx2 = db.getHeader().getHeaderIdx(dkey, dkey+".品番");
@@ -92,7 +99,7 @@ public class MakeUserDefine {
     }
     
     //SID+SBN
-    private static void sbn(String dkey, String file, String out){
+    private static void sbn(String dkey, String file, String out) throws AISTProcessException{
         Map<String, String> setting = ListToCSV.toList(file).stream().collect(Collectors.toMap(s -> s.split(",")[0]+s.split(",")[2].split("#")[0], s -> s));
         
         int idx = db.getHeader().getHeaderIdx(dkey, dkey+".作番");

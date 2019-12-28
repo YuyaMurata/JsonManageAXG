@@ -1,4 +1,5 @@
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import java.io.PrintWriter;
@@ -25,7 +26,7 @@ public class ExtractSyaryoData {
 
     private static MongoDBPOJOData shDB;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
 
@@ -69,7 +70,7 @@ public class ExtractSyaryoData {
         return data;
     }
     
-    private static List<String> subextract(String[] headers, String subfile) {
+    private static List<String> subextract(String[] headers, String subfile) throws AISTProcessException {
         //read
         List<String> sub = ListToCSV.toList(subfile);
         Map subMap = new HashMap();

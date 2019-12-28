@@ -31,22 +31,23 @@ import org.bson.codecs.pojo.PojoCodecProvider;
  * @author ZZ17807
  */
 public class MongoDBPOJOData {
+
     private MongoClient client;
     private MongoDatabase db;
     public MongoCollection coll;
     private transient Map<String, MSyaryoObject> map;
-    
-    private MongoDBPOJOData(){
+
+    private MongoDBPOJOData() {
         Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
         initialize();
     }
-    
+
     private void initialize() {
         CodecRegistry pojoCodecRegistry = fromRegistries(com.mongodb.MongoClientSettings.getDefaultCodecRegistry(),
-                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+            fromProviders(PojoCodecProvider.builder().automatic(true).build()));
         MongoClientSettings settings = MongoClientSettings.builder()
-        .codecRegistry(pojoCodecRegistry)
-        .build();
+            .codecRegistry(pojoCodecRegistry)
+            .build();
         client = MongoClients.create(settings);
     }
 
@@ -57,55 +58,59 @@ public class MongoDBPOJOData {
     public void set(String dbn, String col, Class clazz) throws AISTProcessException {
         this.db = client.getDatabase(dbn);
         this.coll = db.getCollection(col, clazz);
-        
-        if(this.coll.count() <= 0)
-            throw new AISTProcessException("MongoDBでのデータ取得を失敗しました：DB="+dbn+" COLLECTTION="+col);
     }
-    
-    public MHeaderObject getHeader(){
+
+    public void check() throws AISTProcessException {
+        if (this.coll.countDocuments() == 0) {
+            throw new AISTProcessException("参照するDB.コレクションに誤りがあります：" + this.db.getName() + "." + this.coll.getNamespace().getCollectionName());
+        }
+    }
+
+    public MHeaderObject getHeader() {
         MongoCollection hcoll = this.db.getCollection(this.coll.getNamespace().getCollectionName(), MHeaderObject.class);
         MHeaderObject h = (MHeaderObject) hcoll.find(exists("header")).first();
         h.setHeaderMap();
         return h;
     }
-    
-    public List<String> getKeyList(){
+
+    public List<String> getKeyList() {
         long start = System.currentTimeMillis();
         System.out.println("get key start!");
         MongoDBData cl = MongoDBData.create();
-        
-        System.out.println("mongo connect : "+this.db.getName()+"."+this.coll.getNamespace().getCollectionName());
-        
+
+        System.out.println("mongo connect : " + this.db.getName() + "." + this.coll.getNamespace().getCollectionName());
+
         cl.set(this.db.getName(), this.coll.getNamespace().getCollectionName());
         List keys = cl.getKeyList();
         long stop = System.currentTimeMillis();
-        
-        System.out.println("get key time="+(stop-start)+"ms");
+
+        System.out.println("get key time=" + (stop - start) + "ms");
         cl.close();
         return keys;
     }
-    
-    public MSyaryoObject getObj(String name){
+
+    public MSyaryoObject getObj(String name) {
         return (MSyaryoObject) this.coll.find(eq("name", name)).first();
     }
-    
-    public Map<String, MSyaryoObject> getObjMap(){
-        if(map == null)
+
+    public Map<String, MSyaryoObject> getObjMap() {
+        if (map == null) {
             map = getKeyList().parallelStream().map(sid -> getObj(sid))
-                        .collect(Collectors.toMap(s -> s.getName(), s -> s));
-        
+                .collect(Collectors.toMap(s -> s.getName(), s -> s));
+        }
+
         return map;
     }
-    
-    public void createIndexes(){
+
+    public void createIndexes() {
         this.coll.createIndex(new BasicDBObject().append("name", 1), new IndexOptions().unique(true));
     }
-    
-    public void clear(){
-        System.err.println("Drop Collection "+this.coll.getNamespace().getCollectionName());
+
+    public void clear() {
+        System.err.println("Drop Collection " + this.coll.getNamespace().getCollectionName());
         this.coll.drop();
     }
-    
+
     public void close() {
         client.close();
     }

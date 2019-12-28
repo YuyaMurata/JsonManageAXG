@@ -4,8 +4,12 @@ import axg.shuffle.MSyaryoObjectShuffle;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import scenario.ScenarioAnalize;
+import scenario.ScenarioBlock;
 import score.SyaryoObjectEvaluation;
 import score.template.ScoringSettingsTemplate;
 
@@ -27,16 +31,18 @@ public class JsonManageAXGTestMain {
         //cleansing();
         //shuffle();
         SyaryoObjectExtract objex = extract();
-        scoring(objex);
+        Map<String, String[]> score = scoring(objex);
+        scenario(score, objex);
     }
     
     private static void cleansing() throws AISTProcessException{
+        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
+
         //テンプレート生成
-        String template = MSyaryoObjectCleansing.createTemplate(db, col, "project\\"+col+"\\config");
+        String template = clean.createTemplate("project\\"+col+"\\config");
         System.out.println("テンプレートファイル:"+template);
         
         //クレンジング処理
-        MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
         //clean.clean(template);
         clean.clean("project\\"+col+"\\config\\cleansing_settings.json");
         
@@ -48,17 +54,21 @@ public class JsonManageAXGTestMain {
     }
     
     private static void shuffle() throws AISTProcessException{
-        String[] templates = MSyaryoObjectShuffle.createTemplate(db, col, "project\\"+col+"\\config");
+        MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle(db, col);
+        
+        //テンプレート生成
+        String[] templates = shuffle.createTemplate("project\\"+col+"\\config");
         System.out.println("テンプレートファイル:"+Arrays.toString(templates));
         
         //シャッフリング処理
-        MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle(db, col);
         //shuffle.shuffle(templates[0], templates[1]);
         shuffle.shuffle("project\\"+col+"\\config\\shuffle_settings.json", "project\\"+col+"\\config\\layout_settings.json");
     }
     
     private static SyaryoObjectExtract extract() throws AISTProcessException{
         SyaryoObjectExtract objex = new SyaryoObjectExtract(db, col);
+        
+        //ユーザー定義ファイルの設定
         objex.setUserDefine("project\\"+col+"\\config\\user_define.json");
         
         //シナリオ解析の項目
@@ -76,7 +86,7 @@ public class JsonManageAXGTestMain {
         return objex;
     }
     
-    private static void scoring(SyaryoObjectExtract objex) throws AISTProcessException{
+    private static Map<String, String[]> scoring(SyaryoObjectExtract objex) throws AISTProcessException{
         //スコアリングのテンプレート生成
         String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
         System.out.println(Arrays.toString(templates));
@@ -88,10 +98,51 @@ public class JsonManageAXGTestMain {
         
         //スコアリング
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(objex);
-        eval.scoring(mainte, use, agesmr, "project\\"+col+"\\out");
+        Map<String, String[]> results = eval.scoring(mainte, use, agesmr, "project\\"+col+"\\out");
+        
+        //スコアリングの生成物の確認
+        //生成画像ファイル一覧の取得
+        System.out.println(eval.imageMap());
+        //グループリスト
+        System.out.println(eval.groupMap());
         
         //比較
-        eval.compare(new String[]{"out", "1_1", "2_1", "3_1"});
+        String compFile = eval.compare(new String[]{"project\\"+col+"\\out", "1,1", "2,1", "3,1"});
+        System.out.println(compFile);
         
+        return results;
+    }
+    
+    public static void scenario(Map<String, String[]> score, SyaryoObjectExtract objex) throws AISTProcessException{
+        //シナリオの作成
+        ScenarioBlock startBlock = createScenarioBlock(objex);
+        
+        //シナリオの解析
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\"+col+"\\out");
+        scenario.analize(startBlock);
+        
+        //各項目の件数とシナリオ件数
+        System.out.println(scenario.getScenarioResults());
+        
+        //↓フォームに表示される項目
+        System.out.println(scenario.getSearchResults());
+        
+        //類似検索
+        List<String> syaryoList = new ArrayList();   //選択した車両リスト
+        scenario.similar(syaryoList);
+        System.out.println(scenario.getSearchResults());
+    }
+    
+    public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex){
+        ScenarioBlock.setSyaryoObjectExtract(objex);
+        
+        ScenarioBlock start = new ScenarioBlock("テスト項目1");
+        ScenarioBlock sc2 = new ScenarioBlock("テスト項目2");
+        ScenarioBlock sc3 = new ScenarioBlock("テスト項目3");
+        
+        start.setNEXT(sc2);
+        sc2.setNEXT(sc3);
+        
+        return start;
     }
 }

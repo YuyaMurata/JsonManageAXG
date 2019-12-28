@@ -31,6 +31,10 @@ public class SurvivalESyaryo {
     public static String PATH = "";
     public static String X = "";
     public static Integer DELTA = 1;
+    
+    public static Map<String, List<String>> groupList;
+    public static Map<String, String> fileList;
+    
 
     //故障解析　外部呼出し時のメソッド　(累積の故障発生確率の計測)
     public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) throws AISTProcessException {
@@ -40,6 +44,13 @@ public class SurvivalESyaryo {
         //出力ファイル設定
         X = agesmr._settings.get("#VISUAL_X");
         DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_X"));
+        
+        //初期化
+        fileList = new HashMap<>();
+        fileList.put("X", outPath+"\\scale_SMR.png");
+        fileList.put("Y1", outPath+"\\scale_Population (P).png");
+        fileList.put("Y2", outPath+"\\scale_Failure Rate (FR).png");
+        
 
         //グループ分類 初期化
         Map<String, List<ESyaryoObject>> group = IntStream.range(1, 4).boxed()
@@ -52,10 +63,14 @@ public class SurvivalESyaryo {
             
             group.get(g).add(agesmr._eval.get(s));
         });
-
+        
+        //グループリストの取得
+        groupList = group.entrySet().stream().collect(Collectors.toMap(g -> g.getKey(), g -> g.getValue().stream().map(e -> e.a.get().getName()).collect(Collectors.toList())));
+        
         //グループごとの故障分析
-        for(String g : group.keySet())
-            analize(g, group.get(g));
+        for(String g : group.keySet()){
+                analize(g, group.get(g));
+        }
     }
 
     //故障解析
@@ -109,7 +124,8 @@ public class SurvivalESyaryo {
                             .mapToLong(s -> s.getPoints().stream()
                                     .filter(v -> v[svidx] == 1d).count())
                             .sum();
-
+        
+        fileList.put(gkey, PATH + "\\" + gkey + "_FR.csv");
         printCSV(totalSyaryo, totalFail, fail, count, prob, PATH + "\\" + gkey + "_FR.csv");
     }
 

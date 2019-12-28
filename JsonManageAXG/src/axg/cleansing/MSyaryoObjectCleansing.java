@@ -53,11 +53,12 @@ public class MSyaryoObjectCleansing {
     public void clean(String cleanSetting) throws AISTProcessException {
         MongoDBData originDB = MongoDBData.create();
         originDB.set(db, collection);
+        originDB.check();
 
         //元マスタデータのレイアウト出力
         String layoutpath = cleanSetting.substring(0, cleanSetting.lastIndexOf("\\"));
         createMaterLayout(layoutpath + "\\master_layout.json");
-
+        
         //設定ファイルとヘッダ読み込み
         ruleMap = MapToJSON.toMapSJIS(cleanSetting);
         hobj = originDB.getHeaderObj();
@@ -269,15 +270,17 @@ public class MSyaryoObjectCleansing {
     }
 
     //テンプレート生成
-    public static String createTemplate(String db, String collection, String templatePath) throws AISTProcessException {
+    public String createTemplate(String templatePath) throws AISTProcessException {
         String fileName = templatePath + "\\cleansing_template.json";
         
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
+        mongo.check();
+        
         MHeaderObject hobj = mongo.getHeaderObj();
         
         Map<String, Map<String, List<String>>> map = new LinkedHashMap();
-        System.out.println(hobj.map);
+        //System.out.println(hobj.map);
         hobj.map.entrySet().stream().forEach(h -> {
             map.put(h.getKey(),
                     h.getValue().stream()

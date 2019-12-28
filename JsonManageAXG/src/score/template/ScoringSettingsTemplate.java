@@ -24,19 +24,20 @@ import obj.MSyaryoObject;
 public class ScoringSettingsTemplate {
 
     public static String[] createTemplate(String db, String collection, String outPath) throws AISTProcessException {
+        MongoDBPOJOData mongo = MongoDBPOJOData.create();
+        mongo.set(db, collection, MSyaryoObject.class);
+        mongo.check();
+        
         String[] files = new String[3];
-        files[0] = createMainte(db, collection, outPath);
-        files[1] = createUse(db, collection, outPath);
-        files[2] = createAgeSMR(db, collection, outPath);
+        files[0] = createMainte(mongo, outPath);
+        files[1] = createUse(mongo, outPath);
+        files[2] = createAgeSMR(mongo, outPath);
         
         return files;
     }
 
-    private static String createUse(String db, String collection, String path) throws AISTProcessException {
+    private static String createUse(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_use_template.json";
-
-        MongoDBPOJOData mongo = MongoDBPOJOData.create();
-        mongo.set(db, collection, MSyaryoObject.class);
 
         MHeaderObject hobj = mongo.getHeader();
         Optional<MSyaryoObject> syaryo = mongo.getKeyList().stream()
@@ -80,7 +81,7 @@ public class ScoringSettingsTemplate {
         return file;
     }
 
-    private static String createMainte(String db, String collection, String path) throws AISTProcessException {
+    private static String createMainte(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_maintenance_template.json";
         
         Map temp = new LinkedHashMap();
@@ -93,7 +94,7 @@ public class ScoringSettingsTemplate {
         return file;
     }
 
-    private static String createAgeSMR(String db, String collection, String path) throws AISTProcessException {
+    private static String createAgeSMR(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_agesmr_template.json";
         
         Map temp = new LinkedHashMap();

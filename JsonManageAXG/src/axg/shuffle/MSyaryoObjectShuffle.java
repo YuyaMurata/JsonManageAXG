@@ -43,7 +43,8 @@ public class MSyaryoObjectShuffle {
     public void shuffle(String shuffleSetting, String layoutSetting) throws AISTProcessException {
         MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection + "_Clean", MSyaryoObject.class);
-
+        cleanDB.check();
+        
         //設定ファイルの読み込み
         Map index = MapToJSON.toMapSJIS(shuffleSetting); //シャッフリング用
         Map layout = MapToJSON.toMapSJIS(layoutSetting); //ヘッダ用
@@ -71,14 +72,15 @@ public class MSyaryoObjectShuffle {
         long stop = System.currentTimeMillis();
         System.out.println("ShufflingTime=" + (stop - start) + "ms");
 
-        shuffleDB.close();
-
         //中間コレクション削除
-        //cleanDB.clear();
+        cleanDB.clear();
         cleanDB.close();
 
         //整形処理
         MSyaryoObjectFormatting.form(db, collection);
+        
+        shuffleDB.clear();
+        shuffleDB.close();
     }
 
     //1台のシャッフリング
@@ -213,11 +215,12 @@ public class MSyaryoObjectShuffle {
     }
 
     //テンプレート生成
-    public static String[] createTemplate(String db, String collection, String templatePath) throws AISTProcessException {
+    public String[] createTemplate(String templatePath) throws AISTProcessException {
         String file = templatePath + "\\shuffle_template.json";
         String file2 = templatePath + "\\layout_template.json";
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
+        mongo.check();
 
         List<String> hin = mongo.getHeader();
         Map<String, Map<String, List<String>>> head = new LinkedHashMap();

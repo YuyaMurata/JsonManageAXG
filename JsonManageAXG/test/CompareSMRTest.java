@@ -1,9 +1,12 @@
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import mongodb.MongoDBPOJOData;
 import obj.MSyaryoObject;
 
@@ -18,7 +21,7 @@ import obj.MSyaryoObject;
  */
 public class CompareSMRTest {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         MongoDBPOJOData formDB = MongoDBPOJOData.create();
         formDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
 
@@ -27,12 +30,16 @@ public class CompareSMRTest {
                 .map(s -> formDB.getObj(s))
                 .filter(s -> s.getData("KOMTRAX_SMR") != null)
                 .forEach(s -> {
-                    //detect(s.getName(), s.getData("KOMTRAX_SMR"));
-                    output(s.getName(), s.getData("KOMTRAX_SMR"));
+            try {
+                //detect(s.getName(), s.getData("KOMTRAX_SMR"));
+                output(s.getName(), s.getData("KOMTRAX_SMR"));
+            } catch (AISTProcessException ex) {
+                Logger.getLogger(CompareSMRTest.class.getName()).log(Level.SEVERE, null, ex);
+            }
                 });
     }
 
-    private static void detect(String n, Map<String, List<String>> smr) {
+    private static void detect(String n, Map<String, List<String>> smr) throws AISTProcessException {
         Integer temp = 0;
         List<String> dates = new ArrayList<>();
         for (String date : smr.keySet()) {
@@ -54,7 +61,7 @@ public class CompareSMRTest {
         }
     }
     
-    private static void output(String n, Map<String, List<String>> smr) {
+    private static void output(String n, Map<String, List<String>> smr) throws AISTProcessException {
 
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(n + "_smr.csv")) {
             pw.println("date,value");

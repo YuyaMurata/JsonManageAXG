@@ -1,5 +1,6 @@
 
 import analizer.MSyaryoAnalizer;
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ import obj.MSyaryoObject;
 public class ExtractSPSyaryo {
     private static MongoDBPOJOData shDB;
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
         shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         

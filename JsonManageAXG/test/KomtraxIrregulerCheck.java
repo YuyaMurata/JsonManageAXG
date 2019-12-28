@@ -1,4 +1,5 @@
 
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -23,12 +24,12 @@ public class KomtraxIrregulerCheck {
 
     private static MongoDBPOJOData shDB;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
         kmerrCheck();
     }
 
-    private static void kmerrCheck() {
+    private static void kmerrCheck() throws AISTProcessException {
         shDB.set("json", "komatsuDB_PC200_Clean", MSyaryoObject.class);
         MHeaderObject header = shDB.getHeader();
 

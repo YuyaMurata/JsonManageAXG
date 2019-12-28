@@ -6,6 +6,7 @@
 package tools;
 
 import analizer.MSyaryoAnalizer;
+import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import java.io.PrintWriter;
@@ -27,7 +28,7 @@ public class AttachedSyaryoInfo {
     public static MongoDBPOJOData db;
     private static List<String> keyList;
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws AISTProcessException {
         db = MongoDBPOJOData.create();
         db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
         keyList = db.getKeyList();
@@ -38,7 +39,7 @@ public class AttachedSyaryoInfo {
         addInfo("PC200_エンジンOV.csv", "AttachedInfo_PC200_エンジンOV.csv");
     }
     
-    private static void addInfo(String file, String out){
+    private static void addInfo(String file, String out) throws AISTProcessException{
         //日付の追加
         //SMRの追加
         

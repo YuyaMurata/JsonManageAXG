@@ -62,8 +62,6 @@ public class MSyaryoObjectFormatting {
         
         formDB.close();
         
-        //中間コレクション削除
-        //shuffleDB.clear();
         shuffleDB.close();
         
     }

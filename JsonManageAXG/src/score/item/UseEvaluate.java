@@ -40,19 +40,19 @@ public class UseEvaluate extends EvaluateTemplate {
         SCORE_TARGET = new ArrayList();
 
         USE_DATAKEYS = ((Map<String, Map<String, Map<String, String>>>) settings).entrySet().stream()
-                            .filter(e -> e.getKey().charAt(0) != '#')
-                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            .filter(e -> e.getKey().charAt(0) != '#')
+            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         HEADER_OBJ = h;
 
         //設定ファイルのヘッダ変換　データ項目.行.列
         USE_DATAKEYS.entrySet().stream()
-                .forEach(e -> {
-                    List<String> hlist = e.getValue().entrySet().stream()
-                            .flatMap(d -> createHeader(e.getKey(), d).stream())
-                            .collect(Collectors.toList());
-                    super.setHeader(e.getKey(), hlist);
-                }
-                );
+            .forEach(e -> {
+                List<String> hlist = e.getValue().entrySet().stream()
+                    .flatMap(d -> createHeader(e.getKey(), d).stream())
+                    .collect(Collectors.toList());
+                super.setHeader(e.getKey(), hlist);
+            }
+            );
     }
 
     //設定ファイルからヘッダを作成
@@ -61,30 +61,30 @@ public class UseEvaluate extends EvaluateTemplate {
         if (!d.getValue().containsKey("SUM")) {
             //通常のヘッダ処理
             itemHeader = d.getValue().entrySet().stream()
-                    .filter(di -> di.getKey().charAt(0) != '#') //設定情報を読み込まない
-                    .filter(di -> !di.getKey().equals("HEADER"))
-                    .flatMap(di -> Arrays.stream(d.getValue().get("HEADER").split(",")).map(dj -> d.getKey() + "." + di.getKey() + "." + dj))
-                    .collect(Collectors.toList());
+                .filter(di -> di.getKey().charAt(0) != '#') //設定情報を読み込まない
+                .filter(di -> !di.getKey().equals("HEADER"))
+                .flatMap(di -> Arrays.stream(d.getValue().get("HEADER").split(",")).map(dj -> d.getKey() + "." + di.getKey() + "." + dj))
+                .collect(Collectors.toList());
         } else {
             //行和を計算する場合のヘッダ処理
             if (d.getValue().get("SUM").equals("COLUMN")) {
                 itemHeader = Arrays.stream(d.getValue().get("HEADER").split(","))
-                        .map(dj -> d.getKey() + ".SUM("
-                        + d.getValue().keySet().stream()
-                                .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
-                                .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
-                                .collect(Collectors.joining(".")) + ")."
-                        + dj).collect(Collectors.toList());
+                    .map(dj -> d.getKey() + ".SUM("
+                    + d.getValue().keySet().stream()
+                        .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
+                        .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                        .collect(Collectors.joining(".")) + ")."
+                    + dj).collect(Collectors.toList());
             } else {
                 //列和を計算する場合のヘッダ処理
                 itemHeader = d.getValue().keySet().stream()
-                        .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
-                        .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
-                        .map(di -> d.getKey() + "."
-                        + di + ".SUM("
-                        + Arrays.stream(d.getValue().get("HEADER").split(","))
-                                .collect(Collectors.joining(".")) + ")"
-                        ).collect(Collectors.toList());
+                    .filter(di -> di.charAt(0) != '#') //設定情報を読み込まない
+                    .filter(di -> !di.equals("HEADER") && !di.equals("SUM"))
+                    .map(di -> d.getKey() + "."
+                    + di + ".SUM("
+                    + Arrays.stream(d.getValue().get("HEADER").split(","))
+                        .collect(Collectors.joining(".")) + ")"
+                    ).collect(Collectors.toList());
             }
         }
 
@@ -102,11 +102,11 @@ public class UseEvaluate extends EvaluateTemplate {
     @Override
     public Map<String, List<String>> extract(ESyaryoObject s) {
         Map<String, List<String>> map = USE_DATAKEYS.entrySet().stream()
-                .collect(Collectors.toMap(
-                        ld -> ld.getKey(),
-                        ld -> ld.getValue().keySet().stream()
-                                .collect(Collectors.toList())
-                ));
+            .collect(Collectors.toMap(
+                ld -> ld.getKey(),
+                ld -> ld.getValue().keySet().stream()
+                    .collect(Collectors.toList())
+            ));
 
         return map;
     }
@@ -114,18 +114,18 @@ public class UseEvaluate extends EvaluateTemplate {
     @Override
     public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = sv.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey(), //評価項目
-                        e -> e.getValue().stream().filter(d -> !d.isEmpty()).flatMap(d -> { //データ項目
-                            Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
-                            List<String> h = HEADER_OBJ.getHeader(d);
-                            if (h != null) {
-                                return inData(setting, h, s, d);
-                            } else {
-                                return outData(setting, h, s, d);
-                            }
-                        }).collect(Collectors.toList())
-                ));
+            .collect(Collectors.toMap(
+                e -> e.getKey(), //評価項目
+                e -> e.getValue().stream().filter(d -> !d.isEmpty()).flatMap(d -> { //データ項目
+                    Map<String, String> setting = USE_DATAKEYS.get(e.getKey()).get(d);
+                    List<String> h = HEADER_OBJ.getHeader(d);
+                    if (h != null) {
+                        return inData(setting, h, s, d);
+                    } else {
+                        return outData(setting, h, s, d);
+                    }
+                }).collect(Collectors.toList())
+            ));
         return data;
     }
 
@@ -155,33 +155,33 @@ public class UseEvaluate extends EvaluateTemplate {
 
     private List<String> nosum(Map<String, String> setting, List<String> setH, List<String> dataH, Map<String, List<String>> d) {
         return d.entrySet().stream()
-                .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
-                .flatMap(di
-                        -> setH.stream()
-                        .map(hi -> {
-                            String[] set = setting.get("INDEX") != null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
-                            return mask(set[setH.indexOf(hi)], di.getValue().get(dataH.indexOf(hi)));
-                        })
-                ).collect(Collectors.toList());
+            .filter(di -> setting.get(di.getKey()) != null ? true : setting.get("INDEX") != null)
+            .flatMap(di
+                -> setH.stream()
+                .map(hi -> {
+                    String[] set = setting.get("INDEX") != null ? setting.get("INDEX").split(",") : setting.get(di.getKey()).split(",");
+                    return mask(set[setH.indexOf(hi)], di.getValue().get(dataH.indexOf(hi)));
+                })
+            ).collect(Collectors.toList());
     }
 
     private List<String> sum(Map<String, String> setting, List<String> setH, List<String> dataH, Map<String, List<String>> d) {
         if (setting.get("SUM").equals("COLUMN")) {
             return setH.stream()
-                    .map(hj
-                            -> d.entrySet().stream()
-                            .map(di -> mask(setting.get(di.getKey()).split(",")[setH.indexOf(hj)], di.getValue().get(dataH.indexOf(hj))))
-                            .mapToDouble(di -> Double.valueOf(di)).sum())
-                    .map(sum -> String.valueOf(sum))
-                    .collect(Collectors.toList());
+                .map(hj
+                    -> d.entrySet().stream()
+                    .map(di -> mask(setting.get(di.getKey()).split(",")[setH.indexOf(hj)], di.getValue().get(dataH.indexOf(hj))))
+                    .mapToDouble(di -> Double.valueOf(di)).sum())
+                .map(sum -> String.valueOf(sum))
+                .collect(Collectors.toList());
         } else {
             return setting.keySet().stream().filter(hi -> !hi.equals("HEADER") && !hi.equals("SUM"))
-                    .map(hi
-                            -> setH.stream()
-                            .map(hj -> mask(setting.get(hi).split(",")[setH.indexOf(hj)], d.get(hi).get(dataH.indexOf(hj))))
-                            .mapToDouble(dj -> Double.valueOf(dj)).sum())
-                    .map(sum -> String.valueOf(sum))
-                    .collect(Collectors.toList());
+                .map(hi
+                    -> setH.stream()
+                    .map(hj -> mask(setting.get(hi).split(",")[setH.indexOf(hj)], d.get(hi).get(dataH.indexOf(hj))))
+                    .mapToDouble(dj -> Double.valueOf(dj)).sum())
+                .map(sum -> String.valueOf(sum))
+                .collect(Collectors.toList());
         }
     }
 
@@ -237,20 +237,23 @@ public class UseEvaluate extends EvaluateTemplate {
         List<DataVector> cidavg = cidScore(cids);
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        if (splitor == null) {
+            return;
+        }
 
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
-                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.reverseOrder()))
-                .map(i -> i).collect(Collectors.toList());
+            .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.reverseOrder()))
+            .map(i -> i).collect(Collectors.toList());
 
         //スコアリング
         sort.stream().forEach(i -> {
             splitor.get(i).getPoints().stream()
-                    .map(sp -> sp.cid)
-                    .forEach(cid -> {
-                        cids.get(cid).stream().forEach(e -> {
-                            e.score = sort.indexOf(i) + 1;
-                        });
+                .map(sp -> sp.cid)
+                .forEach(cid -> {
+                    cids.get(cid).stream().forEach(e -> {
+                        e.score = sort.indexOf(i) + 1;
                     });
+                });
         });
     }
 
@@ -259,32 +262,34 @@ public class UseEvaluate extends EvaluateTemplate {
 
         //全体平均
         List<Double> avg = SCORE_TARGET.stream()
-                .map(t -> cids.values().stream()
-                .flatMap(v -> v.stream().map(vi -> vi.getPoint()[h.indexOf(t)]))
-                .mapToDouble(cij -> cij).average().getAsDouble())
-                .collect(Collectors.toList());
+            .map(t -> cids.values().stream()
+            .flatMap(v -> v.stream().map(vi -> vi.getPoint()[h.indexOf(t)]))
+            .mapToDouble(cij -> cij).average())
+            .filter(es -> es.isPresent())
+            .map(es -> es.getAsDouble())
+            .collect(Collectors.toList());
         //System.out.println("AVG:" + avg);
 
         //各CID平均
         Map<Integer, List<Double>> cidAvg = cids.entrySet().stream()
-                .collect(Collectors.toMap(
-                        cid -> cid.getKey(),
-                        cid -> SCORE_TARGET.stream()
-                                .map(t -> cid.getValue().stream()
-                                .map(ci -> ci.getPoint()[h.indexOf(t)])
-                                .mapToDouble(cij -> cij).average().getAsDouble())
-                                .collect(Collectors.toList())
-                ));
+            .collect(Collectors.toMap(
+                cid -> cid.getKey(),
+                cid -> SCORE_TARGET.stream()
+                    .map(t -> cid.getValue().stream()
+                    .map(ci -> ci.getPoint()[h.indexOf(t)])
+                    .mapToDouble(cij -> cij).average().getAsDouble())
+                    .collect(Collectors.toList())
+            ));
         //cidAvg.entrySet().stream().forEach(System.out::println);
 
         //CIDと平均の比率を計算
         List<DataVector> vec = cidAvg.entrySet().stream()
-                .map(cid
-                        -> new DataVector(cid.getKey(),
-                        IntStream.range(0, cid.getValue().size()).boxed()
-                                .mapToDouble(i -> cid.getValue().get(i) / avg.get(i))
-                                .average().getAsDouble()))
-                .collect(Collectors.toList());
+            .map(cid
+                -> new DataVector(cid.getKey(),
+                IntStream.range(0, cid.getValue().size()).boxed()
+                    .mapToDouble(i -> cid.getValue().get(i) / avg.get(i))
+                    .average().getAsDouble()))
+            .collect(Collectors.toList());
 
         //System.out.println(vec);
         return vec;
