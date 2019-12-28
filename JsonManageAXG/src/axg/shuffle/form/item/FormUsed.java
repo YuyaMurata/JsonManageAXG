@@ -52,7 +52,7 @@ public class FormUsed extends FormItem{
             }
             return data;
         }
-
+        
         //複数存在するときの処理
         String key = "";
         for (String date : data.keySet()) {
@@ -65,9 +65,9 @@ public class FormUsed extends FormItem{
             }
 
             //新車より前に存在する中古車情報を削除
-            if (Integer.valueOf(d) <= Integer.valueOf(newd)) {
-                continue;
-            }
+            //if (Integer.valueOf(d) <= Integer.valueOf(newd)) {
+            //    continue;
+            //}
 
             if (!key.equals(d)) {
                 key = d;

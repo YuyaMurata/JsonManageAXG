@@ -5,7 +5,7 @@
  */
 package score.item;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import score.cluster.ClusteringESyaryo;
 import score.cluster.DataVector;
 import score.obj.ESyaryoObject;
@@ -35,22 +35,24 @@ public class UseEvaluate extends EvaluateTemplate {
 
     public UseEvaluate(Map settings, MHeaderObject h) {
         super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
-        settings.remove("#EVALUATE");
 
         //スコア基準値の取得
         SCORE_TARGET = new ArrayList();
 
-        USE_DATAKEYS = (Map<String, Map<String, Map<String, String>>>) settings;
+        USE_DATAKEYS = ((Map<String, Map<String, Map<String, String>>>) settings).entrySet().stream()
+                            .filter(e -> e.getKey().charAt(0) != '#')
+                            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         HEADER_OBJ = h;
 
         //設定ファイルのヘッダ変換　データ項目.行.列
-        USE_DATAKEYS.entrySet().forEach(e -> {
-            List<String> hlist = e.getValue().entrySet().stream()
-                    .flatMap(d -> createHeader(e.getKey(), d).stream())
-                    .collect(Collectors.toList());
-            super.setHeader(e.getKey(), hlist);
-        }
-        );
+        USE_DATAKEYS.entrySet().stream()
+                .forEach(e -> {
+                    List<String> hlist = e.getValue().entrySet().stream()
+                            .flatMap(d -> createHeader(e.getKey(), d).stream())
+                            .collect(Collectors.toList());
+                    super.setHeader(e.getKey(), hlist);
+                }
+                );
     }
 
     //設定ファイルからヘッダを作成

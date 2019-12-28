@@ -27,7 +27,7 @@ public class SnappyMap {
         return null;
     }
     
-    public static Object toMap(byte[] bytes){
+    public static Object toObject(byte[] bytes){
         try {
             return getObject(Snappy.uncompress(bytes));
         } catch (IOException ex) {

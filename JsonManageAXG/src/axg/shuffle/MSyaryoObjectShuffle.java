@@ -213,7 +213,7 @@ public class MSyaryoObjectShuffle {
     }
 
     //テンプレート生成
-    public static String[] createTemplate(String db, String collection, String templatePath) {
+    public static String[] createTemplate(String db, String collection, String templatePath) throws AISTProcessException {
         String file = templatePath + "\\shuffle_template.json";
         String file2 = templatePath + "\\layout_template.json";
         MongoDBData mongo = MongoDBData.create();

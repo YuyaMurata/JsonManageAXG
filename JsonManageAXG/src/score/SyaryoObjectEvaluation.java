@@ -5,6 +5,7 @@
  */
 package score;
 
+import exception.AISTProcessException;
 import score.cluster.ClusteringESyaryo;
 import score.item.AgeSMREvaluate;
 import score.item.EvaluateTemplate;
@@ -15,7 +16,6 @@ import score.survive.SurvivalESyaryo;
 import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
-import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,7 +33,7 @@ public class SyaryoObjectEvaluation {
         this.extract = extract;
     }
 
-    public void scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) {
+    public void scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) throws AISTProcessException {
         //メンテナンス分析
         
         EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
@@ -78,27 +78,7 @@ public class SyaryoObjectEvaluation {
         PythonCommand.py("py\\compare_score.py", pathScore);
     }
 
-    public static void main(String[] args) {
-        SyaryoObjectExtract soe = new SyaryoObjectExtract("json", "komatsuDB_PC200_Form"); //"PC200_DB_Form" with GPS "komatsuDB_PC200_Form"
-        soe.setUserDefine("project\\komatsuDB_PC200\\config\\PC200_user_define.json");
-        
-        SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(soe);
-        System.out.println("スコアリング開始");
-        
-        Map mainte = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_maintenance.json");
-        Map use = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_use.json");
-        Map agesmr = MapToJSON.toMap("project\\komatsuDB_PC200\\config\\PC200_agesmr.json");
-        eval.scoring(
-                mainte, 
-                use, 
-                agesmr, 
-                "out");
-        
-        //比較
-        eval.compare(new String[]{"out", "1_1", "2_1", "3_1"});
-    }
-
-    private static void print(EvaluateTemplate eval, String file) {
+    private static void print(EvaluateTemplate eval, String file) throws AISTProcessException {
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                                                 .flatMap(h -> h.getValue().stream()
@@ -111,7 +91,7 @@ public class SyaryoObjectEvaluation {
     }
 
     //メンテナンスのみ
-    private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) {
+    private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) throws AISTProcessException {
         String file = "file\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             //評価結果

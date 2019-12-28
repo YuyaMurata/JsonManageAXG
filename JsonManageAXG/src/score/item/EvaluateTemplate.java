@@ -5,7 +5,7 @@
  */
 package score.item;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import score.obj.ESyaryoObject;
 import java.util.HashMap;
 import java.util.List;

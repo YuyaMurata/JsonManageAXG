@@ -25,25 +25,18 @@ public class FormKomtrax extends FormItem{
 
     //KOMTRAXデータの整形 (値の重複除去、日付の整形、小数->整数)
     public static void form(MSyaryoObject syaryo, MHeaderObject header) {
-        syaryo.setData("KOMTRAX_SMR", formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR"), syaryo.getData("生産")));
+        syaryo.setData("KOMTRAX_SMR", formKMSMR(syaryo.getData("KOMTRAX_SMR"), header.getHeader("KOMTRAX_SMR")));
     }
 
-    private static Map formKMSMR(Map<String, List<String>> data, List<String> index, Map<String, List<String>> product) {
+    private static Map formKMSMR(Map<String, List<String>> data, List<String> index) {
         if(check(data))
             return null;
-        
-        if(check(product))
-            return null;
-        
         
         TreeMap<Integer, List<String>> map = new TreeMap<>();
 
         int dbIdx = index.indexOf("KOMTRAX_SMR.DB");
         int smrIdx = index.indexOf("KOMTRAX_SMR.SMR_VALUE");
         int unitIdx = index.indexOf("KOMTRAX_SMR.DAILY_UNIT");
-        
-        //初期値の設定
-        String initDate = product.keySet().stream().findFirst().get().split("#")[0];
         
         //KOMTRAX_ACT を取得
         Map<String, List<String>> actSMR = data.entrySet().parallelStream()
@@ -74,7 +67,6 @@ public class FormKomtrax extends FormItem{
         //マージしたものをKOMTRAX_SMRデータに上書き
         Map<String, List<String>> newMap = new TreeMap<>();
         map.entrySet().stream()
-                .filter(e -> Integer.valueOf(initDate) <= e.getKey())
                 .forEach(e -> {
             Integer k = e.getKey();
             List<String> v = e.getValue();
@@ -85,8 +77,8 @@ public class FormKomtrax extends FormItem{
             newMap.put(k.toString(), v);
         });
         
-        List<String> initValue = Arrays.asList(new String[]{"EQP車両", "0", "1"});
-        newMap.put(initDate, initValue);
+        //List<String> initValue = Arrays.asList(new String[]{"EQP車両", "0", "1"});
+        //newMap.put(initDate, initValue);
         
         return newMap;
     }

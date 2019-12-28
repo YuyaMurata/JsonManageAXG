@@ -9,6 +9,7 @@ import axg.shuffle.form.util.FormalizeUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -30,14 +31,21 @@ public class FormNew extends FormItem {
         int nu = indexList.indexOf("新車.ＮＵ区分");
         data = data.entrySet().stream()
                 .filter(e -> e.getValue().get(nu).equals("N"))
+                .filter(e -> e.getKey().length() >= 8)
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
         if (data != null && deploy != null) {
-            //なぜか空が存在した場合
-            if (data.isEmpty()) {
-                data = null;
-            } else {
-                deff = Math.abs(FormalizeUtils.dsub(data.keySet().stream().findFirst().get(), deploy.keySet().stream().findFirst().get())) / 30;
+            Optional<String> deployDate = deploy.keySet().stream()
+                                        .filter(d -> d.length()>=8)
+                                        .sorted()
+                                        .limit(1).findFirst();
+            Optional<String> newDate = data.keySet().stream()
+                                        .filter(d -> d.length()>=8)
+                                        .sorted()
+                                        .limit(1).findFirst();
+            
+            if(deployDate.isPresent() && newDate.isPresent()){
+                deff = Math.abs(FormalizeUtils.dsub(newDate.get(), deployDate.get())) / 30;
             }
         }
 

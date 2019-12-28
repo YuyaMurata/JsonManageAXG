@@ -1,5 +1,5 @@
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.stream.Collectors;

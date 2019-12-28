@@ -7,10 +7,10 @@ package axg.check;
 
 import exception.AISTProcessException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
+import java.util.Set;
 import java.util.stream.Collectors;
 import obj.MHeaderObject;
 
@@ -22,11 +22,6 @@ public class CheckSettings {
 
     //標準的な設定確認
     public static void check(MHeaderObject h, String setting, Map<String, Map<String, List<String>>> map) throws AISTProcessException {
-        //読み込み確認
-        if (map == null) {
-            throw new AISTProcessException(setting + "設定ファイル読み込み，JSON形式に誤りがあります．");
-        }
-
         //ファイル構成の確認
         try {
             map.values().stream().map(m -> (Map<String, List<String>>) m).mapToInt(m -> m.values().size()).sum();
@@ -67,13 +62,11 @@ public class CheckSettings {
 
     //シャッフルとレイアウトの対応確認
     public static void check(Map<String, Map<String, List<String>>> shuffle, Map<String, Map<String, List<String>>> layout) throws AISTProcessException {
-        if (layout == null) {
-            throw new AISTProcessException("レイアウトファイル読み込み，JSON形式に誤りがあります．");
-        }
-
         //データ項目が正しいか確認
-        List<String> exists = shuffle.keySet().stream()
-                .filter(d -> layout.get(d) == null)
+        Set<String> dkeys = new HashSet<>(shuffle.keySet());
+        layout.keySet().stream().forEach(dkeys::add);
+        List<String> exists = dkeys.stream()
+                .filter(d -> layout.get(d) == null || shuffle.get(d) == null)
                 .collect(Collectors.toList());
         if (!exists.isEmpty()) {
             throw new AISTProcessException("レイアウト設定ファイルに誤り : 下記項目がレイアウトに存在しません．\n   " + exists);
@@ -87,6 +80,4 @@ public class CheckSettings {
             throw new AISTProcessException("レイアウト設定ファイルに誤り : 下記項目のレコード長が異なります．\n   " + exists);
         }
     }
-
-    //型の確認
 }

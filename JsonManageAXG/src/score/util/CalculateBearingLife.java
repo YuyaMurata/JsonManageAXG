@@ -5,7 +5,7 @@
  */
 package score.util;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import score.obj.ESyaryoObject;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -118,16 +118,5 @@ public class CalculateBearingLife {
     private void printMatrix(Double[][] d){
         Arrays.stream(d).map(di -> Arrays.asList(di).toString())
                 .forEach(System.out::println);
-    }
-    
-    public static void main(String[] args){
-        MongoDBPOJOData db = MongoDBPOJOData.create();
-        db.set("json", "PC200_DB_Form", MSyaryoObject.class);
-        
-        MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
-        ESyaryoObject esyaryo =  new ESyaryoObject(new MSyaryoAnalizer(db.getObj("PC200-10- -451749")));
-        
-        CalculateBearingLife be = new CalculateBearingLife(esyaryo, db.getHeader());
-        System.out.println(be.life());
     }
 }

@@ -81,7 +81,7 @@ public class FormParts extends FormItem{
                     cancels.add(sbn);
                 } else {
                     if (c > q) {
-                        System.err.println(sbn + ":" + q + ", cancel=" + c);
+                        //System.err.println(sbn + ":" + q + ", cancel=" + c);
                         cancels.add(sbn);
                     } else {
                         list.set(quant, String.valueOf(q - c));

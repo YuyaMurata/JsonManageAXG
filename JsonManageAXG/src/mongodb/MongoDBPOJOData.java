@@ -15,6 +15,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
 import com.mongodb.client.model.IndexOptions;
+import exception.AISTProcessException;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -53,9 +54,12 @@ public class MongoDBPOJOData {
         return new MongoDBPOJOData();
     }
 
-    public void set(String dbn, String col, Class clazz) {
+    public void set(String dbn, String col, Class clazz) throws AISTProcessException {
         this.db = client.getDatabase(dbn);
         this.coll = db.getCollection(col, clazz);
+        
+        if(this.coll.count() <= 0)
+            throw new AISTProcessException("MongoDBでのデータ取得を失敗しました：DB="+dbn+" COLLECTTION="+col);
     }
     
     public MHeaderObject getHeader(){

@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
+import exception.AISTProcessException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,7 +28,7 @@ import java.util.Map;
  */
 public class MapToJSON {
 
-    public static void toJSON(String filename, Map index) {
+    public static void toJSON(String filename, Map index) throws AISTProcessException {
         try (JsonWriter writer = new JsonWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), "SJIS")))) {
             writer.setIndent("  ");
 
@@ -34,11 +36,11 @@ public class MapToJSON {
             gson.toJson(index, Map.class, writer);
 
         } catch (IOException e) {
-            System.out.println(index);
+            throw new AISTProcessException("出力先フォルダが存在しません："+filename);
         }
     }
 
-    public static Map toMapSJIS(String filename) {
+    public static Map toMapSJIS(String filename) throws AISTProcessException {
         Map<String, String> index;
         try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename), "SJIS")))) {
 
@@ -48,12 +50,13 @@ public class MapToJSON {
             Gson gson = new Gson();
             index = gson.fromJson(reader, type);
         } catch (Exception e) {
-            return null;
+            throw new AISTProcessException("読み込みファイルが存在しません or JSON形式でありません："+filename);
         }
 
         return index;
     }
 
+    /*
     public static Map toMap(String filename) {
         Map<String, String> index;
         try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename))))) {
@@ -69,5 +72,5 @@ public class MapToJSON {
         }
 
         return index;
-    }
+    }*/
 }

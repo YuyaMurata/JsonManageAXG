@@ -20,6 +20,7 @@ import axg.shuffle.form.item.FormUsed;
 import axg.shuffle.form.item.FormWork;
 import axg.shuffle.form.rule.DataRejectRule;
 import axg.shuffle.form.util.FormalizeUtils;
+import exception.AISTProcessException;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import java.util.List;
@@ -33,11 +34,7 @@ import mongodb.MongoDBPOJOData;
  * @author zz17390
  */
 public class MSyaryoObjectFormatting {
-    public static void main(String[] args) {
-        form("json", "komatsuDB_PC200");
-    }
-    
-    public static void form(String db, String collection){
+    public static void form(String db, String collection) throws AISTProcessException{
         Long start = System.currentTimeMillis();
         
         //シャッフリング用 Mongoコレクションの読み込み

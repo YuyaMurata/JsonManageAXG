@@ -5,6 +5,7 @@
  */
 package file;
 
+import exception.AISTProcessException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
  * @author ZZ17390
  */
 public class ListToCSV {
-    public static List<String> toList(String csv){
+    public static List<String> toList(String csv) throws AISTProcessException{
         try(BufferedReader br = CSVFileReadWrite.readerSJIS(csv)){
             List<String> list = new ArrayList<>();
             String line;
@@ -32,7 +33,7 @@ public class ListToCSV {
         }
     }
     
-    public static Map<String, String> toMap(String csv, int k, int v){
+    public static Map<String, String> toMap(String csv, int k, int v) throws AISTProcessException{
         List<String> l = toList(csv);
         
         Map<String, String> map = l.stream()
@@ -46,7 +47,7 @@ public class ListToCSV {
         return map;
     }
     
-    public static Map<String, String> toKeyMap(String csv, int k, int v){
+    public static Map<String, String> toKeyMap(String csv, int k, int v) throws AISTProcessException{
         List<String> l = toList(csv);
         
         Map<String, String> map = l.stream()
@@ -61,7 +62,7 @@ public class ListToCSV {
         return map;
     }
     
-    public static void toCSV(String csv, List list){
+    public static void toCSV(String csv, List list) throws AISTProcessException{
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS(csv)){
             list.stream().forEach(pw::println);   
         }

@@ -5,7 +5,7 @@
  */
 package score.time;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import java.util.List;
 import java.util.stream.Collectors;
 

@@ -5,7 +5,7 @@
  */
 package score.obj;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

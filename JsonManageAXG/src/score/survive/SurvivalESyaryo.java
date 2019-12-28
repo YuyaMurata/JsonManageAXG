@@ -5,12 +5,12 @@
  */
 package score.survive;
 
+import exception.AISTProcessException;
 import score.item.EvaluateTemplate;
 import score.obj.ESyaryoObject;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -33,7 +33,7 @@ public class SurvivalESyaryo {
     public static Integer DELTA = 1;
 
     //故障解析　外部呼出し時のメソッド　(累積の故障発生確率の計測)
-    public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
+    public static void acmfailure(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) throws AISTProcessException {
         //ファイル出力パス
         PATH = outPath;
 
@@ -54,13 +54,12 @@ public class SurvivalESyaryo {
         });
 
         //グループごとの故障分析
-        group.entrySet().stream().forEach(g -> {
-            analize(g.getKey(), g.getValue());
-        });
+        for(String g : group.keySet())
+            analize(g, group.get(g));
     }
 
     //故障解析
-    public static void analize(String gkey, List<ESyaryoObject> g) {
+    public static void analize(String gkey, List<ESyaryoObject> g) throws AISTProcessException {
         TreeMap<Double, Set<String>> fail = new TreeMap<>();
         TreeMap<Double, Integer> count = new TreeMap<>();
 
@@ -122,7 +121,8 @@ public class SurvivalESyaryo {
                                         s -> s.getMTBF(xidx, svidx)));
         return mtbfMap;
     }
-
+    
+    /*
     //生存解析 外部呼出し時のメソッド
     public static void survival(EvaluateTemplate mainte, EvaluateTemplate use, EvaluateTemplate agesmr, String outPath) {
         //ファイル出力パス
@@ -186,6 +186,7 @@ public class SurvivalESyaryo {
         //グループごとの故障確率
         Map<String, List<String>> map = new TreeMap<>();
         group.entrySet().stream().forEach(g -> map.putAll(km(g.getKey(), g.getValue())));
+        
         map.entrySet().stream().forEach(e -> {
             String s = e.getValue().get(e.getValue().size() - 1);
             List<String> d = new ArrayList(data.get(e.getKey()));
@@ -196,7 +197,7 @@ public class SurvivalESyaryo {
     }
 
     //カプラン・マイヤー法の計算
-    private static Map<String, List<String>> km(String gkey, Map<String, List<String>> g) {
+    private static Map<String, List<String>> km(String gkey, Map<String, List<String>> g) throws AISTProcessException {
         Map<Double, List<String>> m = new TreeMap<>();
         g.entrySet().stream()
                 .forEach(e -> {
@@ -244,7 +245,7 @@ public class SurvivalESyaryo {
         Map result = scoring(g, fail);
 
         return result;
-    }
+    }*/
 
     //解析結果のスコアリング
     private static Map scoring(Map<String, List<String>> g, Map<Double, Double> fail) {
@@ -278,7 +279,7 @@ public class SurvivalESyaryo {
     }
     
     //解析結果のCSV出力
-    private static void printCSV(int totalSyaryo, long totalFail, Map<Double, Set<String>> failur, Map<Double, Integer> remain, Map<Double, Double> result, String filename){
+    private static void printCSV(int totalSyaryo, long totalFail, Map<Double, Set<String>> failur, Map<Double, Integer> remain, Map<Double, Double> result, String filename) throws AISTProcessException{
         //故障率データ出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)) {
             //分析情報

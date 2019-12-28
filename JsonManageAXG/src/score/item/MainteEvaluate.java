@@ -5,7 +5,7 @@
  */
 package score.item;
 
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import score.cluster.ClusteringESyaryo;
 import score.cluster.DataVector;
 import score.obj.ESyaryoObject;
@@ -33,9 +33,10 @@ public class MainteEvaluate extends EvaluateTemplate {
 
     public MainteEvaluate(Map<String, String> settings, Map<String, List<String>> def) {
         super.enable = settings.get("#EVALUATE").equals("ENABLE");
-        settings.remove("#EVALUATE");
         
-        MAINTE_INTERVAL = settings;
+        MAINTE_INTERVAL = settings.entrySet().stream()
+                                .filter(e -> e.getKey().charAt(0) != '#')
+                                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         PARTS_DEF = def;
         super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
     }

@@ -6,7 +6,7 @@
 package score.item;
 
 import axg.shuffle.form.util.FormalizeUtils;
-import score.analizer.MSyaryoAnalizer;
+import analizer.MSyaryoAnalizer;
 import score.obj.ESyaryoObject;
 import score.time.TimeSeriesObject;
 import java.util.ArrayList;
@@ -31,14 +31,13 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
     public AgeSMREvaluate(Map<String, String> settings, Map<String, List<String>> def) {
         super.enable = settings.get("#EVALUATE").equals("ENABLE");
-        settings.remove("#EVALUATE");
         
         super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT"}));
-        AGE_SMR_SETTING = settings.entrySet().stream()
-                .filter(e -> e.getKey().contains("#"))
+        AGE_SMR_SETTING = settings;
+        //AGE_SMR_SETTING.keySet().stream().forEach(settings::remove);
+        AGE_SMR_PARTS = settings.entrySet().stream()
+                .filter(e -> e.getKey().charAt(0) != '#')
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        AGE_SMR_SETTING.keySet().stream().forEach(settings::remove);
-        AGE_SMR_PARTS = settings;
 
         super._settings = AGE_SMR_SETTING;
 
@@ -126,7 +125,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 .limit(1)
                 .flatMap(l -> l.stream())
                 .collect(Collectors.toList());
-
+        
         Map norm = _header.get("経年/SMR").stream()
                 .collect(Collectors.toMap(
                         h -> h,

@@ -19,7 +19,7 @@ public class MHeaderObject {
     private ObjectId id;
     private List<String> header;
     private Boolean isCompleted;
-    private transient Map<String, List<String>> map;
+    public transient Map<String, List<String>> map;
     
     public MHeaderObject(){
     }
@@ -74,10 +74,6 @@ public class MHeaderObject {
     
     public void setHeader(final List header){
         this.header = header;
-    }
-    
-    public Map<String, List<String>> getHeaderMap(){
-        return map;
     }
     
     public Boolean getIsCompleted(){
