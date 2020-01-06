@@ -29,10 +29,10 @@ public class JsonManageAXGTestMain {
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
-        //shuffle();
-        SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
-        scenario(score, objex);
+        shuffle();
+        //SyaryoObjectExtract objex = extract();
+        //Map<String, String[]> score = scoring(objex);
+        //scenario(score, objex);
     }
     
     private static void cleansing() throws AISTProcessException{

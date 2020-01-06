@@ -73,13 +73,13 @@ public class MSyaryoObjectShuffle {
         System.out.println("ShufflingTime=" + (stop - start) + "ms");
 
         //中間コレクション削除
-        cleanDB.clear();
+        //cleanDB.clear();
         cleanDB.close();
 
         //整形処理
         MSyaryoObjectFormatting.form(db, collection);
         
-        shuffleDB.clear();
+        //shuffleDB.clear();
         shuffleDB.close();
     }
 
