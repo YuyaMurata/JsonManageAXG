@@ -123,7 +123,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         List<String> mid = data.values().stream()
                 .sorted(Comparator.comparing(v -> v.get(1), Comparator.naturalOrder()))
                 .limit(1)
-                .flatMap(l -> l.stream())
+                .flatMap(l -> l.stream().map(li -> li.length()==0?"-1":li))
                 .collect(Collectors.toList());
         
         Map norm = _header.get("経年/SMR").stream()
@@ -131,7 +131,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                         h -> h,
                         h -> Double.valueOf(mid.get(_header.get("経年/SMR").indexOf(h))))
                 );
-
+        
         return norm;
     }
     

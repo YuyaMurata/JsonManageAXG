@@ -10,6 +10,7 @@ import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -74,16 +75,16 @@ public class MSyaryoAnalizer {
         header = h;
 
         //受注情報の最大日付
-        try{
-        int idx = header.getHeaderIdx("受注", "受注.作業完了日");
-        LEAST_DATE = String.valueOf(
-                map.values().parallelStream()
-                    .filter(s -> s.getData("KOMTRAX_SMR") != null)
-                    .map(s -> s.getData("受注"))
-                    .filter(odr -> odr != null)
-                    .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
-                    .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
-        }catch(Exception e){
+        try {
+            int idx = header.getHeaderIdx("受注", "受注.作業完了日");
+            LEAST_DATE = String.valueOf(
+                    map.values().parallelStream()
+                            .filter(s -> s.getData("KOMTRAX_SMR") != null)
+                            .map(s -> s.getData("受注"))
+                            .filter(odr -> odr != null)
+                            .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
+                            .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
+        } catch (Exception e) {
             throw new AISTProcessException("分析用オブジェクト生成の初期化に失敗しました：整形設定で受注.作業完了日, KOMTRAX_SMRが定義されていない可能性があります．");
         }
     }
@@ -202,9 +203,10 @@ public class MSyaryoAnalizer {
 
             //主要な代理店
             mcompany = getValue("顧客", "顧客.会社コード", false).stream().filter(c -> c.length() > 1).findFirst().get();
-            
-            if(get("分類") != null)
+
+            if (get("分類") != null) {
                 dealer = getValue("分類", "分類.担当ディーラポイントコード", false).stream().findFirst().get();
+            }
         }
 
     }
@@ -271,19 +273,19 @@ public class MSyaryoAnalizer {
 
         return smr;
     }
-    
+
     public Integer getDateToSVSMR(String date) {
         Integer d = Integer.valueOf(date.split("#")[0]);
         TreeMap<String, List<String>> map = new TreeMap(syaryo.getData("SMR"));
-        
+
         Integer smr;
-        
-        try{
+
+        try {
             smr = Integer.valueOf(map.floorEntry(date).getValue().get(1));
-        }catch(NullPointerException e){
+        } catch (NullPointerException e) {
             smr = Integer.valueOf(map.ceilingEntry(date).getValue().get(1));
         }
-        
+
         return smr;
     }
 
@@ -410,9 +412,9 @@ public class MSyaryoAnalizer {
             List list = get(key).keySet().stream().map(s -> s.split("#")[0]).collect(Collectors.toList());
             return list;
         }
-        
+
         int idx = header.getHeaderIdx(key, index);
-        
+
         //例外処理2
         if (idx == -1) {
             return null;
@@ -451,12 +453,17 @@ public class MSyaryoAnalizer {
 
     //startからstopまでの経過日数計算
     public static Integer time(String start, String stop) {
-        LocalDate st = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        LocalDate sp = LocalDate.parse(stop, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        try {
+            LocalDate st = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyyMMdd"));
+            LocalDate sp = LocalDate.parse(stop, DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-        Long age = ChronoUnit.DAYS.between(st, sp);
+            Long age = ChronoUnit.DAYS.between(st, sp);
 
-        return age.intValue();
+            return age.intValue();
+        } catch (DateTimeParseException dt) {
+            //日付情報が異常な場合の処理
+            return -1;
+        }
     }
 
     //経過日から日付を計算
@@ -531,37 +538,52 @@ public class MSyaryoAnalizer {
         sb.append(" numWorks = " + numWorks + "\n");
         return sb.toString();
     }
-    
+
     public Map<String, String> toStringMap() {
         Map<String, String> strMap = new HashMap<>();
         strMap.put("SID", syaryo.getName());
-        strMap.put("機種", kind);strMap.put("型小変形", type);strMap.put("機番", no);
-        strMap.put("カンパニ", mcompany);strMap.put("担当ディーラ", dealer);
+        strMap.put("機種", kind);
+        strMap.put("型小変形", type);
+        strMap.put("機番", no);
+        strMap.put("カンパニ", mcompany);
+        strMap.put("担当ディーラ", dealer);
         strMap.put("登録顧客数", numOwners.toString());
-        strMap.put("納入年", lifestart);strMap.put("最新日付", lifestop);
-        strMap.put("中古", used.toString()); strMap.put("中古納入", usedlife.toString().replace(",", "_"));
+        strMap.put("納入年", lifestart);
+        strMap.put("最新日付", lifestop);
+        strMap.put("中古", used.toString());
+        strMap.put("中古納入", usedlife.toString().replace(",", "_"));
         strMap.put("KOMTRAX", komtrax.toString());
         strMap.put("オールサポート", allsupport.toString());
         strMap.put("オールサポート期間", termAllSupport.stream().map(s -> Arrays.asList(s).toString().replace(",", "_")).collect(Collectors.joining()));
         strMap.put("最大SMR(2017/05 推定値も含む)", maxSMR.toString());
-        strMap.put("受注数", numOrders.toString());strMap.put("作業数", numWorks.toString());strMap.put("部品数", numParts.toString());
+        strMap.put("受注数", numOrders.toString());
+        strMap.put("作業数", numWorks.toString());
+        strMap.put("部品数", numParts.toString());
         strMap.put("LCC", acmLCC.toString());
-        
+
         return strMap;
     }
 
     public static List<String> getHeader() {
         List<String> mapHeader = new ArrayList<>();
         mapHeader.add("SID");
-        mapHeader.add("機種");mapHeader.add("型小変形");mapHeader.add("機番");
-        mapHeader.add("カンパニ");mapHeader.add("担当ディーラ");
+        mapHeader.add("機種");
+        mapHeader.add("型小変形");
+        mapHeader.add("機番");
+        mapHeader.add("カンパニ");
+        mapHeader.add("担当ディーラ");
         mapHeader.add("登録顧客数");
-        mapHeader.add("納入年");mapHeader.add("最新日付");
-        mapHeader.add("中古"); mapHeader.add("中古納入");
+        mapHeader.add("納入年");
+        mapHeader.add("最新日付");
+        mapHeader.add("中古");
+        mapHeader.add("中古納入");
         mapHeader.add("KOMTRAX");
-        mapHeader.add("オールサポート");mapHeader.add("オールサポート期間");
+        mapHeader.add("オールサポート");
+        mapHeader.add("オールサポート期間");
         mapHeader.add("最大SMR(2017/05 推定値も含む)");
-        mapHeader.add("受注数");mapHeader.add("作業数");mapHeader.add("部品数");
+        mapHeader.add("受注数");
+        mapHeader.add("作業数");
+        mapHeader.add("部品数");
         mapHeader.add("LCC");
 
         return mapHeader;

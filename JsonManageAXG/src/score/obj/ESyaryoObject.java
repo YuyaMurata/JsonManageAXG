@@ -93,7 +93,7 @@ public class ESyaryoObject implements Clusterable {
     //経年/SMR専用のメソッド　複数サービスに対応
     public List<double[]> getPoints() {
         List<double[]> pointList = data.values().stream()
-                .map(v -> v.stream().mapToDouble(vi -> Double.valueOf(vi)).toArray())
+                .map(v -> v.stream().mapToDouble(vi -> vi.length()==0?-1d:Double.valueOf(vi)).toArray())
                 .collect(Collectors.toList());
         return pointList;
     }
