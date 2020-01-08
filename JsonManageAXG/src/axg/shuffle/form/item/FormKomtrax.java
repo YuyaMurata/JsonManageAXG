@@ -44,6 +44,7 @@ public class FormKomtrax extends FormItem{
         //KOMTRAX_ACT を取得
         Map<String, List<String>> actSMR = data.entrySet().parallelStream()
                 .filter(e -> e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
+                .filter(e -> e.getKey().split("#")[0].length() > 0)
                 .sorted(Comparator.comparing(e -> Integer.valueOf(e.getKey().split("#")[0]), Comparator.naturalOrder()))
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (e1,e2) -> e1, LinkedHashMap::new));
         Optional<String> actStartDate = actSMR.keySet().stream().findFirst();
@@ -53,6 +54,7 @@ public class FormKomtrax extends FormItem{
         if (actStartDate.isPresent()) {
             Integer stdate = Integer.valueOf(actStartDate.get().split("#")[0]);
             data.entrySet().stream()
+                    .filter(e -> e.getKey().split("#")[0].length() > 0)
                     .filter(e -> Integer.valueOf(e.getKey().split("#")[0]) <= stdate)
                     .filter(e -> !e.getValue().get(dbIdx).equals("KOMTRAX_ACT"))
                     .forEach(e -> map.put(Integer.valueOf(e.getKey().split("#")[0]), e.getValue()));

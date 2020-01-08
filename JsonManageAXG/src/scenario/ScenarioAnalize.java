@@ -56,7 +56,7 @@ public class ScenarioAnalize {
         }
     }
 
-    public void similar(List<String> syaryoList) throws AISTProcessException {
+    public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
 
         //テスト用
         Random rand = new Random();

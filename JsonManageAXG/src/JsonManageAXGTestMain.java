@@ -129,7 +129,7 @@ public class JsonManageAXGTestMain {
         
         //類似検索
         List<String> syaryoList = new ArrayList();   //選択した車両リスト
-        scenario.similar(syaryoList);
+        scenario.similar(syaryoList, "");
         System.out.println(scenario.getSearchResults());
     }
     
