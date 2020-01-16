@@ -11,6 +11,7 @@ import extract.SyaryoObjectExtract;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import score.time.TimeSeriesObject;
 
 /**
  * シナリオブロック 時系列解析の最小単位
@@ -23,6 +24,7 @@ public class ScenarioBlock {
     private static Map<String, MSyaryoAnalizer> analize;
     private static Boolean enable = true;
 
+    //車両抽出オブジェクトの取得
     public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) throws AISTProcessException {
         try {
             extract = ex;
@@ -46,6 +48,7 @@ public class ScenarioBlock {
         this.data = extract.getDefine().get(item);
     }
 
+    //シナリオ解析が可能か確認
     private void check(String item) throws AISTProcessException {
         if (!enable) {
             throw new AISTProcessException("抽出処理適用後のオブジェクトセットされていません．");
@@ -55,6 +58,26 @@ public class ScenarioBlock {
         }
     }
 
+    public Map<String, TimeSeriesObject> getBlockTimeSequence(){
+        Map<String, List<String>> aggregate = data.stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
+        Map<String, TimeSeriesObject> times = aggregate.entrySet().stream()
+                                    .filter(e -> analize.get(e.getKey()) != null)
+                                    .collect(Collectors.toMap(
+                                        e -> e.getKey(), 
+                                        e -> {
+                                            MSyaryoAnalizer s = analize.get(e.getKey());
+                                            List<String> dateSeq = e.getValue().stream()
+                                                                    .map(d -> d.split(",")[1])
+                                                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true))
+                                                                    .collect(Collectors.toList());
+                                            return new TimeSeriesObject(s, dateSeq);
+                                        })
+                                );
+        return times;
+    }
+    
+    //シナリオブロックの作成
+    
     private ScenarioBlock and;
 
     public void setAND(ScenarioBlock block) {

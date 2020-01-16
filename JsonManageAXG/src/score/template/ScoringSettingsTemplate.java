@@ -25,6 +25,8 @@ public class ScoringSettingsTemplate {
 
     public static String[] createTemplate(String db, String collection, String outPath) throws AISTProcessException {
         MongoDBPOJOData mongo = MongoDBPOJOData.create();
+        if(!collection.contains("_Form"))
+            collection = collection+"_Form";
         mongo.set(db, collection, MSyaryoObject.class);
         mongo.check();
         

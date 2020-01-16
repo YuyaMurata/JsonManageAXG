@@ -40,6 +40,7 @@ public class MapToJSON {
         }
     }
 
+    
     public static Map toMapSJIS(String filename) throws AISTProcessException {
         Map<String, String> index;
         try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename), "SJIS")))) {
@@ -55,22 +56,4 @@ public class MapToJSON {
 
         return index;
     }
-
-    /*
-    public static Map toMap(String filename) {
-        Map<String, String> index;
-        try (JsonReader reader = new JsonReader(new BufferedReader(new InputStreamReader(new FileInputStream(filename))))) {
-
-            Type type = new TypeToken<Map>() {
-            }.getType();
-
-            Gson gson = new Gson();
-            index = gson.fromJson(reader, type);
-        } catch (Exception e) {
-            System.err.println(filename);
-            return null;
-        }
-
-        return index;
-    }*/
 }

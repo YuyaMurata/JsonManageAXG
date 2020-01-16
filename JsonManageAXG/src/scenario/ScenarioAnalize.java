@@ -5,8 +5,11 @@
  */
 package scenario;
 
+import testmain.JsonManageAXGTestMain;
 import exception.AISTProcessException;
+import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
+import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +20,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import score.time.TimeSeriesObject;
 
 /**
  *
@@ -27,7 +31,17 @@ public class ScenarioAnalize {
     private Map<String, List<String>> scenarioMap;
     private Map<String, String[]> score;
     private String path;
-
+    private int delta = 100;
+    
+    //Test用
+    public static void main(String[] args) throws AISTProcessException {
+        Map<String, String[]> score = ((Map<String, List<String>>)MapToJSON.toMapSJIS("scenario_valid.json")).entrySet().stream()
+                                        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
+        //抽出処理
+        SyaryoObjectExtract objex = JsonManageAXGTestMain.extract();
+        JsonManageAXGTestMain.scenario(score, objex);
+    }
+    
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
         this.score = score;
         this.path = outPath;
@@ -37,6 +51,9 @@ public class ScenarioAnalize {
         scenarioMap = new LinkedHashMap<>();
         scenarioMap.put("適合シナリオ", new ArrayList<>());
         getBlock("", root);
+        
+        //時系列作成
+        timeSequece(root);
         
         //テスト用
         Random rand = new Random();
@@ -54,6 +71,15 @@ public class ScenarioAnalize {
             );
             s[h.indexOf("シナリオ")] = String.valueOf(num);
         }
+    }
+    
+    //車両ごとの時系列を作成
+    private Map<String, Integer[]> timeSequece(ScenarioBlock block){
+        System.out.println("時系列での解析を実行");
+        Map<String, TimeSeriesObject> times = block.getBlockTimeSequence();
+        times.entrySet().stream().map(t -> t.getKey()+":"+t.getValue().series).forEach(System.out::println);
+        
+        return null;
     }
 
     public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
@@ -82,31 +108,6 @@ public class ScenarioAnalize {
 
     public Map<String, String[]> getSearchResults() {
         return score;
-    }
-
-    public static void time(ScenarioBlock start) {
-        //車両ID + シナリオ(各部品のリスト)
-        Map<String, List<List<String>>> sidTimes = extract(start);
-    }
-
-    private static Map<String, List<List<String>>> extract(ScenarioBlock block) {
-        Map<String, List<List<String>>> map = new HashMap<>();
-        while ((block = block.getNEXT()) != null) {
-            Map<String, List<String>> dmap = block.data.parallelStream()
-                .collect(Collectors.groupingBy(d -> d.split(",")[0]));
-            dmap.entrySet().stream().forEach(d -> {
-                if (map.get(d.getKey()) == null) {
-                    map.put(d.getKey(), new ArrayList<>());
-                }
-                map.get(d.getKey()).add(d.getValue());
-            });
-        }
-
-        map.entrySet().stream().forEach(m -> {
-            System.out.println(m.getKey());
-        });
-
-        return null;
     }
 
     private void getBlock(String s, ScenarioBlock block) {

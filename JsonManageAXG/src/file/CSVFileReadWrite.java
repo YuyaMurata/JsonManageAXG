@@ -21,17 +21,6 @@ import java.io.UnsupportedEncodingException;
  * @author ZZ17390
  */
 public class CSVFileReadWrite {
-    public static PrintWriter writer(String filename){
-        try {
-            return  new PrintWriter(new OutputStreamWriter(new FileOutputStream(filename)));
-        } catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-            System.exit(0);
-        }
-        
-        return null;
-    }
-    
     public static PrintWriter writerSJIS(String filename) throws AISTProcessException{
         try {
             return  new PrintWriter(new OutputStreamWriter(new FileOutputStream(filename), "SJIS"));
@@ -49,15 +38,6 @@ public class CSVFileReadWrite {
         } catch (UnsupportedEncodingException ex) {
             ex.printStackTrace();
             System.exit(0);
-        }
-        
-        return null;
-    }
-    
-    public static BufferedReader reader(String filename){
-        try {
-            return new BufferedReader(new FileReader(filename));
-        } catch (FileNotFoundException ex) {
         }
         
         return null;
