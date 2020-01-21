@@ -124,7 +124,7 @@ public class JsonManageAXGTestMain {
         scenario.analize(startBlock);
         
         //各項目の件数とシナリオ件数
-        System.out.println(scenario.getScenarioResults());
+        scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
         
         //↓フォームに表示される項目
         System.out.println(scenario.getSearchResults());

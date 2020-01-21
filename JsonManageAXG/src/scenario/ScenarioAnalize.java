@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,7 +32,7 @@ public class ScenarioAnalize {
     private Map<String, List<String>> scenarioMap;
     private Map<String, String[]> score;
     private String path;
-    private int delta = 100;
+    private int delta = 1000;
     
     //Test用
     public static void main(String[] args) throws AISTProcessException {
@@ -53,33 +54,82 @@ public class ScenarioAnalize {
         getBlock("", root);
         
         //時系列作成
-        timeSequece(root);
+        BlockTimeSequence.DELTA = delta;
+        List<BlockTimeSequence> times = timesSequece(root);
+        Map<String, List<Integer>> timeDelays = timeSequenceDelay(times.get(0), times.get(1));
         
-        //テスト用
-        Random rand = new Random();
-        List<String> h = Arrays.asList(score.get("#HEADER"));
-        int lastN = scenarioMap.values().stream().map(v -> v.size()).reduce((e1, e2) -> e2).orElse(null);
-        for (String sid : score.keySet()) {
-            if (sid.equals("#HEADER") || (rand.nextInt(score.size())< lastN)) {
-                continue;
-            }
-
-            String[] s = score.get(sid);
-            Integer num = rand.nextInt(10);
-            IntStream.range(0, num).forEach(i
-                -> scenarioMap.get("適合シナリオ").add(sid + "," + i + "XX,OOO")
-            );
-            s[h.indexOf("シナリオ")] = String.valueOf(num);
-        }
+        //スコアの適合シナリオ件数更新
+        //適合シナリオ件数
+        int scidx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
+        timeDelays.entrySet().stream()
+                .forEach(td -> {
+                    String[] sc = score.get(td.getKey());
+                    sc[scidx] = String.valueOf(td.getValue().size());
+                    score.put(td.getKey(), sc);
+                    
+                    td.getValue().stream()
+                                .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey()+","+tdi));});
     }
     
-    //車両ごとの時系列を作成
-    private Map<String, Integer[]> timeSequece(ScenarioBlock block){
-        System.out.println("時系列での解析を実行");
-        Map<String, TimeSeriesObject> times = block.getBlockTimeSequence();
-        times.entrySet().stream().map(t -> t.getKey()+":"+t.getValue().series).forEach(System.out::println);
+    //Timeで接続された時系列を作成
+    private List<BlockTimeSequence> timesSequece(ScenarioBlock block){
+        List<BlockTimeSequence> times = new ArrayList<>();
+        ScenarioBlock b = block;
+        do{
+            times.add(new BlockTimeSequence(b));
+        }while((b = b.getNEXT()) != null);
         
-        return null;
+        return times;
+    }
+    
+    private Map<String, List<Integer>> timeSequenceDelay(BlockTimeSequence start, BlockTimeSequence stop){
+        System.out.println("2ブロックの時間遅れを解析");
+        Map<String, List<Integer>> delays = new HashMap<>();
+        
+        for(String sid : stop.timeSeq.keySet()){
+            Integer[] st = start.timeSeq.get(sid);
+            if(st == null){
+                System.out.println(sid+" シナリオ不適合");
+                continue;
+            }
+            Integer[] sp = stop.timeSeq.get(sid);
+            
+            //Diveide Time Area
+            List<Integer> area = IntStream.range(0, sp.length).boxed()
+                                        .filter(i -> 0 < sp[i])
+                                        .collect(Collectors.toList());
+            
+            //Time Area Delay
+            List<Integer> fitStart = new ArrayList();
+            List<Integer> fitStop = new ArrayList();
+            List<Integer> delay = new ArrayList();
+            int i = 0;
+            for(int j : area){
+                Optional<Integer> d = IntStream.range(i, j+1).boxed()
+                                            .filter(t -> 0 < st[t])
+                                            .findFirst();
+                if(d.isPresent()){
+                    //System.out.println(i+"-"+j+":"+d.get());
+                    delay.add(j-d.get());
+                    
+                    //適合時系列
+                    fitStart.add(d.get());
+                    fitStop.add(j);
+                }
+                
+                i = j+1;
+            }
+            
+            //不適合時系列の削除
+            start.reject(sid, fitStart);
+            stop.reject(sid, fitStop);
+            
+            delays.put(sid, delay);
+        }
+        
+        delays.entrySet().stream().map(tb -> tb.getKey()+":"+tb.getValue()).forEach(System.out::println);
+        
+        return delays;
     }
 
     public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
