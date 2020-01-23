@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
@@ -56,6 +57,8 @@ public class SyaryoObjectExtract {
                 .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
 
         masterSize = compressMap.size();
+        
+        db.close();
     }
 
     private void setSyaryoAnalizer() throws AISTProcessException {
@@ -139,7 +142,7 @@ public class SyaryoObjectExtract {
                     map.put(set.getKey(), setlist);
 
                     return map.entrySet().stream();
-                }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+                }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (a,b) -> b, TreeMap::new));
 
         //defineData.entrySet().stream().forEach(System.out::println);
         define = defineData;
@@ -208,21 +211,24 @@ public class SyaryoObjectExtract {
                 //ヘッダが存在するか確認
                 listHeader.stream().filter(h -> !h.equals("SID"))
                         .filter(h -> h.charAt(0) != '#')
-                        .filter(h -> header.getHeaderIdx(h.split("\\.")[0], h.split("\\.")[1]) < 0)
+                        .filter(h -> !header.getHeader().contains(h))
                         .forEach(exceptionItem::add);
 
                 csvSettings.put(f, compress(setting));
             } catch (AISTProcessException e) {
+                System.err.println(f);
                 exception.add(f);
             }
         }
 
-        //if (!exception.isEmpty()) {
-        //    throw new AISTProcessException("定義ファイル内の設定ファイルが存在しません：" + exception);
-        //}
-
+        //ファイルが存在し場合の処理
+        if (!exception.isEmpty()) {
+            System.out.println("定義中の参照ファイルが存在しません："+exception);
+            //throw new AISTProcessException("定義ファイル内の設定ファイルが存在しません：" + exception);
+        }
+        
         if (!exceptionItem.isEmpty() && exception.isEmpty()) {
-            throw new AISTProcessException("定義ファイルから参照されるファイルの設定項目が存在しません：" + exceptionItem);
+            throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません：" + exceptionItem);
         }
 
         return csvSettings;
@@ -333,14 +339,17 @@ public class SyaryoObjectExtract {
         sb.append(settingsCount.entrySet().stream()
                 .filter(s -> s.getKey().charAt(0) != '#')
                 .map(s -> s.getKey() + "=" + s.getValue())
+                .sorted()
                 .collect(Collectors.joining("\n")));
-
-        sb.append("\n削除データ項目");
+        
+        sb.append("\n\n削除データ項目\n");
         List<String> del = settingsCount.entrySet().stream()
                 .filter(s -> s.getKey().contains("#DELRECORD_"))
                 .map(s -> s.getKey().replace("#DELRECORD_", "") + "=" + s.getValue())
+                .sorted()
                 .collect(Collectors.toList());
         sb.append(del.stream().collect(Collectors.joining("\n")));
+        
         return sb.toString();
     }
 

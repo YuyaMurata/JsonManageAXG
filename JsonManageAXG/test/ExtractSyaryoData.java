@@ -28,7 +28,7 @@ public class ExtractSyaryoData {
 
     public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
-        shDB.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
+        shDB.set("json", "SMALLTEST_DB_Form", MSyaryoObject.class);
 
         String[] headers = new String[]{"部品"};
         List<String> out = extract(headers);

@@ -27,14 +27,14 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "komatsuDB_PC200";
+    static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
         //shuffle();
         SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
-        scenario(score, objex);
+        //Map<String, String[]> score = scoring(objex);
+        //scenario(score, objex);
     }
     
     public static void cleansing() throws AISTProcessException{

@@ -49,6 +49,10 @@ public class ScenarioAnalize {
     }
 
     public void analize(ScenarioBlock root) {
+        try{
+            System.out.println("ブロックの中身を確認:"+root);
+            System.out.println("ブロックの中身を確認:"+root.getNEXT());
+            
         scenarioMap = new LinkedHashMap<>();
         scenarioMap.put("適合シナリオ", new ArrayList<>());
         getBlock("", root);
@@ -69,6 +73,9 @@ public class ScenarioAnalize {
                     
                     td.getValue().stream()
                                 .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey()+","+tdi));});
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
     
     //Timeで接続された時系列を作成

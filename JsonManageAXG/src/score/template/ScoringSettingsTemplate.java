@@ -24,6 +24,8 @@ import obj.MSyaryoObject;
 public class ScoringSettingsTemplate {
 
     public static String[] createTemplate(String db, String collection, String outPath) throws AISTProcessException {
+        System.out.println("実行の確認");
+        
         MongoDBPOJOData mongo = MongoDBPOJOData.create();
         if(!collection.contains("_Form"))
             collection = collection+"_Form";
@@ -78,6 +80,7 @@ public class ScoringSettingsTemplate {
             ((Map<String, Map>)temp.get("評価項目")).putAll(t1);
         }
 
+        System.out.println(file+"を生成．");
         MapToJSON.toJSON(file, temp);
         
         return file;
@@ -91,6 +94,7 @@ public class ScoringSettingsTemplate {
         temp.put("#COMMENT", "ユーザ定義ファイルにより設定された項目のみ評価項目に設定可能");
         temp.put("評価項目", "インターバル");
 
+        System.out.println(file+"を生成．");
         MapToJSON.toJSON(file, temp);
         
         return file;
@@ -106,6 +110,7 @@ public class ScoringSettingsTemplate {
         temp.put("#VISUAL_X", "SMR");
         temp.put("#DIVIDE_X", "100");
 
+        System.out.println(file+"を生成．");
         MapToJSON.toJSON(file, temp);
         
         return file;
