@@ -12,7 +12,7 @@ args = sys.argv
 if len(args) <= 1:
     print("データが選択されていません")
     exit(0)
-if len(args) > 3:
+if len(args) > 2:
     path = args[1]
     for i in range(2,len(args)):
         files.append(args[i].replace('_', ',')+'_FR.csv')

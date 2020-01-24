@@ -286,12 +286,12 @@ public class UseEvaluate extends EvaluateTemplate {
         List<DataVector> vec = cidAvg.entrySet().stream()
             .map(cid
                 -> new DataVector(cid.getKey(),
-                IntStream.range(0, cid.getValue().size()).boxed()
-                    .mapToDouble(i -> cid.getValue().get(i) / avg.get(i))
+                IntStream.range(0, cid.getValue().size()).boxed() //0割りの例外処理
+                    .mapToDouble(i -> cid.getValue().get(i) / avg.get(i)==0d?1:avg.get(i))
                     .average().getAsDouble()))
             .collect(Collectors.toList());
-
         //System.out.println(vec);
+        
         return vec;
     }
 

@@ -5,6 +5,7 @@
  */
 package score.cluster;
 
+import java.util.Arrays;
 import org.apache.commons.math3.ml.clustering.Clusterable;
 
 /**
@@ -20,6 +21,15 @@ public class DataVector implements Clusterable{
         this.cid = cid;
         this.p = p;
         this.points = new double[]{p};
+    }
+    
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append(cid);
+        sb.append(":");
+        sb.append(p);
+        sb.append("\n");
+        return sb.toString();
     }
     
     @Override

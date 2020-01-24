@@ -27,13 +27,13 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "SMALLTEST_DB";
+    static String col = "komatsuDB_PC200";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
         //shuffle();
         SyaryoObjectExtract objex = extract();
-        //Map<String, String[]> score = scoring(objex);
+        Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -90,8 +90,8 @@ public class JsonManageAXGTestMain {
     
     public static Map<String, String[]> scoring(SyaryoObjectExtract objex) throws AISTProcessException{
         //スコアリングのテンプレート生成
-        String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
-        System.out.println(Arrays.toString(templates));
+        //String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
+        //System.out.println(Arrays.toString(templates));
         
         //設定ファイルの読み込み
         Map mainte = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_maintenance_settings.json");

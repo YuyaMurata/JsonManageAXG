@@ -110,6 +110,11 @@ public class SurvivalESyaryo {
         for (Double smr : fail.keySet()) {
             Integer failCnt = fail.get(smr).size();
             Integer remN = count.get(smr);
+            
+            if(remN==0){
+                System.err.println("残存台数の算出に誤りがあります.smr="+smr+" fail="+failCnt);
+                remN=1;
+            }
 
             Double surv = before * (remN - failCnt) / remN;
             before = surv;

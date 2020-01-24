@@ -43,7 +43,7 @@ public class ScenarioBlock {
 
     public ScenarioBlock(String item) throws AISTProcessException {
         check(item);
-
+        System.out.println(item);
         this.item = item;
         this.data = extract.getDefine().get(item);
     }
@@ -101,6 +101,7 @@ public class ScenarioBlock {
     private ScenarioBlock next;
 
     public void setNEXT(ScenarioBlock block) {
+        System.out.println(block.item);
         this.next = block;
     }
 

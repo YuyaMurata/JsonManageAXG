@@ -52,7 +52,7 @@ public class SyaryoObjectExtract {
 
         header = db.getHeader();
 
-        compressMap = db.getKeyList().parallelStream().limit(10) //テスト用
+        compressMap = db.getKeyList().parallelStream()//.limit(10) //テスト用
                 .map(sid -> db.getObj(sid))
                 .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
 
