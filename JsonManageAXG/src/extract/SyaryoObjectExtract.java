@@ -26,7 +26,7 @@ import obj.MSyaryoObject;
 
 /**
  * 車両データの抽出
- *
+ * パフォーマンスチューニングを行う
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {

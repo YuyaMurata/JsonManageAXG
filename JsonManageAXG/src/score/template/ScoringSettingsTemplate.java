@@ -26,9 +26,14 @@ public class ScoringSettingsTemplate {
     public static String[] createTemplate(String db, String collection, String outPath) throws AISTProcessException {
         System.out.println("実行の確認");
         
+        System.out.println("db="+db);
+        System.out.println("col="+collection);
+        
         MongoDBPOJOData mongo = MongoDBPOJOData.create();
+        
         if(!collection.contains("_Form"))
             collection = collection+"_Form";
+        
         mongo.set(db, collection, MSyaryoObject.class);
         mongo.check();
         
@@ -36,6 +41,8 @@ public class ScoringSettingsTemplate {
         files[0] = createMainte(mongo, outPath);
         files[1] = createUse(mongo, outPath);
         files[2] = createAgeSMR(mongo, outPath);
+        
+        mongo.close();
         
         return files;
     }

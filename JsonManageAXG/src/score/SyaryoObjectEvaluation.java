@@ -40,60 +40,66 @@ public class SyaryoObjectEvaluation {
     }
 
     public Map<String, String[]> scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) throws AISTProcessException {
-        //メンテナンス分析
-        EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
+        try {
+            //メンテナンス分析
+            EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
 
-        //使われ方分析
-        EvaluateTemplate evalUse = new UseEvaluate(useSettings, extract.getHeader());
+            //使われ方分析
+            EvaluateTemplate evalUse = new UseEvaluate(useSettings, extract.getHeader());
 
-        //経年/SMR分析
-        EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
+            //経年/SMR分析
+            EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
 
-        extract.getObjMap().values().parallelStream().forEach(s -> {
-            evalMainte.add(s);
-            evalUse.add(s);
-            evalAgeSMR.add(s);
-        });
+            extract.getObjMap().values().parallelStream().forEach(s -> {
+                evalMainte.add(s);
+                evalUse.add(s);
+                evalAgeSMR.add(s);
+            });
 
-        //クラスタリング
-        ClusteringESyaryo.cluster(evalMainte._eval.values());
-        ClusteringESyaryo.cluster(evalUse._eval.values());
+            //クラスタリング
+            ClusteringESyaryo.cluster(evalMainte._eval.values());
+            ClusteringESyaryo.cluster(evalUse._eval.values());
 
-        //スコアリング
-        evalMainte.scoring();
-        evalUse.scoring();
+            //スコアリング
+            evalMainte.scoring();
+            evalUse.scoring();
 
-        //故障解析
-        //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR, "out");
-        SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR, outPath);
+            //故障解析
+            //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR, "out");
+            SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR, outPath);
 
-        print(evalMainte, outPath + "\\mainte_score.csv");
-        MainteEvaluate.printImage(outPath + "\\mainte_score.csv", "AGE", "AVG", "SCORE");
-        AgeSMREvaluate.printImage(outPath);
-        print(evalUse, outPath + "\\use_score.csv");
-        print(evalAgeSMR, outPath + "\\agesmr_score.csv");
+            print(evalMainte, outPath + "\\mainte_score.csv");
+            MainteEvaluate.printImage(outPath + "\\mainte_score.csv", "AGE", "AVG", "SCORE");
+            AgeSMREvaluate.printImage(outPath);
+            print(evalUse, outPath + "\\use_score.csv");
+            print(evalAgeSMR, outPath + "\\agesmr_score.csv");
 
-        /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
+            /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
         evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
                 .forEach(s -> print(evalMainte, s));
-         */
+             */
+            //スコアの集約
+            Map<String, String[]> results = new LinkedHashMap();
+            results.put("#HEADER", new String[]{"SID", "シナリオ", "類似度", "メンテナンス", "使われ方", "経年/SMR"});
+            Random rand = new Random(); //テスト用
+            evalMainte._eval.keySet().stream().forEach(s -> {
+                String[] d = new String[6];
+                d[0] = s;
+                d[1] = "0";
+                d[2] = "0";
+                d[3] = String.valueOf(1 + rand.nextInt(3));//evalMainte._eval.get(s).score.toString();
+                d[4] = String.valueOf(1 + rand.nextInt(3));//evalUse._eval.get(s).score.toString();
+                d[5] = String.valueOf(1 + rand.nextInt(3));//evalAgeSMR._eval.get(s).score.toString();
+
+                results.put(s, d);
+
+            });
+            return results;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
-        //スコアの集約
-        Map<String, String[]> results = new LinkedHashMap();
-        results.put("#HEADER", new String[]{"SID", "シナリオ", "類似度", "メンテナンス", "使われ方", "経年/SMR"});
-        Random rand = new Random(); //テスト用
-        evalMainte._eval.keySet().stream().forEach(s -> {
-            String[] d = new String[6];
-            d[0] = s;
-            d[1] = "0";
-            d[2] = "0";
-            d[3] = String.valueOf(1+rand.nextInt(3));//evalMainte._eval.get(s).score.toString();
-            d[4] = String.valueOf(1+rand.nextInt(3));//evalUse._eval.get(s).score.toString();
-            d[5] = String.valueOf(1+rand.nextInt(3));//evalAgeSMR._eval.get(s).score.toString();
-            
-            results.put(s, d);
-        });
-        return results;
+        return null;
     }
 
     public Map<String, String> imageMap() {
@@ -113,12 +119,12 @@ public class SyaryoObjectEvaluation {
     private static void print(EvaluateTemplate eval, String file) throws AISTProcessException {
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
-                .flatMap(h -> h.getValue().stream()
-                .map(hv -> h.getKey() + "_" + hv))
-                .collect(Collectors.joining(",")) + ",AVG,CID,SCORE");
+                    .flatMap(h -> h.getValue().stream()
+                    .map(hv -> h.getKey() + "_" + hv))
+                    .collect(Collectors.joining(",")) + ",AVG,CID,SCORE");
             eval._eval.values().stream()
-                .map(s -> s.check())
-                .forEach(pw::println);
+                    .map(s -> s.check())
+                    .forEach(pw::println);
         }
     }
 
@@ -129,9 +135,9 @@ public class SyaryoObjectEvaluation {
             //評価結果
             pw.println("評価結果");
             pw.println("SID,DATE,AGE,SMR," + evtemp._header.entrySet().stream()
-                .flatMap(h -> h.getValue().stream()
-                .map(hv -> h.getKey() + "_" + hv))
-                .collect(Collectors.joining(",")) + ",CID");
+                    .flatMap(h -> h.getValue().stream()
+                    .map(hv -> h.getKey() + "_" + hv))
+                    .collect(Collectors.joining(",")) + ",CID");
             pw.println(eval.check());
             pw.println();
 
@@ -145,9 +151,9 @@ public class SyaryoObjectEvaluation {
             pw.println("評価対象となったサービス群");
             pw.println("評価対象,SID,作番," + String.join(",", header.getHeader("部品")) + ",日付,SMR");
             eval.sv.entrySet().stream()
-                .flatMap(e -> e.getValue().stream()
-                .map(d -> e.getKey() + "," + d + "," + eval.a.getSBNToDate(d.split(",")[1], true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(d.split(",")[1], true))))
-                .forEach(pw::println);
+                    .flatMap(e -> e.getValue().stream()
+                    .map(d -> e.getKey() + "," + d + "," + eval.a.getSBNToDate(d.split(",")[1], true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(d.split(",")[1], true))))
+                    .forEach(pw::println);
             pw.println();
 
             //評価に利用されなかったサービス
@@ -155,11 +161,11 @@ public class SyaryoObjectEvaluation {
             pw.println("作番," + String.join(",", header.getHeader("部品")) + ",日付,SMR");
             if (eval.a.syaryo.getData("部品") != null) {
                 eval.a.syaryo.getData("部品").entrySet().stream()
-                    .filter(e -> !eval.sv.values().stream()
-                    .flatMap(d -> d.stream().map(di -> di.split(",")[1]))
-                    .filter(d -> d.equals(e.getKey())).findFirst().isPresent())
-                    .map(e -> e.getKey() + "," + String.join(",", e.getValue()) + "," + eval.a.getSBNToDate(e.getKey(), true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(e.getKey(), true)))
-                    .forEach(pw::println);
+                        .filter(e -> !eval.sv.values().stream()
+                        .flatMap(d -> d.stream().map(di -> di.split(",")[1]))
+                        .filter(d -> d.equals(e.getKey())).findFirst().isPresent())
+                        .map(e -> e.getKey() + "," + String.join(",", e.getValue()) + "," + eval.a.getSBNToDate(e.getKey(), true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(e.getKey(), true)))
+                        .forEach(pw::println);
             }
         }
 

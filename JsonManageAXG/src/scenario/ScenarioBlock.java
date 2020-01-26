@@ -29,9 +29,9 @@ public class ScenarioBlock {
         try {
             extract = ex;
             analize = extract.getObjMap().entrySet().stream()
-                .collect(Collectors.toMap(
-                    e -> e.getKey(),
-                    e -> e.getValue()));
+                    .collect(Collectors.toMap(
+                            e -> e.getKey(),
+                            e -> e.getValue()));
         } catch (Exception e) {
             enable = false;
             throw new AISTProcessException("抽出処理に問題があります．");
@@ -42,10 +42,13 @@ public class ScenarioBlock {
     public List<String> data;
 
     public ScenarioBlock(String item) throws AISTProcessException {
-        check(item);
-        System.out.println(item);
-        this.item = item;
-        this.data = extract.getDefine().get(item);
+        try {
+            check(item);
+            this.item = item;
+            this.data = extract.getDefine().get(item);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //シナリオ解析が可能か確認
@@ -58,26 +61,25 @@ public class ScenarioBlock {
         }
     }
 
-    public Map<String, TimeSeriesObject> getBlockTimeSequence(){
+    public Map<String, TimeSeriesObject> getBlockTimeSequence() {
         Map<String, List<String>> aggregate = data.stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
         Map<String, TimeSeriesObject> times = aggregate.entrySet().stream()
-                                    .filter(e -> analize.get(e.getKey()) != null)
-                                    .collect(Collectors.toMap(
-                                        e -> e.getKey(), 
-                                        e -> {
-                                            MSyaryoAnalizer s = analize.get(e.getKey());
-                                            List<String> dateSeq = e.getValue().stream()
-                                                                    .map(d -> d.split(",")[1])
-                                                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true))
-                                                                    .collect(Collectors.toList());
-                                            return new TimeSeriesObject(s, dateSeq);
-                                        })
-                                );
+                .filter(e -> analize.get(e.getKey()) != null)
+                .collect(Collectors.toMap(
+                        e -> e.getKey(),
+                        e -> {
+                            MSyaryoAnalizer s = analize.get(e.getKey());
+                            List<String> dateSeq = e.getValue().stream()
+                                    .map(d -> d.split(",")[1])
+                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true))
+                                    .collect(Collectors.toList());
+                            return new TimeSeriesObject(s, dateSeq);
+                        })
+                );
         return times;
     }
-    
+
     //シナリオブロックの作成
-    
     private ScenarioBlock and;
 
     public void setAND(ScenarioBlock block) {

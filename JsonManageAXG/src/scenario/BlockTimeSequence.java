@@ -33,15 +33,16 @@ public class BlockTimeSequence {
                             int n = 10000 / DELTA;
                             Integer[] seq = new Integer[n];
                             Arrays.fill(seq, 0);
+                            
                             t.getValue().series.stream()
+                                    .filter(ti -> ti < 10000 && ti > -1)
                                     .map(ti -> ti / DELTA)
                                     .forEach(tidx -> seq[tidx] += 1);
                             return seq;
                         }
                 ));
-        times.entrySet().stream().map(tb -> tb.getKey()+":"+tb.getValue().series).forEach(System.out::println);
-        
-        timeSeq.entrySet().stream().map(tb -> tb.getKey()+":"+Arrays.asList(tb.getValue())).forEach(System.out::println);
+        //times.entrySet().stream().map(tb -> tb.getKey()+":"+tb.getValue().series).forEach(System.out::println);   
+        //timeSeq.entrySet().stream().map(tb -> tb.getKey()+":"+Arrays.asList(tb.getValue())).forEach(System.out::println);
     }
     
     public void reject(String sid, List<Integer> fit){
