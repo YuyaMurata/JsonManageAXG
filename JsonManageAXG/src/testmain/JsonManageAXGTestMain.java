@@ -30,10 +30,10 @@ public class JsonManageAXGTestMain {
     static String col = "komatsuDB_PC200";
     
     public static void main(String[] args) throws AISTProcessException {
-        //cleansing();
-        //shuffle();
-        SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
+        cleansing();
+        shuffle();
+        //SyaryoObjectExtract objex = extract();
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -41,26 +41,26 @@ public class JsonManageAXGTestMain {
         MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
 
         //テンプレート生成
-        String template = clean.createTemplate("project\\"+col+"\\config");
-        System.out.println("テンプレートファイル:"+template);
+        //String template = clean.createTemplate("project\\"+col+"\\config");
+        //System.out.println("テンプレートファイル:"+template);
         
         //クレンジング処理
         //clean.clean(template);
         clean.clean("project\\"+col+"\\config\\cleansing_settings.json");
         
         //クレンジングログ出力
-        clean.logPrint("project\\"+col+"\\log");
+        //clean.logPrint("project\\"+col+"\\log");
         
         //サマリの出力
-        System.out.println(clean.getSummary());
+        //System.out.println(clean.getSummary());
     }
     
     public static void shuffle() throws AISTProcessException{
         MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle(db, col);
         
         //テンプレート生成
-        String[] templates = shuffle.createTemplate("project\\"+col+"\\config");
-        System.out.println("テンプレートファイル:"+Arrays.toString(templates));
+        //String[] templates = shuffle.createTemplate("project\\"+col+"\\config");
+        //System.out.println("テンプレートファイル:"+Arrays.toString(templates));
         
         //シャッフリング処理
         //shuffle.shuffle(templates[0], templates[1]);

@@ -7,6 +7,7 @@ package axg.shuffle.form.item;
 
 import axg.shuffle.form.util.FormalizeUtils;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -86,6 +87,7 @@ public class FormNew extends FormItem {
         List list = new ArrayList();
         String key = "";
         String[] price = new String[3];
+        Arrays.fill(price, "");
         Boolean flg = true;
         for (String date : data.keySet()) {
             list = data.get(date);
@@ -115,7 +117,6 @@ public class FormNew extends FormItem {
                 list.set(hyomen + i, String.valueOf(Double.valueOf(s).intValue()));
             }
         }
-
         map.put(key, list);
 
         return map;

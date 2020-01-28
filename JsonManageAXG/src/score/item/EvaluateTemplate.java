@@ -99,4 +99,9 @@ public abstract class EvaluateTemplate {
     public abstract Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data);
     
     public abstract void scoring();
+    
+    public void infoPrint(String  info, Set<String> settings){
+        System.out.println(info);
+        settings.stream().forEach(System.out::println);
+    }
 }

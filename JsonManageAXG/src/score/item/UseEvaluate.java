@@ -53,6 +53,9 @@ public class UseEvaluate extends EvaluateTemplate {
                 super.setHeader(e.getKey(), hlist);
             }
             );
+        
+        //取得設定の出力
+        infoPrint("使われ方設定", USE_DATAKEYS.keySet());
     }
 
     //設定ファイルからヘッダを作成

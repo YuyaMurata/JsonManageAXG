@@ -42,6 +42,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         super._settings = AGE_SMR_SETTING;
 
         PARTS_DEF = def;
+        
+        //取得設定の出力
+        infoPrint("経年/SMR設定", AGE_SMR_PARTS.keySet());
     }
 
     @Override

@@ -7,6 +7,7 @@ package axg.shuffle;
 
 import axg.check.CheckSettings;
 import axg.shuffle.form.MSyaryoObjectFormatting;
+import axg.shuffle.form.util.ExecutableThreadPool;
 import exception.AISTProcessException;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
@@ -17,6 +18,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import mongodb.MongoDBData;
 
@@ -44,7 +48,7 @@ public class MSyaryoObjectShuffle {
         MongoDBPOJOData cleanDB = MongoDBPOJOData.create();
         cleanDB.set(db, collection + "_Clean", MSyaryoObject.class);
         cleanDB.check();
-        
+
         //設定ファイルの読み込み
         Map index = MapToJSON.toMapSJIS(shuffleSetting); //シャッフリング用
         Map layout = MapToJSON.toMapSJIS(layoutSetting); //ヘッダ用
@@ -54,7 +58,7 @@ public class MSyaryoObjectShuffle {
 
         //設定の検証
         checkSettings(hobj, index, layout);
-        
+
         long start = System.currentTimeMillis();
 
         //シャッフリング用 Mongoコレクションを生成
@@ -63,11 +67,19 @@ public class MSyaryoObjectShuffle {
         shuffleDB.clear();
         shuffleDB.coll.insertOne(recreateHeaderObj(layout));
 
-        //シャッフリング実行
-        List<String> sids = cleanDB.getKeyList();
-        sids.parallelStream()
-                .map(sid -> shuffleOne(hobj, cleanDB.getObj(sid), index))
-                .forEach(shuffleDB.coll::insertOne);
+        try {
+            //シャッフリング実行
+            ExecutableThreadPool.getInstance().threadPool.submit(()
+                    -> cleanDB.getKeyList().parallelStream()
+                            .map(sid -> cleanDB.getObj(sid))
+                            .map(obj -> shuffleOne(hobj, obj, index))
+                            .forEach(shuffleDB.coll::insertOne)).get();
+
+        } catch (InterruptedException | ExecutionException ex) {
+            System.err.println("シャッフリングエラー");
+            ex.printStackTrace();
+            throw new AISTProcessException("シャッフリングエラー");
+        }
 
         long stop = System.currentTimeMillis();
         System.out.println("ShufflingTime=" + (stop - start) + "ms");
@@ -78,7 +90,7 @@ public class MSyaryoObjectShuffle {
 
         //整形処理
         MSyaryoObjectFormatting.form(db, collection);
-        
+
         shuffleDB.clear();
         shuffleDB.close();
     }

@@ -28,7 +28,7 @@ public class CheckSettings {
         } catch (ClassCastException e) {
             throw new AISTProcessException(setting + "設定ファイルの構成に誤りがあります．");
         }
-        
+
         List<String> exists = new ArrayList<>();
         //データ項目が正しいか確認
         if (!setting.equals("シャッフル")) {
@@ -36,7 +36,9 @@ public class CheckSettings {
                     .filter(d -> h.getHeader(d) == null)
                     .collect(Collectors.toList());
             if (!exists.isEmpty()) {
-                throw new AISTProcessException(setting + "設定ファイルに誤り : 下記項目が存在しません．\n  " + exists);
+                System.err.println(setting + "設定ファイルの誤り");
+                System.err.println("設定ファイルの下記項目が存在しません．\n" + exists);
+                throw new AISTProcessException(setting + "設定ファイルの内容に誤りがあります．");
             }
         }
 
@@ -56,7 +58,9 @@ public class CheckSettings {
         }
 
         if (!exists.isEmpty()) {
-            throw new AISTProcessException(setting + "設定ファイルに誤り : 下記列が存在しません．\n  " + exists);
+            System.err.println(setting + "設定ファイルの誤り");
+            System.err.println("設定ファイルの項目に下記項目が存在しません．\n  " + exists);
+            throw new AISTProcessException(setting + "設定ファイルの項目に誤りがあります．");
         }
     }
 
@@ -69,7 +73,9 @@ public class CheckSettings {
                 .filter(d -> layout.get(d) == null || shuffle.get(d) == null)
                 .collect(Collectors.toList());
         if (!exists.isEmpty()) {
-            throw new AISTProcessException("レイアウト設定ファイルに誤り : 下記項目がレイアウトに存在しません．\n   " + exists);
+            System.err.println("レイアウト設定ファイルの誤り");
+            System.err.println("下記項目がレイアウトに存在しません．\n   " + exists);
+            throw new AISTProcessException("レイアウト設定ファイルに誤りがあります．");
         }
 
         //レコード列の確認
@@ -77,7 +83,9 @@ public class CheckSettings {
                 .filter(s -> shuffle.get(s).values().stream().findFirst().get().size() != layout.get(s).values().stream().findFirst().get().size())
                 .collect(Collectors.toList());
         if (!exists.isEmpty()) {
-            throw new AISTProcessException("レイアウト設定ファイルに誤り : 下記項目のレコード長が異なります．\n   " + exists);
+            System.err.println("レイアウト設定ファイルの誤り");
+            System.err.println("下記項目のレコード長が異なります．\n   " + exists);
+            throw new AISTProcessException("レイアウト設定ファイルに誤りがあります");
         }
     }
 }

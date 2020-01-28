@@ -39,8 +39,11 @@ public class MainteEvaluate extends EvaluateTemplate {
                                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         PARTS_DEF = def;
         super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
+        
+        //取得設定の出力
+        infoPrint("メンテナンス設定", MAINTE_INTERVAL.keySet());
     }
-
+    
     //対象サービスの抽出
     @Override
     public Map<String, List<String>> extract(ESyaryoObject s) {

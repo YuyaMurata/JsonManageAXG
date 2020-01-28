@@ -52,6 +52,7 @@ public class ScenarioAnalize {
         try {
             scenarioMap = new LinkedHashMap<>();
             scenarioMap.put("適合シナリオ", new ArrayList<>());
+            System.out.println("登録されたシナリオ：");
             getBlock("", root);
 
             //時系列作成
