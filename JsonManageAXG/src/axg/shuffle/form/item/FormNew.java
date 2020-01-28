@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class FormNew extends FormItem {
 
     public static Map form(Map<String, List<String>> data, Map<String, List<String>> born, Map<String, List<String>> deploy, List indexList) {
+        //新車情報からデータを取得
         if(check(data) || check(deploy))
             return null;
         

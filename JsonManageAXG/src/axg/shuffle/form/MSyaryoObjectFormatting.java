@@ -28,8 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 
@@ -73,9 +71,10 @@ public class MSyaryoObjectFormatting {
         formDB.createIndexes();
 
         formDB.close();
-
+        
+        //中間コレクションの削除
+        shuffleDB.clear();
         shuffleDB.close();
-
     }
 
     //1台の整形

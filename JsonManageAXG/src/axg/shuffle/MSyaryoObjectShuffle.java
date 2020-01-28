@@ -87,12 +87,11 @@ public class MSyaryoObjectShuffle {
         //中間コレクション削除
         cleanDB.clear();
         cleanDB.close();
+        
+        shuffleDB.close();
 
         //整形処理
         MSyaryoObjectFormatting.form(db, collection);
-
-        shuffleDB.clear();
-        shuffleDB.close();
     }
 
     //1台のシャッフリング
@@ -112,9 +111,6 @@ public class MSyaryoObjectShuffle {
                 //update map
                 Map<String, List<String>> subMap = idxMapping(map.get(idx.getKey()), idx2.getKey(), idx2.getValue(), header, syaryo);
                 map.put(idx.getKey(), subMap);
-
-                //
-                //testPrint(idx2.getKey() + ":" + idx2.getValue(), subMap);
             });
         });
 
@@ -124,19 +120,6 @@ public class MSyaryoObjectShuffle {
         obj.recalc();
 
         return obj;
-    }
-
-    //テスト用
-    private void testPrint(String idx, Map<String, List<String>> map) {
-        System.out.println(idx);
-
-        if (map.isEmpty()) {
-            System.out.println("Data Nothing");
-        } else {
-            map.entrySet().stream().map(e -> e.getKey() + ":" + e.getValue()).forEach(System.out::println);
-        }
-
-        System.out.println("");
     }
 
     //インデックスのマッピング

@@ -87,7 +87,7 @@ public class MSyaryoObjectCleansing {
             ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> originDB.getKeyList().parallelStream()
                             .map(sid -> originDB.get(sid))
-                            .map(obj -> spaceReject(obj))
+                            //.map(obj -> spaceReject(obj))
                             .map(obj -> cleanOne(obj))
                             .filter(obj -> obj != null)
                             .forEach(cleanDB.coll::insertOne)).get();
@@ -105,14 +105,15 @@ public class MSyaryoObjectCleansing {
         cleanDB.close();
     }
 
+    /*
     private MSyaryoObject spaceReject(MSyaryoObject obj) {
         Map<String, Map<String, List<String>>> map = new HashMap<>();
 
         obj.getMap().entrySet().parallelStream().forEach(e -> {
             Map<String, List<String>> m = new HashMap();
             e.getValue().entrySet().stream().forEach(e1 -> {
-                String e1k = e1.getKey().strip();
-                List<String> e1l = e1.getValue().stream().map(e1j -> e1j.strip()).collect(Collectors.toList());
+                String e1k = e1.getKey().trim();
+                List<String> e1l = e1.getValue().stream().map(e1j -> e1j.trim()).collect(Collectors.toList());
                 m.put(e1k, e1l);
             });
 
@@ -121,7 +122,7 @@ public class MSyaryoObjectCleansing {
 
         obj.setMap(map);
         return obj;
-    }
+    }*/
 
     //1台のクレンジング
     private MSyaryoObject cleanOne(MSyaryoObject obj) {

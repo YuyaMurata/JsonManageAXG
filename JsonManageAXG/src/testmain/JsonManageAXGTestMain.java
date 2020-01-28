@@ -3,6 +3,7 @@ package testmain;
 
 import axg.cleansing.MSyaryoObjectCleansing;
 import axg.shuffle.MSyaryoObjectShuffle;
+import axg.shuffle.form.MSyaryoObjectFormatting;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
@@ -31,7 +32,8 @@ public class JsonManageAXGTestMain {
     
     public static void main(String[] args) throws AISTProcessException {
         cleansing();
-        shuffle();
+        //shuffle();
+        //MSyaryoObjectFormatting.form(db, col);
         //SyaryoObjectExtract objex = extract();
         //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
