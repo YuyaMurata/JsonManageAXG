@@ -298,7 +298,7 @@ public class SyaryoObjectExtract {
     public Map<String, MSyaryoAnalizer> getObjMap() {
         if (analizeMap == null) {
             System.out.println("Setting Syaryo Analizer!");
-            analizeMap = extractMap.values().parallelStream()
+            analizeMap = extractMap.values().stream()
                     .map(s -> new MSyaryoAnalizer(s))
                     .collect(Collectors.toMap(sa -> sa.syaryo.getName(), sa -> sa));
         }

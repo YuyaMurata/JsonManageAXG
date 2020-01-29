@@ -7,7 +7,7 @@ package axg.shuffle;
 
 import axg.check.CheckSettings;
 import axg.shuffle.form.MSyaryoObjectFormatting;
-import axg.shuffle.form.util.ExecutableThreadPool;
+import thread.ExecutableThreadPool;
 import exception.AISTProcessException;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;

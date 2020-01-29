@@ -85,7 +85,9 @@ public class MSyaryoAnalizer {
                             .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
                             .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
         } catch (Exception e) {
-            throw new AISTProcessException("分析用オブジェクト生成の初期化に失敗しました：整形設定で受注.作業完了日, KOMTRAX_SMRが定義されていない可能性があります．");
+            System.err.println("分析用オブジェクト生成の初期化に失敗しました．");
+            System.err.println("整形設定で受注.作業完了日, KOMTRAX_SMRが定義されていない可能性があります．");
+            throw new AISTProcessException("分析用オブジェクト生成の初期化エラー");
         }
     }
 
@@ -161,8 +163,16 @@ public class MSyaryoAnalizer {
         }
 
         //最大SMR
-        maxSMR = getDateToSMR(LEAST_DATE);
-
+        try{
+            maxSMR = getDateToSMR(LEAST_DATE);
+        }catch(Exception e){
+            System.err.println(syaryo.getName());
+            System.err.println(LEAST_DATE);
+            System.err.println(smrDate);
+            e.printStackTrace();
+            System.exit(0);
+        }
+        
         //lifedead
         if (get("廃車") != null) {
             lifedead = get("廃車").keySet().stream().findFirst().get().split("#")[0];

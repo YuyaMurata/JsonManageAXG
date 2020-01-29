@@ -6,7 +6,7 @@
 package axg.cleansing;
 
 import axg.check.CheckSettings;
-import axg.shuffle.form.util.ExecutableThreadPool;
+import thread.ExecutableThreadPool;
 import axg.shuffle.form.util.FormalizeUtils;
 import compress.SnappyMap;
 import exception.AISTProcessException;

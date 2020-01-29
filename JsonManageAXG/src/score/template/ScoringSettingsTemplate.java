@@ -57,7 +57,7 @@ public class ScoringSettingsTemplate {
                 .findFirst();
 
         Map temp = new LinkedHashMap();
-        temp.put("#EVALUATE", "ENABLE");
+        temp.put("#EVALUATE", "DISABLE");
         temp.put("#COMMENT", "データの列ごとの合計で計算する場合はSUM:ROWをHEADER下に追加,行ごとの合計はCOLUMNとする");
 
         temp.put("評価項目", new LinkedHashMap<>());
@@ -97,7 +97,7 @@ public class ScoringSettingsTemplate {
         String file = path + "\\score_maintenance_template.json";
         
         Map temp = new LinkedHashMap();
-        temp.put("#EVALUATE", "ENABLE");
+        temp.put("#EVALUATE", "DISABLE");
         temp.put("#COMMENT", "ユーザ定義ファイルにより設定された項目のみ評価項目に設定可能");
         temp.put("評価項目", "インターバル");
 
@@ -111,7 +111,7 @@ public class ScoringSettingsTemplate {
         String file = path + "\\score_agesmr_template.json";
         
         Map temp = new LinkedHashMap();
-        temp.put("#EVALUATE", "ENABLE");
+        temp.put("#EVALUATE", "DISABLE");
         temp.put("#COMMENT", "ユーザ定義ファイルにより設定された項目のみ評価項目に設定可能");
         temp.put("評価項目", "左データに対するコメント入力箇所(入力は無くても良い)");
         temp.put("#VISUAL_X", "SMR");
