@@ -19,9 +19,11 @@ import axg.shuffle.form.item.FormSMR;
 import axg.shuffle.form.item.FormUsed;
 import axg.shuffle.form.item.FormWork;
 import axg.shuffle.form.rule.DataRejectRule;
+import axg.shuffle.form.util.FormInfoMap;
 import thread.ExecutableThreadPool;
 import axg.shuffle.form.util.FormalizeUtils;
 import exception.AISTProcessException;
+import java.util.HashMap;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import java.util.List;
@@ -64,14 +66,17 @@ public class MSyaryoObjectFormatting {
             ex.printStackTrace();
             throw new AISTProcessException("整形エラー");
         }
-
+        
+        //整形情報の登録
+        setFormInfo(formDB, db+"."+collection+"_Form");
+        
         long stop = System.currentTimeMillis();
         System.out.println("FormattingTime=" + (stop - start) + "ms");
-
-        formDB.createIndexes();
-
-        formDB.close();
         
+        //インデックスの作成
+        formDB.createIndexes();
+        formDB.close();
+
         //中間コレクションの削除
         shuffleDB.clear();
         shuffleDB.close();
@@ -163,6 +168,33 @@ public class MSyaryoObjectFormatting {
                 .filter(e -> !e.getValue().isEmpty())
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         syaryo.setMap(map);
+    }
+
+    //整形情報の登録
+    public static FormInfoMap setFormInfo(MongoDBPOJOData formDB, String dbcoll) throws AISTProcessException {
+        try {
+            int idx = formDB.getHeader().getHeaderIdx("受注", "作業完了日");
+            //整形実行
+            Integer maxLeastDate =
+                    ExecutableThreadPool.getInstance().threadPool.submit(()
+                    -> formDB.getKeyList().parallelStream()
+                            .map(sid -> formDB.getObj(sid))
+                            .filter(obj -> obj.getData("KOMTRAX_SMR") != null)
+                            .filter(obj -> obj.getData("受注") != null)
+                            .flatMap(obj -> obj.getData("受注").values().stream())
+                            .mapToInt(odr -> Integer.valueOf(odr.get(idx))).max().getAsInt()).get();
+        
+            Map infoMap = new HashMap();
+            infoMap.put("MAX_LEAST_DATE", maxLeastDate.toString());
+            FormInfoMap info = new FormInfoMap(dbcoll, infoMap);
+            FormalizeUtils.createFormInfo(info);
+            
+            return info;
+        } catch (InterruptedException | ExecutionException ex) {
+            System.err.println("KOMTRAX_SMR、受注情報が紐づいていません．");
+            ex.printStackTrace();
+            throw new AISTProcessException("整形データからの受注最大日付の取得エラー");
+        }
     }
 
 }

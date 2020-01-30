@@ -5,6 +5,8 @@
  */
 package axg.shuffle.form.util;
 
+import static com.mongodb.client.model.Filters.eq;
+import exception.AISTProcessException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import mongodb.MongoDBPOJOData;
 
 /**
  *
@@ -74,5 +77,26 @@ public class FormalizeUtils {
             date = date.split("#")[0].split(" ")[0].replace("-", "").substring(0, 8);
         
         return date;    
+    }
+    
+    public static void createFormInfo(FormInfoMap info){
+        String dbn = "info";
+        String col = "DB_FormInfo";
+        
+        MongoDBPOJOData db = MongoDBPOJOData.create();
+        db.set(dbn, col, FormInfoMap.class);
+        
+        db.coll.deleteOne(eq("name", info.getName()));
+        db.coll.insertOne(info);
+    }
+    
+    public static FormInfoMap getFormInfo(String dbcol) throws AISTProcessException{
+        String dbn = "info";
+        String col = "DB_FormInfo";
+        
+        MongoDBPOJOData db = MongoDBPOJOData.create();
+        db.set(dbn, col, FormInfoMap.class);
+        
+        return (FormInfoMap) db.coll.find(eq("name", dbcol)).first();
     }
 }

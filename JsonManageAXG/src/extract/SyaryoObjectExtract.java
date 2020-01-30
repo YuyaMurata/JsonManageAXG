@@ -8,6 +8,9 @@ package extract;
 import compress.SnappyMap;
 import exception.AISTProcessException;
 import analizer.MSyaryoAnalizer;
+import axg.shuffle.form.MSyaryoObjectFormatting;
+import axg.shuffle.form.util.FormInfoMap;
+import axg.shuffle.form.util.FormalizeUtils;
 import file.ListToCSV;
 import file.MapToJSON;
 import java.util.ArrayList;
@@ -33,13 +36,14 @@ public class SyaryoObjectExtract {
 
     public Map<String, Integer> settingsCount;
     private int masterSize;
-    private Map<String, byte[]> compressMap;
+    //private Map<String, byte[]> compressMap;
     private Map<String, MSyaryoObject> extractMap;
     private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
     private Set<String> deleteSet;
     private Map<String, List<String>> define;
     private Map<String, byte[]> csv;
+    private FormInfoMap info;
 
     public SyaryoObjectExtract(String dbn, String collection) throws AISTProcessException {
         if (!collection.contains("_Form")) {
@@ -51,12 +55,18 @@ public class SyaryoObjectExtract {
         db.check();
 
         header = db.getHeader();
-
+        
+        //整形時の情報を取得
+        info = FormalizeUtils.getFormInfo(dbn+"."+collection);
+        if(info == null)
+            info = MSyaryoObjectFormatting.setFormInfo(db, dbn+"."+collection);
+        
+        /*
         compressMap = db.getKeyList().parallelStream()//.limit(10) //テスト用
                 .map(sid -> db.getObj(sid))
                 .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
-
-        masterSize = compressMap.size();
+        */
+        masterSize = db.getKeyList().size();
         
         db.close();
     }

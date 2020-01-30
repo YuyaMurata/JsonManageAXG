@@ -55,7 +55,7 @@ public class MongoDBPOJOData {
         return new MongoDBPOJOData();
     }
 
-    public void set(String dbn, String col, Class clazz) throws AISTProcessException {
+    public void set(String dbn, String col, Class clazz){
         this.db = client.getDatabase(dbn);
         this.coll = db.getCollection(col, clazz);
     }
