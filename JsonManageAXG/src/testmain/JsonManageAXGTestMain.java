@@ -94,15 +94,15 @@ public class JsonManageAXGTestMain {
         //スコアリングのテンプレート生成
         String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
         System.out.println(Arrays.toString(templates));
-        Map mainte = MapToJSON.toMapSJIS(templates[0]);
-        Map use = MapToJSON.toMapSJIS(templates[1]);
-        Map agesmr = MapToJSON.toMapSJIS(templates[2]);
+        //Map mainte = MapToJSON.toMapSJIS(templates[0]);
+        //Map use = MapToJSON.toMapSJIS(templates[1]);
+        //Map agesmr = MapToJSON.toMapSJIS(templates[2]);
         
         
         //設定ファイルの読み込み
-        //Map mainte = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_maintenance_settings.json");
-        //Map use = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_use_settings.json");
-        //Map agesmr = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_agesmr_settings.json");
+        Map mainte = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_maintenance_settings.json");
+        Map use = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_use_settings.json");
+        Map agesmr = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_agesmr_settings.json");
         
         //スコアリング
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(objex);

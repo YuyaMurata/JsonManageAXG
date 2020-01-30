@@ -36,7 +36,7 @@ public class SyaryoObjectExtract {
 
     public Map<String, Integer> settingsCount;
     private int masterSize;
-    //private Map<String, byte[]> compressMap;
+    private Map<String, byte[]> compressMap;
     private Map<String, MSyaryoObject> extractMap;
     private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
@@ -61,18 +61,17 @@ public class SyaryoObjectExtract {
         if(info == null)
             info = MSyaryoObjectFormatting.setFormInfo(db, dbn+"."+collection);
         
-        /*
         compressMap = db.getKeyList().parallelStream()//.limit(10) //テスト用
                 .map(sid -> db.getObj(sid))
                 .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
-        */
+        
         masterSize = db.getKeyList().size();
         
         db.close();
     }
 
     private void setSyaryoAnalizer() throws AISTProcessException {
-        MSyaryoAnalizer.initialize(header, extractMap);
+        MSyaryoAnalizer.initialize(header, info);
         analizeMap = null;
     }
 
@@ -310,8 +309,10 @@ public class SyaryoObjectExtract {
             System.out.println("Setting Syaryo Analizer!");
             analizeMap = extractMap.values().stream()
                     .map(s -> new MSyaryoAnalizer(s))
+                    .filter(sa -> sa.get() != null)
                     .collect(Collectors.toMap(sa -> sa.syaryo.getName(), sa -> sa));
         }
+        System.out.println("分析用オブジェクト変換数:"+extractMap.size()+"->"+analizeMap.size());
 
         return analizeMap;
     }

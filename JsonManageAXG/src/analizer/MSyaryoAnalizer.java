@@ -5,6 +5,7 @@
  */
 package analizer;
 
+import axg.shuffle.form.util.FormInfoMap;
 import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
@@ -70,20 +71,13 @@ public class MSyaryoAnalizer {
     private static MHeaderObject header;
     private static int CNT;
 
-    public static void initialize(MHeaderObject h, Map<String, MSyaryoObject> map) throws AISTProcessException {
+    public static void initialize(MHeaderObject h, FormInfoMap info) throws AISTProcessException {
         CNT = 0;
         header = h;
 
         //受注情報の最大日付
         try {
-            int idx = header.getHeaderIdx("受注", "受注.作業完了日");
-            LEAST_DATE = String.valueOf(
-                    map.values().parallelStream()
-                            .filter(s -> s.getData("KOMTRAX_SMR") != null)
-                            .map(s -> s.getData("受注"))
-                            .filter(odr -> odr != null)
-                            .flatMap(odr -> odr.values().parallelStream().map(d -> d.get(idx)))
-                            .mapToInt(date -> Integer.valueOf(date)).max().getAsInt());
+            LEAST_DATE = info.getInfo("MAX_LEAST_DATE");
         } catch (Exception e) {
             System.err.println("分析用オブジェクト生成の初期化に失敗しました．");
             System.err.println("整形設定で受注.作業完了日, KOMTRAX_SMRが定義されていない可能性があります．");
@@ -92,14 +86,19 @@ public class MSyaryoAnalizer {
     }
 
     public MSyaryoAnalizer(MSyaryoObject obj) {
-        CNT++;
-        this.syaryo = obj;
+        try {
+            CNT++;
+            this.syaryo = obj;
 
-        //設定
-        settings();
+            //設定
+            settings();
 
-        if (CNT % 1000 == 0 && DISP_COUNT) {
-            System.out.println(CNT + " Trans SyaryoAnalizer");
+            if (CNT % 1000 == 0 && DISP_COUNT) {
+                System.out.println(CNT + " Trans SyaryoAnalizer");
+            }
+        } catch (Exception e) {
+            System.err.println(obj.getName()+":分析用オブジェクトへの変換要件を満たしません");
+            this.syaryo = null;
         }
     }
 
@@ -163,16 +162,8 @@ public class MSyaryoAnalizer {
         }
 
         //最大SMR
-        try{
-            maxSMR = getDateToSMR(LEAST_DATE);
-        }catch(Exception e){
-            System.err.println(syaryo.getName());
-            System.err.println(LEAST_DATE);
-            System.err.println(smrDate);
-            e.printStackTrace();
-            System.exit(0);
-        }
-        
+        maxSMR = getDateToSMR(LEAST_DATE);
+
         //lifedead
         if (get("廃車") != null) {
             lifedead = get("廃車").keySet().stream().findFirst().get().split("#")[0];
