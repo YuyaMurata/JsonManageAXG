@@ -59,7 +59,7 @@ public class MSyaryoObjectFormatting {
             //整形実行
             ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> shuffleDB.getKeyList().parallelStream()
-                            .map(sid -> formOne(header, shuffleDB.getObj(sid)))
+                            .map(sid -> formOne(header, (MSyaryoObject)shuffleDB.getObj(sid)))
                             .forEach(formDB.coll::insertOne)).get();
         } catch (InterruptedException | ExecutionException ex) {
             System.err.println("整形エラー");
@@ -178,7 +178,7 @@ public class MSyaryoObjectFormatting {
             Integer maxLeastDate =
                     ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> formDB.getKeyList().parallelStream()
-                            .map(sid -> formDB.getObj(sid))
+                            .map(sid -> (MSyaryoObject)formDB.getObj(sid))
                             .filter(obj -> obj.getData("KOMTRAX_SMR") != null)
                             .filter(obj -> obj.getData("受注") != null)
                             .flatMap(obj -> obj.getData("受注").values().stream())
@@ -186,6 +186,8 @@ public class MSyaryoObjectFormatting {
         
             Map infoMap = new HashMap();
             infoMap.put("MAX_LEAST_DATE", maxLeastDate.toString());
+            infoMap.put("MACHINE_KIND", formDB.getKeyList().get(0).split("-")[0]);
+            
             FormInfoMap info = new FormInfoMap(dbcoll, infoMap);
             FormalizeUtils.createFormInfo(info);
             

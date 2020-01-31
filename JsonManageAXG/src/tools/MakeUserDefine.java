@@ -62,7 +62,7 @@ public class MakeUserDefine {
         
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS(out)){
             pw.println("SID,部品.作番,"+String.join(",", db.getHeader().getHeader(dkey)));
-            keyList.stream().map(k -> db.getObj(k))
+            keyList.stream().map(k -> (MSyaryoObject)db.getObj(k))
                     .filter(s -> s.getData(dkey) != null)
                     .peek(s -> System.out.println(s.getName()+":"+s.getCount(dkey)))
                     .forEach(s ->{
@@ -85,7 +85,7 @@ public class MakeUserDefine {
         
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS(out)){
             pw.println("SID,部品.作番,"+String.join(",", db.getHeader().getHeader(dkey)));
-            keyList.stream().map(k -> db.getObj(k))
+            keyList.stream().map(k -> (MSyaryoObject)db.getObj(k))
                     .filter(s -> s.getData(dkey) != null)
                     .peek(s -> System.out.println(s.getName()+":"+s.getCount(dkey)))
                     .forEach(s ->{
@@ -106,7 +106,7 @@ public class MakeUserDefine {
         
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS(out)){
             pw.println("SID,作番,"+String.join(",", db.getHeader().getHeader(dkey)));
-            keyList.stream().map(k -> db.getObj(k))
+            keyList.stream().map(k -> (MSyaryoObject)db.getObj(k))
                     .filter(s -> s.getData(dkey) != null)
                     .peek(s -> System.out.println(s.getName()+":"+s.getCount(dkey)))
                     .forEach(s ->{

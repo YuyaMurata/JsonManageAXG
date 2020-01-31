@@ -62,12 +62,14 @@ public class MongoDBData {
 
     //将来的に動作しなくなる可能性がある
     public List<String> getKeyList() {
-        List keys = new ArrayList<>();
+        List keys = new ArrayList();
+        
         Document match = new Document("$match", new Document("name", new Document("$ne", null)));
         Document group = new Document("$group", new Document("_id", "$name"));
         this.coll.aggregate(Arrays.asList(match, group))
-            .forEach((Block<Document>) t -> keys.addAll(t.values()));
+                .forEach((Block<Document>) t -> keys.addAll(t.values()));
         System.out.println("get key size=" + keys.size());
+
         return keys;
     }
 

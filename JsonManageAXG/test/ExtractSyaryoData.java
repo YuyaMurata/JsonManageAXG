@@ -47,7 +47,7 @@ public class ExtractSyaryoData {
 
         if (!headers[0].contains(".")) {
             shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData(key) != null)
                     .forEach(s -> {
                         s.getData(key).entrySet().stream()
@@ -56,7 +56,7 @@ public class ExtractSyaryoData {
                     });
         } else {
             shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData(key) != null)
                     .forEach(s -> {
                         s.getData(key).values().stream()
@@ -80,7 +80,7 @@ public class ExtractSyaryoData {
         String key = headers[0].split("\\.")[0];
 
         shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData(key) != null)
                     .forEach(s -> {
                         s.getData(key).entrySet().stream()

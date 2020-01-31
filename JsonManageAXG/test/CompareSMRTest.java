@@ -27,7 +27,7 @@ public class CompareSMRTest {
 
         //SMRの下がる車両を抽出
         formDB.getKeyList().stream().filter(sid -> sid.equals("PC200-8-N1-316686"))
-                .map(s -> formDB.getObj(s))
+                .map(s -> (MSyaryoObject)formDB.getObj(s))
                 .filter(s -> s.getData("KOMTRAX_SMR") != null)
                 .forEach(s -> {
             try {

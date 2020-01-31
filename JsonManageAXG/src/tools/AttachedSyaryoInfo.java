@@ -54,7 +54,7 @@ public class AttachedSyaryoInfo {
             setting.entrySet().stream().forEach(e -> {
                 String sid = e.getKey().split(",")[0];
                 String sbn = e.getKey().split(",")[1].split("#")[0];
-                MSyaryoAnalizer s = new MSyaryoAnalizer(db.getObj(sid));
+                MSyaryoAnalizer s = new MSyaryoAnalizer((MSyaryoObject)db.getObj(sid));
                 String date = s.getSBNToDate(sbn, true);
                 Integer smr = s.getDateToSMR(date);
                 Integer svsmr = s.getDateToSVSMR(date);

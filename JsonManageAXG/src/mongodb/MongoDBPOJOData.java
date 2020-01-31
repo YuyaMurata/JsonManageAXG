@@ -16,6 +16,7 @@ import com.mongodb.client.MongoDatabase;
 import static com.mongodb.client.model.Filters.*;
 import com.mongodb.client.model.IndexOptions;
 import exception.AISTProcessException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -36,6 +37,8 @@ public class MongoDBPOJOData {
     private MongoDatabase db;
     public MongoCollection coll;
     private transient Map<String, MSyaryoObject> map;
+    private List keys;
+    private MHeaderObject header;
 
     private MongoDBPOJOData() {
         Logger.getLogger("org.mongodb.driver").setLevel(Level.SEVERE);
@@ -44,10 +47,10 @@ public class MongoDBPOJOData {
 
     private void initialize() {
         CodecRegistry pojoCodecRegistry = fromRegistries(com.mongodb.MongoClientSettings.getDefaultCodecRegistry(),
-            fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
         MongoClientSettings settings = MongoClientSettings.builder()
-            .codecRegistry(pojoCodecRegistry)
-            .build();
+                .codecRegistry(pojoCodecRegistry)
+                .build();
         client = MongoClients.create(settings);
     }
 
@@ -55,9 +58,11 @@ public class MongoDBPOJOData {
         return new MongoDBPOJOData();
     }
 
-    public void set(String dbn, String col, Class clazz){
+    public void set(String dbn, String col, Class clazz) {
         this.db = client.getDatabase(dbn);
         this.coll = db.getCollection(col, clazz);
+        this.keys = new ArrayList();
+        this.header = null;
     }
 
     public void check() throws AISTProcessException {
@@ -67,36 +72,45 @@ public class MongoDBPOJOData {
     }
 
     public MHeaderObject getHeader() {
-        MongoCollection hcoll = this.db.getCollection(this.coll.getNamespace().getCollectionName(), MHeaderObject.class);
-        MHeaderObject h = (MHeaderObject) hcoll.find(exists("header")).first();
-        h.setHeaderMap();
-        return h;
+        if (this.header == null) {
+            MongoCollection hcoll = this.db.getCollection(this.coll.getNamespace().getCollectionName(), MHeaderObject.class);
+            this.header = (MHeaderObject) hcoll.find(exists("header")).first();
+            this.header.setHeaderMap();
+        }
+
+        return this.header;
     }
 
     public List<String> getKeyList() {
-        long start = System.currentTimeMillis();
-        System.out.println("get key start!");
-        MongoDBData cl = MongoDBData.create();
 
-        System.out.println("mongo connect : " + this.db.getName() + "." + this.coll.getNamespace().getCollectionName());
+        if (this.keys.isEmpty()) {
 
-        cl.set(this.db.getName(), this.coll.getNamespace().getCollectionName());
-        List keys = cl.getKeyList();
-        long stop = System.currentTimeMillis();
+            long start = System.currentTimeMillis();
+            System.out.println("get key start!");
 
-        System.out.println("get key time=" + (stop - start) + "ms");
-        cl.close();
-        return keys;
+            MongoDBData cl = MongoDBData.create();
+
+            System.out.println("mongo connect : " + this.db.getName() + "." + this.coll.getNamespace().getCollectionName());
+
+            cl.set(this.db.getName(), this.coll.getNamespace().getCollectionName());
+            this.keys = cl.getKeyList();
+            cl.close();
+
+            long stop = System.currentTimeMillis();
+            System.out.println("get key time=" + (stop - start) + "ms");
+        }
+
+        return this.keys;
     }
 
-    public MSyaryoObject getObj(String name) {
-        return (MSyaryoObject) this.coll.find(eq("name", name)).first();
+    public Object getObj(String name) {
+        return this.coll.find(eq("name", name)).first();
     }
 
     public Map<String, MSyaryoObject> getObjMap() {
         if (map == null) {
-            map = getKeyList().parallelStream().map(sid -> getObj(sid))
-                .collect(Collectors.toMap(s -> s.getName(), s -> s));
+            map = getKeyList().parallelStream().map(sid -> (MSyaryoObject) getObj(sid))
+                    .collect(Collectors.toMap(s -> s.getName(), s -> s));
         }
 
         return map;

@@ -72,13 +72,13 @@ public class CheckLoadMapData {
         */
         //油温
         shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData(key) != null)
                     .peek(s -> System.out.println(s.getName()))
                     .forEach(s ->{
                         try(PrintWriter pw = CSVFileReadWrite.writerSJIS("file\\"+s.getName()+"_LOADMAP_作動油温.csv")){
                             pw.println(s.getName()+",SMR,"+smr(s.getDataOne(smrKey).get(0)));
-                            pw.println(","+shDB.getObj("PC200-10- -453947").getData(key).keySet().stream().sorted(Comparator.comparing(d -> Integer.valueOf(d.replace("_","")))).collect(Collectors.joining(",")));
+                            pw.println(","+((MSyaryoObject)shDB.getObj("PC200-10- -453947")).getData(key).keySet().stream().sorted(Comparator.comparing(d -> Integer.valueOf(d.replace("_","")))).collect(Collectors.joining(",")));
                             String str = s.getData(key).entrySet().stream()
                                             .sorted(Comparator.comparing(d -> Integer.valueOf(d.getKey().replace("_",""))))
                                             .map(d -> d.getValue().stream().mapToInt(v -> smr(v)).sum()).map(sum -> sum.toString()).collect(Collectors.joining(","));
@@ -94,9 +94,9 @@ public class CheckLoadMapData {
         String smrKey = "LOADMAP_DATE_SMR";
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS("loadmap_engine.csv")){
             //header
-            pw.println("sid,smr,"+h.getHeader(key).stream().map(s -> s.split("\\.")[1]).collect(Collectors.joining(","))+","+String.join(",", shDB.getObj("PC200-10- -453947").getData(key).keySet()));
+            pw.println("sid,smr,"+h.getHeader(key).stream().map(s -> s.split("\\.")[1]).collect(Collectors.joining(","))+","+String.join(",", ((MSyaryoObject)shDB.getObj("PC200-10- -453947")).getData(key).keySet()));
             shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData(key) != null)
                     .peek(s -> System.out.println(s.getName()))
                     .map(s -> s.getName()+","+(smr(s.getDataOne(smrKey).get(0)))+","+

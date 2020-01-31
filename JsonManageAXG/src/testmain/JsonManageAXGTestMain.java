@@ -35,7 +35,7 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -75,9 +75,6 @@ public class JsonManageAXGTestMain {
         //ユーザー定義ファイルの設定
         objex.setUserDefine("project\\"+col+"\\config\\user_define.json");
         
-        //シナリオ解析の項目
-        System.out.println(objex.getDefineItem());
-        
         //データリスト
         System.out.println(objex.getDataList());
         
@@ -87,6 +84,9 @@ public class JsonManageAXGTestMain {
         //サマリー
         System.out.println(objex.getSummary());
         
+        //シナリオ解析の項目
+        System.out.println(objex.getDefineItem());
+
         return objex;
     }
     

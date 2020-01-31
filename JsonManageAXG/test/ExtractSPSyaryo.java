@@ -28,7 +28,7 @@ public class ExtractSPSyaryo {
         
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("syaryoanalizer_print.csv")) {
             pw.println(String.join(",", MSyaryoAnalizer.getHeader()));
-            shDB.getKeyList().stream().map(sid -> new MSyaryoAnalizer(shDB.getObj(sid)))
+            shDB.getKeyList().stream().map(sid -> new MSyaryoAnalizer((MSyaryoObject)shDB.getObj(sid)))
                     .map(s -> s.toStringMap())
                     .map(m -> MSyaryoAnalizer.getHeader().stream().map(h -> m.get(h)).collect(Collectors.joining(",")))
                     .forEach(pw::println);

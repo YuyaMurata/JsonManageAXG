@@ -52,7 +52,7 @@ public class ScoringSettingsTemplate {
 
         MHeaderObject hobj = mongo.getHeader();
         Optional<MSyaryoObject> syaryo = mongo.getKeyList().stream()
-                .map(sid -> mongo.getObj(sid))
+                .map(sid -> (MSyaryoObject)mongo.getObj(sid))
                 .filter(s -> s.getData("LOADMAP_DATE_SMR") != null)
                 .findFirst();
 

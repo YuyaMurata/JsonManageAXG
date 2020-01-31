@@ -11,6 +11,8 @@ import analizer.MSyaryoAnalizer;
 import axg.shuffle.form.MSyaryoObjectFormatting;
 import axg.shuffle.form.util.FormInfoMap;
 import axg.shuffle.form.util.FormalizeUtils;
+import static com.mongodb.client.model.Filters.eq;
+import file.FileMD5;
 import file.ListToCSV;
 import file.MapToJSON;
 import java.util.ArrayList;
@@ -28,20 +30,22 @@ import obj.MHeaderObject;
 import obj.MSyaryoObject;
 
 /**
- * 車両データの抽出
- * パフォーマンスチューニングを行う
+ * 車両データの抽出 パフォーマンスチューニングを行う
+ *
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {
 
     public Map<String, Integer> settingsCount;
-    private int masterSize;
-    private Map<String, byte[]> compressMap;
-    private Map<String, MSyaryoObject> extractMap;
+    private String userDefFileHash;
+    private static MongoDBPOJOData orgDB;
+    private static MongoDBPOJOData extDB;
+    private static MongoDBPOJOData defDB;
     private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
+    private List<String> keys;
     private Set<String> deleteSet;
-    private Map<String, List<String>> define;
+    private Map<String, List<String>> settings;
     private Map<String, byte[]> csv;
     private FormInfoMap info;
 
@@ -49,25 +53,22 @@ public class SyaryoObjectExtract {
         if (!collection.contains("_Form")) {
             collection = collection + "_Form";
         }
-
-        MongoDBPOJOData db = MongoDBPOJOData.create();
-        db.set(dbn, collection, MSyaryoObject.class);
-        db.check();
-
-        header = db.getHeader();
         
+        if(orgDB == null)
+            orgDB = MongoDBPOJOData.create();
+        orgDB.set(dbn, collection, MSyaryoObject.class);
+        
+        orgDB.check();
+
+        header = orgDB.getHeader();
+        
+        keys = orgDB.getKeyList();
+
         //整形時の情報を取得
-        info = FormalizeUtils.getFormInfo(dbn+"."+collection);
-        if(info == null)
-            info = MSyaryoObjectFormatting.setFormInfo(db, dbn+"."+collection);
-        
-        compressMap = db.getKeyList().parallelStream()//.limit(10) //テスト用
-                .map(sid -> db.getObj(sid))
-                .collect(Collectors.toMap(s -> s.getName(), s -> compress(s)));
-        
-        masterSize = db.getKeyList().size();
-        
-        db.close();
+        info = FormalizeUtils.getFormInfo(dbn + "." + collection);
+        if (info == null) {
+            info = MSyaryoObjectFormatting.setFormInfo(orgDB, dbn + "." + collection);
+        }
     }
 
     private void setSyaryoAnalizer() throws AISTProcessException {
@@ -81,113 +82,19 @@ public class SyaryoObjectExtract {
         settingsCount = new HashMap();
         deleteSet = new HashSet<>();
 
-        //解凍
-        extractMap = compressMap.values().parallelStream()
-                .map(s -> (MSyaryoObject) decompress(s))
-                .collect(Collectors.toMap(s -> s.getName(), s -> s));
-        System.out.println("車両オブジェクトの解凍.");
+        //ユーザー定義ファイルのハッシュ値の取得
+        this.userDefFileHash = FileMD5.hash(settingFile);
 
-        Map<String, List<String>> settings = MapToJSON.toMapSJIS(settingFile);
+        this.settings = MapToJSON.toMapSJIS(settingFile);
+
         this.csv = readCSVSettings(settings);
-        errorCheck(settings);
 
-        deleteSettings(settings);
-        importSettings(settings);
+        errorCheck(settings);
 
         //車両分析器の作成
         setSyaryoAnalizer();
     }
-
-    //設定ファイルからデータ削除
-    private void deleteSettings(Map<String, List<String>> settings) {
-        //車両IDに基づく削除
-        //SID抽出
-        List<String> deleteSID = settings.entrySet().parallelStream()
-                .filter(def -> def.getKey().contains("#DELOBJECT_"))
-                .flatMap(def -> {
-                    List<String> del = def.getValue().parallelStream()
-                            .map(defi -> extract(defi))
-                            .flatMap(list -> list.stream().map(di -> di.split(",")[0]))
-                            .distinct().collect(Collectors.toList());
-
-                    settingsCount.put(def.getKey(), del.size());
-
-                    return del.stream();
-                }).distinct().collect(Collectors.toList());
-        //SID削除
-        deleteSID.stream().forEach(extractMap::remove);
-
-        //データIDに基づく削除
-        //SID+データID抽出
-        Map<String, List<String>> deleteSIDandKey = settings.entrySet().stream()
-                .filter(def -> def.getKey().contains("#DELRECORD_"))
-                .flatMap(def -> {
-                    List<String> del = def.getValue().parallelStream()
-                            .map(defi -> extract(defi))
-                            .flatMap(list -> list.stream())
-                            .collect(Collectors.toList());
-
-                    settingsCount.put(def.getKey(), del.size());
-
-                    return del.stream();
-                }).collect(Collectors.groupingBy(l -> l.split(",")[0]));
-
-        //データ削除
-        deleteRecord(deleteSIDandKey);
-    }
-
-    //分析対象データのインポート
-    private void importSettings(Map<String, List<String>> settings) {
-        Map<String, List<String>> defineData = settings.entrySet().parallelStream()
-                .filter(set -> set.getKey().charAt(0) != '#')
-                .flatMap(set -> {
-                    Map<String, List<String>> map = new HashMap();
-                    List<String> setlist = set.getValue().parallelStream()
-                            .map(f -> extract(f))
-                            .flatMap(list -> list.stream())
-                            .collect(Collectors.toList());
-
-                    settingsCount.put(set.getKey(), setlist.size());
-                    map.put(set.getKey(), setlist);
-
-                    return map.entrySet().stream();
-                }).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue(), (a,b) -> b, TreeMap::new));
-
-        //defineData.entrySet().stream().forEach(System.out::println);
-        define = defineData;
-    }
-
-    //データ抽出処理
-    private List<String> extract(String path) {
-        List<String> data;
-
-        if (path.contains(".csv")) {
-            System.out.println(path);
-            data = (List<String>) decompress(this.csv.get(path));
-        } else {
-            data = dataCodeSettings(path);
-        }
-
-        return data;
-    }
-
-    //SID+KEYで対象データレコードの削除と登録
-    private void deleteRecord(Map<String, List<String>> records) {
-        extractMap.values().parallelStream()
-                .forEach(s -> {
-                    if (records.get(s.getName()) != null) {
-                        records.get(s.getName()).parallelStream()
-                                .map(reci -> reci.split(",")[1])
-                                .forEach(id -> {
-                                    s.getData(id.split("\\.")[0]).remove(id.split("\\.")[1]);
-                                    deleteSet.add(id.split("\\.")[0]);
-                                });
-                    }
-
-                    extractMap.put(s.getName(), s);
-                });
-    }
-
+    
     //汎用のファイル情報取得メソッド SID+Keyを取得
     private Map<String, byte[]> readCSVSettings(Map<String, List<String>> settings) throws AISTProcessException {
         //読み込むCSVリストを取得
@@ -225,50 +132,31 @@ public class SyaryoObjectExtract {
 
                 csvSettings.put(f, compress(setting));
             } catch (AISTProcessException e) {
-                System.err.println(f);
+                //System.err.println(f);
                 exception.add(f);
             }
         }
 
-        //ファイルが存在し場合の処理
+        //ファイルが存在しない場合の処理
         if (!exception.isEmpty()) {
-            System.out.println("定義中の参照ファイルが存在しません："+exception);
+            System.out.println("定義中の参照ファイルが存在しません：" + exception);
             //throw new AISTProcessException("定義ファイル内の設定ファイルが存在しません：" + exception);
         }
-        
+
         if (!exceptionItem.isEmpty() && exception.isEmpty()) {
             throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません：" + exceptionItem);
         }
 
         return csvSettings;
     }
-
-    //汎用のコードマッチング情報取得メソッド SID+Keyを取得
-    private List<String> dataCodeSettings(String codes) {
-        String key = codes.split("\\.")[0];
-        System.out.println(codes);
-        int rowID = header.getHeaderIdx(key, codes.split("\\.")[1]);
-        String code = codes.replace(codes.split("\\.")[0] + "." + codes.split("\\.")[1] + ".", "");
-
-        //入力コードに合う車両IDを抽出
-        List<String> setting = new ArrayList<>();
-        setting.addAll(extractMap.values().parallelStream()
-                .filter(s -> s.getData(key) != null)
-                .flatMap(s -> s.getData(key).entrySet().parallelStream()
-                .filter(di -> di.getValue().get(rowID).matches(code))
-                .map(di -> s.getName() + "," + key + "." + di.getKey()))
-                .collect(Collectors.toList()));
-
-        return setting;
-    }
-
+    
     //車両IDの変換
     private String transSID(String sid) {
         if (sid.split("-").length == 4) {
             return sid;
         } else {
             String kisyukiban = sid.split("-")[0] + "-" + sid.split("-")[sid.split("-").length - 1];
-            Optional<String> id = extractMap.keySet().parallelStream()
+            Optional<String> id = keys.parallelStream()
                     .filter(s -> kisyukiban.equals(s.split("-")[0] + "-" + s.split("-")[s.split("-").length - 1]))
                     .findFirst();
 
@@ -279,7 +167,7 @@ public class SyaryoObjectExtract {
             }
         }
     }
-
+    
     //ファイル or データキー が存在しない場合に例外処理
     private void errorCheck(Map<String, List<String>> settings) throws AISTProcessException {
         List<String> exception = new ArrayList<>();
@@ -299,6 +187,115 @@ public class SyaryoObjectExtract {
         }
     }
 
+    //設定ファイルからデータ削除
+    private void deleteSettings(Map<String, List<String>> settings) {
+        //車両IDに基づく削除
+        //SID抽出
+        List<String> deleteSID = settings.entrySet().parallelStream()
+                .filter(def -> def.getKey().contains("#DELOBJECT_"))
+                .flatMap(def -> {
+                    List<String> del = def.getValue().parallelStream()
+                            .map(defi -> extract(defi))
+                            .flatMap(list -> list.stream().map(di -> di.split(",")[0]))
+                            .distinct().collect(Collectors.toList());
+
+                    settingsCount.put(def.getKey(), del.size());
+
+                    return del.stream();
+                }).distinct().collect(Collectors.toList());
+
+        //データIDに基づく削除
+        //SID+データID抽出
+        Map<String, List<String>> deleteSIDandKey = settings.entrySet().stream()
+                .filter(def -> def.getKey().contains("#DELRECORD_"))
+                .flatMap(def -> {
+                    List<String> del = def.getValue().parallelStream()
+                            .map(defi -> extract(defi))
+                            .flatMap(list -> list.stream())
+                            .collect(Collectors.toList());
+
+                    settingsCount.put(def.getKey(), del.size());
+
+                    return del.stream();
+                }).collect(Collectors.groupingBy(l -> l.split(",")[0]));
+
+        //SID+データ削除
+        deleteRecord(deleteSID, deleteSIDandKey);
+    }
+
+    //SID+KEYで対象データレコードの削除と登録
+    private void deleteRecord(List<String> deleateSID, Map<String, List<String>> records) {
+        orgDB.getKeyList().parallelStream()
+                .filter(sid -> !deleateSID.contains(sid))
+                .map(sid -> (MSyaryoObject) orgDB.getObj(sid))
+                .forEach(s -> {
+                    if (records.get(s.getName()) != null) {
+                        records.get(s.getName()).parallelStream()
+                                .map(reci -> reci.split(",")[1])
+                                .forEach(id -> {
+                                    s.getData(id.split("\\.")[0]).remove(id.split("\\.")[1]);
+                                    deleteSet.add(id.split("\\.")[0]);
+                                });
+                    }
+
+                    //抽出データベースに保存
+                    extDB.coll.insertOne(new CompressExtractionObject(s));
+                });
+    }
+
+    //分析対象データのインポート
+    private void importSettings(Map<String, List<String>> settings) {
+        settings.entrySet().stream()
+                .filter(set -> set.getKey().charAt(0) != '#')
+                .forEach(set -> {
+                    Map<String, List<String>> map = new HashMap();
+                    List<String> setlist = set.getValue().parallelStream()
+                            .map(f -> extract(f))
+                            .filter(list -> list != null) //存在しないファイルを読み込まない
+                            .flatMap(list -> list.stream())
+                            .collect(Collectors.toList());
+
+                    settingsCount.put(set.getKey(), setlist.size());
+                    
+                    //定義DBに登録
+                    defDB.coll.insertOne(new CompressExtractionDefineFile(set.getKey(), setlist));
+                });
+    }
+
+    //データ抽出処理
+    private List<String> extract(String path) {
+
+        List<String> data;
+
+        if (path.contains(".csv")) {
+            System.out.println("extract file="+path);
+            data = (List<String>) decompress(this.csv.get(path));
+        } else {
+            data = dataCodeSettings(path);
+        }
+
+        return data;
+    }
+
+    //汎用のコードマッチング情報取得メソッド SID+Keyを取得
+    private List<String> dataCodeSettings(String codes) {
+        String key = codes.split("\\.")[0];
+        System.out.println("extract code="+codes);
+        int rowID = header.getHeaderIdx(key, codes.split("\\.")[1]);
+        String code = codes.replace(codes.split("\\.")[0] + "." + codes.split("\\.")[1] + ".", "");
+
+        //入力コードに合う車両IDを抽出
+        List<String> setting = orgDB.getKeyList().parallelStream()
+                .map(sid -> (MSyaryoObject) orgDB.getObj(sid))
+                .filter(s -> s.getData(key) != null)
+                .flatMap(s -> s.getData(key).entrySet().parallelStream()
+                .filter(di -> di.getValue().get(rowID).matches(code))
+                .map(di -> s.getName() + "," + key + "." + di.getKey()))
+                .collect(Collectors.toList());
+
+        return setting;
+    }
+
     public MHeaderObject getHeader() {
         return header;
     }
@@ -307,25 +304,171 @@ public class SyaryoObjectExtract {
     public Map<String, MSyaryoAnalizer> getObjMap() {
         if (analizeMap == null) {
             System.out.println("Setting Syaryo Analizer!");
-            analizeMap = extractMap.values().stream()
+            analizeMap = extDB.getKeyList().stream()
+                    .map(sid -> ((CompressExtractionObject)extDB.getObj(sid)).toObj())
                     .map(s -> new MSyaryoAnalizer(s))
                     .filter(sa -> sa.get() != null)
                     .collect(Collectors.toMap(sa -> sa.syaryo.getName(), sa -> sa));
         }
-        System.out.println("分析用オブジェクト変換数:"+extractMap.size()+"->"+analizeMap.size());
+        System.out.println("分析用オブジェクト変換数:" + extDB.getKeyList().size() + "->" + analizeMap.size());
 
         return analizeMap;
     }
 
     //抽出処理適用後の定義ファイルを取得
     public List<String> getDefineItem() {
-        return define.keySet().stream()
+        return defDB.getKeyList().stream()
                 .filter(k -> k.charAt(0) != '#')
                 .collect(Collectors.toList());
     }
 
     public Map<String, List<String>> getDefine() {
-        return define;
+        Map<String, List<String>> map = defDB.getKeyList().stream()
+                .collect(Collectors.toMap(
+                        item -> item, 
+                        item -> ((CompressExtractionDefineFile)defDB.getObj(item)).toList()));
+        
+        return map;
+    }
+
+    public String getDataList() {
+        StringBuilder sb = new StringBuilder();
+
+        List<String> rec;
+        sb.append("定義データ項目\n");
+        rec = settings.keySet().stream()
+                .filter(s -> s.charAt(0) != '#')
+                .map(s -> "  " + s)
+                .sorted()
+                .collect(Collectors.toList());
+        if (rec.isEmpty()) {
+            sb.append("None");
+        } else {
+            sb.append(String.join("\n", rec));
+        }
+
+        sb.append("\n\n削除データ項目\n");
+        rec = settings.keySet().stream()
+                .filter(s -> s.contains("#DELRECORD_"))
+                .map(s -> "  " + s.replace("#DELRECORD_", ""))
+                .sorted()
+                .collect(Collectors.toList());
+        if (rec.isEmpty()) {
+            sb.append("None");
+        } else {
+            sb.append(String.join("\n", rec));
+        }
+
+        return sb.toString();
+    }
+
+    public String getObjectList() {
+        StringBuilder sb = new StringBuilder();
+
+        List<String> rec;
+
+        sb.append("削除オブジェクト項目\n");
+        rec = settings.keySet().stream()
+                .filter(s -> s.contains("#DELOBJECT_"))
+                .map(s -> "  " + s.replace("#DELOBJECT_", ""))
+                .collect(Collectors.toList());
+        if (rec.isEmpty()) {
+            sb.append("None");
+        } else {
+            sb.append(String.join("\n", rec));
+        }
+
+        return sb.toString();
+    }
+
+    //抽出ボタン押下処理
+    public String getSummary() {
+        createExtractionDB();
+        return summary();
+    }
+
+    private void createExtractionDB() {
+        //
+        String dbn = "extraction";
+        String col = userDefFileHash;
+        
+        if(extDB == null)
+            extDB = MongoDBPOJOData.create();
+        extDB.set(dbn, col, CompressExtractionObject.class);
+        try {
+            extDB.check();
+        } catch (AISTProcessException e) {
+            System.out.println("抽出オブジェクト管理用コレクションの作成");
+            deleteSettings(settings);
+        }
+
+        dbn = "definition";
+        if(defDB == null)
+            defDB = MongoDBPOJOData.create();
+        defDB.set(dbn, col, CompressExtractionDefineFile.class);
+
+        try {
+            defDB.check();
+        } catch (AISTProcessException e) {
+            System.out.println("ユーザー定義ファイル管理用コレクションの作成");
+            importSettings(settings);
+        }
+    }
+
+    private String summary() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("車両数の変化：変化前,変化後\n");
+        sb.append(info.getInfo("MACHINE_KIND") + " : " + orgDB.getKeyList().size() + ",");
+        sb.append(extDB.getKeyList().size() + "\n\n");
+
+        List<String> rec;
+        sb.append("データ数の変化：変化前,変化後\n");
+        rec = deleteSet.stream().map(h -> h.split("\\.")[0]).distinct()
+                .map(h -> "  Data Size : " + h + " "
+                + extDB.getKeyList().parallelStream()
+                        .map(sid -> ((CompressExtractionObject) extDB.getObj(sid)).toObj())
+                        .filter(s -> s.getCount(h) != null)
+                        .mapToInt(s -> s.getCount(h)).sum()
+                + ","
+                + extDB.getKeyList().parallelStream()
+                        .map(sid -> ((CompressExtractionObject) extDB.getObj(sid)).toObj())
+                        .filter(s -> s.getData(h) != null)
+                        .mapToInt(s -> s.getData(h).size()).sum())
+                .collect(Collectors.toList());
+        sb.append(recToString(rec));
+
+        sb.append("\n\n定義データ項目,レコード数\n");
+        rec = settingsCount.entrySet().stream()
+                .filter(s -> s.getKey().charAt(0) != '#')
+                .map(s -> "  " + s.getKey() + "," + s.getValue())
+                .sorted()
+                .collect(Collectors.toList());
+        sb.append(recToString(rec));
+
+        sb.append("\n\n削除データ項目,レコード数\n");
+        rec = settingsCount.entrySet().stream()
+                .filter(s -> s.getKey().contains("#DELRECORD_"))
+                .map(s -> "  " + s.getKey().replace("#DELRECORD_", "") + "," + s.getValue())
+                .sorted()
+                .collect(Collectors.toList());
+        sb.append(recToString(rec));
+
+        sb.append("\n\n削除オブジェクト項目,レコード数\n");
+        rec = settingsCount.entrySet().stream()
+                .filter(s -> s.getKey().contains("#DELOBJECT_"))
+                .map(s -> "  " + s.getKey().replace("#DELOBJECT_", "") + "," + s.getValue())
+                .collect(Collectors.toList());
+        sb.append(recToString(rec));
+
+        return sb.toString();
+    }
+
+    private String recToString(List<String> rec) {
+        if (!rec.isEmpty()) {
+            return String.join("\n", rec);
+        } else {
+            return "  None,None";
+        }
     }
 
     /**
@@ -339,68 +482,10 @@ public class SyaryoObjectExtract {
      * データ解凍
      */
     private Object decompress(byte[] b) {
-        if(b == null)
-            return new ArrayList();
-        return SnappyMap.toObject(b);
-    }
-
-    public String getDataList() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("定義データ項目\n");
-        sb.append(settingsCount.entrySet().stream()
-                .filter(s -> s.getKey().charAt(0) != '#')
-                .map(s -> s.getKey() + "=" + s.getValue())
-                .sorted()
-                .collect(Collectors.joining("\n")));
-        
-        sb.append("\n\n削除データ項目\n");
-        List<String> del = settingsCount.entrySet().stream()
-                .filter(s -> s.getKey().contains("#DELRECORD_"))
-                .map(s -> s.getKey().replace("#DELRECORD_", "") + "=" + s.getValue())
-                .sorted()
-                .collect(Collectors.toList());
-        sb.append(del.stream().collect(Collectors.joining("\n")));
-        
-        return sb.toString();
-    }
-
-    public String getObjectList() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("削除オブジェクト項目\n");
-
-        sb.append(settingsCount.entrySet().stream()
-                .filter(s -> s.getKey().contains("#DELOBJECT_"))
-                .map(s -> s.getKey().replace("#DELOBJECT_", "") + "=" + s.getValue())
-                .collect(Collectors.joining("\n")));
-
-        return sb.toString();
-    }
-
-    public String getSummary() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("車両数の変化：\n");
-        sb.append("   " + masterSize + "  ->  ");
-        sb.append(extractMap.size() + "\n\n");
-
-        sb.append("データ数の変化：\n");
-        List<String> del = deleteSet.stream().map(h -> h.split("\\.")[0]).distinct()
-                .map(h -> "  Data Size : " + h + " "
-                + extractMap.values().parallelStream()
-                        .filter(s -> s.getCount(h) != null)
-                        .mapToInt(s -> s.getCount(h)).sum()
-                + " -> "
-                + extractMap.values().parallelStream()
-                        .filter(s -> s.getData(h) != null)
-                        .mapToInt(s -> s.getData(h).size()).sum())
-                .collect(Collectors.toList());
-
-        if (!del.isEmpty()) {
-            sb.append(del.stream().collect(Collectors.joining("\n")));
-        } else {
-            sb.append("    削除されたデータはありません．");
+        if (b == null) {
+            return null;
         }
-
-        return sb.toString();
+        return SnappyMap.toObject(b);
     }
 
     public static void main(String[] args) throws AISTProcessException {

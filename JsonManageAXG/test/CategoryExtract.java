@@ -40,7 +40,7 @@ public class CategoryExtract {
         MHeaderObject h = shDB.getHeader();
         Map<String, List<String>> extract = new HashMap();
         extract.put("カテゴリ外", new ArrayList<>());
-        shDB.getKeyList().stream().map(sid -> shDB.getObj(sid))
+        shDB.getKeyList().stream().map(sid -> (MSyaryoObject)shDB.getObj(sid))
                 .filter(s -> s.getData("部品") != null)
                 .forEach(s ->{
                     s.getData("部品").entrySet().stream().forEach(d -> {

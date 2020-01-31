@@ -23,6 +23,8 @@ public class CreateInfoDB {
         cmap.put("MAX_LEAST_DATE", "20190521");
         FormInfoMap map = new FormInfoMap("json.KM_PC200_DB", cmap);
         
+        cmap.put("MACHINE_TYPE", "20190521");
+        
         FormalizeUtils.createFormInfo(map);
         
         System.out.println(FormalizeUtils.getFormInfo("json.KM_PC200_DB"));

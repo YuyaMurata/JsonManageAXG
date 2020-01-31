@@ -77,7 +77,7 @@ public class PartsInfoExtract {
         try(PrintWriter pw = CSVFileReadWrite.writerSJIS("PC200_部品リスト_ユーザー定義を除く.csv")){
             pw.println("SID,部品.作番,"+String.join(",", h.getHeader(dkey)));
         db.getKeyList().stream()
-                .map(s -> db.getObj(s))
+                .map(s -> (MSyaryoObject)db.getObj(s))
                 .filter(s -> s.getData(dkey) != null)
                 .forEach(s ->{
                     s.getData(dkey).entrySet().stream()

@@ -40,7 +40,7 @@ public class KomtraxIrregulerCheck {
             pw.println("SID," + header.getHeader("KOMTRAX_ERROR").stream().map(h -> h.split("\\.")[1]).collect(Collectors.joining(",")));
 
             shDB.getKeyList().stream()
-                    .map(s -> shDB.getObj(s))
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
                     .filter(s -> s.getData("KOMTRAX_ERROR") != null)
                     .peek(s -> System.out.println(s.getName()))
                     .forEach(s -> {
