@@ -413,25 +413,9 @@ public class SyaryoObjectExtract {
         StringBuilder sb = new StringBuilder();
         sb.append("車両数の変化：変化前,変化後\n");
         sb.append(info.getInfo("MACHINE_KIND") + " : " + orgDB.getKeyList().size() + ",");
-        sb.append(extDB.getKeyList().size() + "\n\n");
+        sb.append(extDB.getKeyList().size());
 
         List<String> rec;
-        sb.append("データ数の変化：変化前,変化後\n");
-        /*rec = deleteSet.stream().map(h -> h.split("\\.")[0]).distinct()
-                .map(h -> "  Data Size : " + h + " "
-                + extDB.getKeyList().parallelStream()
-                        .map(sid -> ((CompressExtractionObject) extDB.getObj(sid)).toObj())
-                        .filter(s -> s.getCount(h) != null)
-                        .mapToInt(s -> s.getCount(h)).sum()
-                + ","
-                + extDB.getKeyList().parallelStream()
-                        .map(sid -> ((CompressExtractionObject) extDB.getObj(sid)).toObj())
-                        .filter(s -> s.getData(h) != null)
-                        .mapToInt(s -> s.getData(h).size()).sum())
-                .collect(Collectors.toList());
-        sb.append(recToString(rec));*/
-        
-        System.out.println(defDB.getKeyList());
         
         sb.append("\n\n定義データ項目,レコード数\n");
         rec = defDB.getKeyList().stream()

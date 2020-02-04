@@ -28,18 +28,19 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "komatsuDB_PC200";
+    static String col = "KM_PC200_DB";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        //Map<String, String[]> score = scoring(objex);
+        Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
     public static void cleansing() throws AISTProcessException{
+        try{
         MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
 
         //テンプレート生成
@@ -55,6 +56,9 @@ public class JsonManageAXGTestMain {
         
         //サマリの出力
         //System.out.println(clean.getSummary());
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }
     
     public static void shuffle() throws AISTProcessException{
@@ -92,8 +96,8 @@ public class JsonManageAXGTestMain {
     
     public static Map<String, String[]> scoring(SyaryoObjectExtract objex) throws AISTProcessException{
         //スコアリングのテンプレート生成
-        String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
-        System.out.println(Arrays.toString(templates));
+        //String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
+        //System.out.println(Arrays.toString(templates));
         //Map mainte = MapToJSON.toMapSJIS(templates[0]);
         //Map use = MapToJSON.toMapSJIS(templates[1]);
         //Map agesmr = MapToJSON.toMapSJIS(templates[2]);

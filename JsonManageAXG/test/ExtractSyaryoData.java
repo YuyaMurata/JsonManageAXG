@@ -28,10 +28,11 @@ public class ExtractSyaryoData {
 
     public static void main(String[] args) throws AISTProcessException {
         shDB = MongoDBPOJOData.create();
-        shDB.set("json", "SMALLTEST_DB_Form", MSyaryoObject.class);
+        shDB.set("json", "KM_PC200_DB_Form", MSyaryoObject.class);
 
-        String[] headers = new String[]{"部品"};
-        List<String> out = extract(headers);
+        String[] headers = new String[]{"分類"};
+        //List<String> out = extract(headers);
+        List<String> out = notexists("分類");
         //List<String> out = subextract(headers, "指定作業形態によるクレンジング結果.csv");
         
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("test_bunrui.csv")) {
@@ -39,7 +40,17 @@ public class ExtractSyaryoData {
             out.stream().forEach(pw::println);
         }
     }
-
+    
+    private static List<String> notexists(String dkey){
+        List<String> sids = shDB.getKeyList().stream()
+                    .map(s -> (MSyaryoObject)shDB.getObj(s))
+                    .filter(s -> s.getData(dkey) == null)
+                    .map(s -> s.getName())
+                    .collect(Collectors.toList());
+        
+        return sids;
+    }
+    
     private static List<String> extract(String[] headers) {
         List<String> data = new ArrayList();
         MHeaderObject hobj = shDB.getHeader();
