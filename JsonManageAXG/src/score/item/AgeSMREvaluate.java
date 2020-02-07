@@ -16,8 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import obj.MSyaryoObject;
+import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import py.PythonCommand;
+import score.cluster.ClusteringESyaryo;
+import score.cluster.DataVector;
 
 /**
  *
@@ -31,8 +35,8 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
     public AgeSMREvaluate(Map<String, String> settings, Map<String, List<String>> def) {
         super.enable = settings.get("#EVALUATE").equals("ENABLE");
-        
-        super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT"}));
+
+        super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT", "N"}));
         AGE_SMR_SETTING = settings;
         //AGE_SMR_SETTING.keySet().stream().forEach(settings::remove);
         AGE_SMR_PARTS = settings.entrySet().stream()
@@ -42,7 +46,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         super._settings = AGE_SMR_SETTING;
 
         PARTS_DEF = def;
-        
+
         //取得設定の出力
         infoPrint("経年/SMR設定", AGE_SMR_PARTS.keySet());
     }
@@ -74,7 +78,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 t.series.stream().forEach(ti -> {
                     String k2 = FormalizeUtils.dup(k, data);
                     data.put(k2, new ArrayList<>());
-                    
+
                     //納入年月
                     data.get(k2).add(s.a.lifestart);
 
@@ -96,13 +100,13 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                     data.get(k2).add("1");
                 });
             } else {
-                if(data.get(k) == null){
+                if (data.get(k) == null) {
                     data.put(k, new ArrayList<>());
-                    
+
                     //納入年月
                     data.get(k).add(s.a.lifestart);
                 }
-                    
+
                 data.get(k).add(s.date);
                 //経年
                 if (visual.equals("AGE")) {
@@ -126,9 +130,12 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         List<String> mid = data.values().stream()
                 .sorted(Comparator.comparing(v -> v.get(1), Comparator.naturalOrder()))
                 .limit(1)
-                .flatMap(l -> l.stream().map(li -> li.length()==0?"-1":li))
+                .flatMap(l -> l.stream().map(li -> li.length() == 0 ? "-1" : li))
                 .collect(Collectors.toList());
+        mid.add(String.valueOf(data.size()));
         
+        System.out.println(_header.get("経年/SMR"));
+
         Map norm = _header.get("経年/SMR").stream()
                 .collect(Collectors.toMap(
                         h -> h,
@@ -137,26 +144,48 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         
         return norm;
     }
-    
+
     //画像生成
-    public static void printImage(String deirectory){
+    public static void printImage(String deirectory) {
         System.out.println("経年/SMRの画像を生成．");
         PythonCommand.py("py\\agesmr_visualize.py", new String[]{deirectory});
     }
-    
+
     @Override
     public void scoring() {
         //評価適用　無効
-        if(!super.enable) return ;
-        
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (!super.enable) {
+            return;
+        }
+
+        //cidごとの平均充足率
+        List<String> keys = new ArrayList(super._eval.keySet());
+        List<DataVector> cidavg = super._eval.entrySet().stream()
+                .map(e -> new DataVector(keys.indexOf(e.getKey()), e.getValue().data == null ? 0d : e.getValue().data.size()))
+                .collect(Collectors.toList());
+
+        //スコアリング用にデータを3分割
+        List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
+                .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
+                .map(i -> i).collect(Collectors.toList());
+
+        //スコアリング
+        sort.stream().forEach(i -> {
+            splitor.get(i).getPoints().stream()
+                    .map(sp -> sp.cid)
+                    .forEach(sid -> {
+                        String key = keys.get(sid);
+                        super._eval.get(key).score = sort.indexOf(i) + 1;
+                    });
+        });
     }
-    
-    public void testPrint(Map<String, List<String>> data, Map<String, Double> norm, ESyaryoObject s){
+
+    public void testPrint(Map<String, List<String>> data, Map<String, Double> norm, ESyaryoObject s) {
         //集約データのテスト出力
         System.out.println(s.a.get().getName());
         data.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue()).forEach(System.out::println);
-        
+
         //正規化データのテスト出力
         norm.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue().intValue()).forEach(System.out::println);
     }

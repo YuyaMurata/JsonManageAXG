@@ -38,7 +38,6 @@ public class ClusteringESyaryo {
         List<CentroidCluster<ESyaryoObject>> results = new ArrayList<>();
         try {
             results = cluster.cluster(evaldata);
-            //List<Cluster<ESyaryoObject>> results = cluster.cluster(evaldata);
         } catch (NumberIsTooSmallException ne) {
             System.err.println("分析車両数が少ないためクラスタ数を小さくして分析.");
             try {

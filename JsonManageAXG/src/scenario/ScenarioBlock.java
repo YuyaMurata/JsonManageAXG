@@ -8,6 +8,7 @@ package scenario;
 import analizer.MSyaryoAnalizer;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,10 +24,12 @@ public class ScenarioBlock {
     private static SyaryoObjectExtract extract;
     private static Map<String, MSyaryoAnalizer> analize;
     private static Boolean enable = true;
+    private static List<String> exception;
 
     //車両抽出オブジェクトの取得
     public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) throws AISTProcessException {
         try {
+            exception = new ArrayList<>();
             extract = ex;
             analize = extract.getObjMap().entrySet().stream()
                     .collect(Collectors.toMap(
@@ -57,6 +60,7 @@ public class ScenarioBlock {
             throw new AISTProcessException("抽出処理適用後のオブジェクトセットされていません．");
         }
         if (extract.getDefine().get(item) == null) {
+            exception.add(item);
             throw new AISTProcessException("定義にない項目が選択されています：" + item);
         }
     }
@@ -113,5 +117,9 @@ public class ScenarioBlock {
 
     public Integer getN() {
         return this.data.size();
+    }
+    
+    public List<String> getErrCheck(){
+        return exception;
     }
 }

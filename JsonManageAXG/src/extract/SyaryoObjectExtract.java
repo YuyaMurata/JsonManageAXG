@@ -11,19 +11,15 @@ import analizer.MSyaryoAnalizer;
 import axg.shuffle.form.MSyaryoObjectFormatting;
 import axg.shuffle.form.util.FormInfoMap;
 import axg.shuffle.form.util.FormalizeUtils;
-import static com.mongodb.client.model.Filters.eq;
 import file.FileMD5;
 import file.ListToCSV;
 import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
@@ -35,6 +31,7 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {
+
     private String userDefFileHash;
     private static MongoDBPOJOData orgDB;
     private static MongoDBPOJOData extDB;
@@ -43,7 +40,6 @@ public class SyaryoObjectExtract {
     private MHeaderObject header;
     private List<String> keys;
     private Map<String, List<String>> settings;
-    private Map<String, byte[]> csv;
     private FormInfoMap info;
 
     public SyaryoObjectExtract(String dbn, String collection) throws AISTProcessException {
@@ -83,72 +79,19 @@ public class SyaryoObjectExtract {
 
         this.settings = MapToJSON.toMapSJIS(settingFile);
 
-        this.csv = readCSVSettings(settings);
-
+        //this.csv = readCSVSettings(settings);
         errorCheck(settings);
 
         //車両分析器の作成
         setSyaryoAnalizer();
     }
 
-    //汎用のファイル情報取得メソッド SID+Keyを取得
-    private Map<String, byte[]> readCSVSettings(Map<String, List<String>> settings) throws AISTProcessException {
-        //読み込むCSVリストを取得
-        List<String> files = settings.values().stream()
-                .flatMap(s -> s.stream())
-                .filter(f -> f.contains(".csv"))
-                .collect(Collectors.toList());
-
-        List<String> exception = new ArrayList<>();
-        List<String> exceptionItem = new ArrayList<>();
-
-        Map<String, byte[]> csvSettings = new HashMap<>();
-
-        for (String f : files) {
-            try {
-                List<String> list = ListToCSV.toList(f);
-
-                List<String> listHeader = Arrays.asList(list.get(0).split(","));
-                list.remove(0);
-
-                //ターゲット列のデータを抽出  KEY.SBN の形式で登録
-                List<String> setting = list.parallelStream()
-                        .map(l -> l.split(","))
-                        .map(l -> listHeader.stream()
-                        .filter(h -> h.charAt(0) != '#')
-                        .map(h -> h.equals("SID") ? transSID(l[listHeader.indexOf(h)]) : h.split("\\.")[0] + "." + l[listHeader.indexOf(h)]) //車両IDの正規化
-                        .collect(Collectors.joining(",")))
-                        .collect(Collectors.toList());
-
-                //ヘッダが存在するか確認
-                listHeader.stream().filter(h -> !h.equals("SID"))
-                        .filter(h -> h.charAt(0) != '#')
-                        .filter(h -> !header.getHeader().contains(h))
-                        .forEach(exceptionItem::add);
-
-                csvSettings.put(f, compress(setting));
-            } catch (AISTProcessException e) {
-                //System.err.println(f);
-                exception.add(f);
-            }
-        }
-
-        //ファイルが存在しない場合の処理
-        if (!exception.isEmpty()) {
-            System.out.println("定義中の参照ファイルが存在しません：" + exception);
-            //throw new AISTProcessException("定義ファイル内の設定ファイルが存在しません：" + exception);
-        }
-
-        if (!exceptionItem.isEmpty() && exception.isEmpty()) {
-            throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません：" + exceptionItem);
-        }
-
-        return csvSettings;
-    }
-
     //車両IDの変換
     private String transSID(String sid) {
         if (sid.split("-").length == 4) {
+            if (keys.indexOf(sid) < 0) {
+                return sid.replace(" ", "");
+            }
             return sid;
         } else {
             String kisyukiban = sid.split("-")[0] + "-" + sid.split("-")[sid.split("-").length - 1];
@@ -194,10 +137,10 @@ public class SyaryoObjectExtract {
                             .map(defi -> extract(defi))
                             .flatMap(list -> list.stream().map(di -> di.split(",")[0]))
                             .distinct().collect(Collectors.toList());
-                    
+
                     //定義DBに登録
                     defDB.coll.insertOne(new CompressExtractionDefineFile(def.getKey(), del));
-                
+
                     return del.stream();
                 }).distinct().collect(Collectors.toList());
 
@@ -210,10 +153,10 @@ public class SyaryoObjectExtract {
                             .map(defi -> extract(defi))
                             .flatMap(list -> list.stream())
                             .collect(Collectors.toList());
-                    
+
                     //定義DBに登録
                     defDB.coll.insertOne(new CompressExtractionDefineFile(def.getKey(), del));
-                    
+
                     return del.stream();
                 }).collect(Collectors.groupingBy(l -> l.split(",")[0]));
 
@@ -234,7 +177,7 @@ public class SyaryoObjectExtract {
                                     s.getData(id.split("\\.")[0]).remove(id.split("\\.")[1]);
                                 });
                     }
-                    
+
                     //抽出データベースに保存
                     extDB.coll.insertOne(new CompressExtractionObject(s));
                 });
@@ -264,12 +207,46 @@ public class SyaryoObjectExtract {
 
         if (path.contains(".csv")) {
             System.out.println("extract file=" + path);
-            data = (List<String>) decompress(this.csv.get(path));
+            data = fileToSimplyList(path);
         } else {
             data = dataCodeSettings(path);
         }
 
         return data;
+    }
+
+    private List<String> fileToSimplyList(String path) {
+        try {
+            List<String> exceptionItem = new ArrayList<>();
+            List<String> list = ListToCSV.toList(path);
+            List<String> listHeader = Arrays.asList(list.get(0).split(","));
+            list.remove(0); //Delete Header
+
+            //ヘッダが存在するか確認
+            listHeader.stream().filter(h -> !h.equals("SID"))
+                    .filter(h -> h.charAt(0) != '#')
+                    .filter(h -> !header.getHeader().contains(h))
+                    .forEach(exceptionItem::add);
+
+            if (!exceptionItem.isEmpty()) {
+                System.err.println("読み込みファイルのヘッダーに誤りがあります");
+                System.err.println(exceptionItem);
+                throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません");
+            }
+
+            return list.parallelStream()
+                    .map(l -> l.split(","))
+                    .map(l -> listHeader.stream()
+                    .filter(h -> h.charAt(0) != '#')
+                    .map(h -> h.equals("SID") ? transSID(l[listHeader.indexOf(h)]) : h.split("\\.")[0] + "." + l[listHeader.indexOf(h)]) //車両IDの正規化
+                    .collect(Collectors.joining(",")))
+                    .collect(Collectors.toList());
+
+        } catch (AISTProcessException ex) {
+            //ex.printStackTrace();
+            System.err.println(ex.getMessage());
+            return null;
+        }
     }
 
     //汎用のコードマッチング情報取得メソッド SID+Keyを取得
@@ -321,9 +298,13 @@ public class SyaryoObjectExtract {
         Map<String, List<String>> map = defDB.getKeyList().stream()
                 .collect(Collectors.toMap(
                         item -> item,
-                        item -> ((CompressExtractionDefineFile) defDB.getObj(item)).toList()));
+                        item -> getDefine(item).toList()));
 
         return map;
+    }
+
+    public CompressExtractionDefineFile getDefine(String item) {
+        return (CompressExtractionDefineFile) defDB.getObj(item);
     }
 
     public String getDataList() {
@@ -383,6 +364,7 @@ public class SyaryoObjectExtract {
         return summary();
     }
 
+    //抽出オブジェクトDB
     private void createExtractionDB() {
         String dbn = "extraction";
         String col = userDefFileHash;
@@ -391,13 +373,13 @@ public class SyaryoObjectExtract {
             extDB = MongoDBPOJOData.create();
         }
         extDB.set(dbn, col, CompressExtractionObject.class);
-        
+
         dbn = "definition";
         if (defDB == null) {
             defDB = MongoDBPOJOData.create();
         }
         defDB.set(dbn, col, CompressExtractionDefineFile.class);
-        
+
         try {
             extDB.check();
             defDB.check();
@@ -409,6 +391,7 @@ public class SyaryoObjectExtract {
         }
     }
 
+    //抽出ボタン押下後のサマリー
     private String summary() {
         StringBuilder sb = new StringBuilder();
         sb.append("車両数の変化：変化前,変化後\n");
@@ -416,11 +399,11 @@ public class SyaryoObjectExtract {
         sb.append(extDB.getKeyList().size());
 
         List<String> rec;
-        
+
         sb.append("\n\n定義データ項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.charAt(0) != '#')
-                .map(item -> (CompressExtractionDefineFile) defDB.getObj(item))
+                .map(item -> getDefine(item))
                 .map(def -> "  " + def.getName() + "," + def.toList().size())
                 .sorted()
                 .collect(Collectors.toList());
@@ -429,7 +412,7 @@ public class SyaryoObjectExtract {
         sb.append("\n\n削除データ項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.contains("#DELRECORD_"))
-                .map(item -> (CompressExtractionDefineFile) defDB.getObj(item))
+                .map(item -> getDefine(item))
                 .map(def -> "  " + def.getName().replace("#DELRECORD_", "") + "," + def.toList().size())
                 .sorted()
                 .collect(Collectors.toList());
@@ -438,7 +421,7 @@ public class SyaryoObjectExtract {
         sb.append("\n\n削除オブジェクト項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.contains("#DELOBJECT_"))
-                .map(item -> (CompressExtractionDefineFile) defDB.getObj(item))
+                .map(item -> getDefine(item))
                 .map(def -> "  " + def.getName().replace("#DELOBJECT_", "") + "," + def.toList().size())
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
@@ -452,23 +435,6 @@ public class SyaryoObjectExtract {
         } else {
             return "  None,None";
         }
-    }
-
-    /**
-     * データ圧縮
-     */
-    private byte[] compress(Object obj) {
-        return SnappyMap.toSnappy(obj);
-    }
-
-    /**
-     * データ解凍
-     */
-    private Object decompress(byte[] b) {
-        if (b == null) {
-            return null;
-        }
-        return SnappyMap.toObject(b);
     }
 
     public static void main(String[] args) throws AISTProcessException {

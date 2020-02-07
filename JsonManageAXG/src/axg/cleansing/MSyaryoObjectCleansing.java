@@ -17,6 +17,8 @@ import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import file.MapToJSON;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -342,7 +344,12 @@ public class MSyaryoObjectCleansing {
     //テンプレート生成
     public String createTemplate(String templatePath) throws AISTProcessException {
         String fileName = templatePath + "\\cleansing_template.json";
-
+        
+        if(Files.exists(Paths.get(fileName))){
+            System.out.println("Exists File:"+fileName);
+            return fileName;
+        }
+        
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
         mongo.check();

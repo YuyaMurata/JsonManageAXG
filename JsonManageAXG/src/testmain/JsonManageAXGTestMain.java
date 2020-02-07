@@ -3,12 +3,10 @@ package testmain;
 
 import axg.cleansing.MSyaryoObjectCleansing;
 import axg.shuffle.MSyaryoObjectShuffle;
-import axg.shuffle.form.MSyaryoObjectFormatting;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import scenario.ScenarioAnalize;
@@ -28,14 +26,14 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "KM_PC200_DB";
+    static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -96,17 +94,17 @@ public class JsonManageAXGTestMain {
     
     public static Map<String, String[]> scoring(SyaryoObjectExtract objex) throws AISTProcessException{
         //スコアリングのテンプレート生成
-        //String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
+        String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
         //System.out.println(Arrays.toString(templates));
-        //Map mainte = MapToJSON.toMapSJIS(templates[0]);
-        //Map use = MapToJSON.toMapSJIS(templates[1]);
-        //Map agesmr = MapToJSON.toMapSJIS(templates[2]);
+        Map mainte = MapToJSON.toMapSJIS(templates[0]);
+        Map use = MapToJSON.toMapSJIS(templates[1]);
+        Map agesmr = MapToJSON.toMapSJIS(templates[2]);
         
         
         //設定ファイルの読み込み
-        Map mainte = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_maintenance_settings.json");
-        Map use = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_use_settings.json");
-        Map agesmr = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_agesmr_settings.json");
+        //Map mainte = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_maintenance_settings.json");
+        //Map use = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_use_settings.json");
+        //Map agesmr = MapToJSON.toMapSJIS("project\\"+col+"\\config\\score_agesmr_settings.json");
         
         //スコアリング
         SyaryoObjectEvaluation eval = new SyaryoObjectEvaluation(objex);
@@ -148,10 +146,33 @@ public class JsonManageAXGTestMain {
     public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex) throws AISTProcessException{
         ScenarioBlock.setSyaryoObjectExtract(objex);
         
-        ScenarioBlock start = new ScenarioBlock("エンジンオイル");
-        ScenarioBlock sc2 = new ScenarioBlock("エンジンオイルフィルタ");
+        ScenarioBlock start = new ScenarioBlock("部品1-1");
+        ScenarioBlock sc12 = new ScenarioBlock("部品1-2");
+        ScenarioBlock sc13 = new ScenarioBlock("部品1-3");
+        ScenarioBlock sc14 = new ScenarioBlock("部品1-4");
+        ScenarioBlock sc15 = new ScenarioBlock("部品1-5");
+        ScenarioBlock sc16 = new ScenarioBlock("部品1-6");
+        ScenarioBlock sc161 = new ScenarioBlock("部品1-6");
+        ScenarioBlock sc21 = new ScenarioBlock("部品2-1");
+        ScenarioBlock sc22 = new ScenarioBlock("部品2-2");
+        ScenarioBlock sc31 = new ScenarioBlock("部品3-1");
+        ScenarioBlock sc32 = new ScenarioBlock("部品3-2");
+        ScenarioBlock sc33 = new ScenarioBlock("部品3-3");
         
-        start.setNEXT(sc2);
+        start.setNEXT(sc21);
+        start.setAND(sc14);
+        start.setOR(sc12);
+        
+        sc12.setAND(sc13);
+        sc13.setOR(sc14);
+        sc14.setAND(sc15);
+        sc15.setOR(sc16);
+        
+        sc21.setAND(sc31);
+        sc21.setOR(sc22);
+        
+        sc31.setOR(sc32);
+        sc32.setAND(sc33);
         
         return start;
     }

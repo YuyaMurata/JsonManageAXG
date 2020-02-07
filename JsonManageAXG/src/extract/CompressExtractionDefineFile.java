@@ -6,7 +6,6 @@
 package extract;
 
 import compress.CompressUtil;
-import compress.SnappyMap;
 import java.util.List;
 import org.bson.types.ObjectId;
 

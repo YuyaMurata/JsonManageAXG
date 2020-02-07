@@ -16,6 +16,7 @@ import score.survive.SurvivalESyaryo;
 import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
+import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -41,6 +42,7 @@ public class SyaryoObjectEvaluation {
 
     public Map<String, String[]> scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) throws AISTProcessException {
         try {
+            System.out.println("スコアリング開始");
             //メンテナンス分析
             EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
 
@@ -63,43 +65,42 @@ public class SyaryoObjectEvaluation {
             //スコアリング
             evalMainte.scoring();
             evalUse.scoring();
+            evalAgeSMR.scoring();
 
             //故障解析
-            //SurvivalESyaryo.survival(evalMainte, evalUse, evalAgeSMR, "out");
             SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR, outPath);
 
+            //データ出力
             print(evalMainte, outPath + "\\mainte_score.csv");
             MainteEvaluate.printImage(outPath + "\\mainte_score.csv", "AGE", "AVG", "SCORE");
             AgeSMREvaluate.printImage(outPath);
             print(evalUse, outPath + "\\use_score.csv");
             print(evalAgeSMR, outPath + "\\agesmr_score.csv");
 
-            /*List<String> slist = ListToCSV.toList("file\\comp_oilfilter_PC200.csv");
-        evalMainte._eval.values().stream().filter(s -> slist.contains(s.a.get().getName()))
-                .forEach(s -> print(evalMainte, s));
-             */
             //スコアの集約
             Map<String, String[]> results = new LinkedHashMap();
             results.put("#HEADER", new String[]{"SID", "シナリオ", "類似度", "メンテナンス", "使われ方", "経年/SMR"});
-            Random rand = new Random(); //テスト用
             evalMainte._eval.keySet().stream().forEach(s -> {
                 String[] d = new String[6];
                 d[0] = s;
                 d[1] = "0";
                 d[2] = "0";
-                d[3] = String.valueOf(1 + rand.nextInt(3));//evalMainte._eval.get(s).score.toString();
-                d[4] = String.valueOf(1 + rand.nextInt(3));//evalUse._eval.get(s).score.toString();
-                d[5] = String.valueOf(1 + rand.nextInt(3));//evalAgeSMR._eval.get(s).score.toString();
+                d[3] = evalMainte._eval.get(s).score.toString();
+                d[4] = evalUse._eval.get(s).score.toString();
+                d[5] = evalAgeSMR._eval.get(s).score.toString();
 
                 results.put(s, d);
 
             });
+            
+            //スコアリング結果の出力
+            MapToJSON.toJSON(outPath+"\\scoring_results.json", results);
+            
             return results;
         } catch (Exception e) {
             e.printStackTrace();
+            throw new AISTProcessException("スコアリングエラー");
         }
-        
-        return null;
     }
 
     public Map<String, String> imageMap() {

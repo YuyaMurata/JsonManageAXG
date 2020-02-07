@@ -70,7 +70,7 @@ public abstract class EvaluateTemplate {
     public ESyaryoObject trans(MSyaryoAnalizer a){
         ESyaryoObject s = new ESyaryoObject(a);
         
-        if(check(s)){
+        if(check(s) || !enable){
             s.setData(headers());
             return s;
         }

@@ -36,11 +36,12 @@ public class ScenarioAnalize {
 
     //Test用
     public static void main(String[] args) throws AISTProcessException {
-        Map<String, String[]> score = ((Map<String, List<String>>) MapToJSON.toMapSJIS("scenario_valid.json")).entrySet().stream()
+        Map<String, String[]> score = ((Map<String, List<String>>) MapToJSON.toMapSJIS("project\\SMALLTEST_DB\\out\\scoring_results.json")).entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
         //抽出処理
         SyaryoObjectExtract objex = JsonManageAXGTestMain.extract();
         JsonManageAXGTestMain.scenario(score, objex);
+
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -48,16 +49,20 @@ public class ScenarioAnalize {
         this.path = outPath;
     }
 
-    public void analize(ScenarioBlock root) {
+    public void analize(ScenarioBlock root) throws AISTProcessException {
+        errCheck(root);
+        
         try {
             scenarioMap = new LinkedHashMap<>();
             scenarioMap.put("適合シナリオ", new ArrayList<>());
             System.out.println("登録されたシナリオ：");
             getBlock("", root);
+            System.out.println("");
 
             //時系列作成
             BlockTimeSequence.DELTA = delta;
             List<BlockTimeSequence> times = timesSequece(root);
+
             Map<String, List<Integer>> timeDelays = timeSequenceDelay(times.get(0), times.get(1));
 
             //スコアの適合シナリオ件数更新
@@ -166,20 +171,37 @@ public class ScenarioAnalize {
         return score;
     }
 
+    int nest = 0;
+
     private void getBlock(String s, ScenarioBlock block) {
         if (block != null) {
             scenarioMap.put(block.item, block.data);
             if (s.equals("-")) {
                 System.out.print(s + block.item);
             } else if (s.equals("|")) {
-                System.out.print(s + block.item);
+                String indent = IntStream.range(0, nest * 10).boxed().map(i -> " ").collect(Collectors.joining());
+                System.out.println("");
+                System.out.print("|" + indent + s + block.item);
             } else {
-                System.out.println(block.item);
+                System.out.print(s + block.item);
             }
 
-            getBlock("|", block.getOR());
+            nest++;
             getBlock("-", block.getAND());
-            getBlock("", block.getNEXT());
+            nest--;
+            getBlock("|", block.getOR());
+            getBlock("\n", block.getNEXT());
+        }
+    }
+    
+    private void errCheck(ScenarioBlock root) throws AISTProcessException{
+        if(root == null){
+            System.err.println("シナリオブロックの中身がNullです");
+            throw new AISTProcessException("シナリオブロックエラー");
+        }
+        if (!root.getErrCheck().isEmpty()) {
+                System.err.println(root.getErrCheck());
+                throw new AISTProcessException("シナリオブロックエラー");
         }
     }
 }

@@ -13,8 +13,11 @@ import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import file.MapToJSON;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,6 +216,17 @@ public class MSyaryoObjectShuffle {
     public String[] createTemplate(String templatePath) throws AISTProcessException {
         String file = templatePath + "\\shuffle_template.json";
         String file2 = templatePath + "\\layout_template.json";
+        
+        //ファイル名の取得
+        String[] files = new String[2];
+        files[0] = file;
+        files[1] = file2;
+        
+        if(Files.exists(Paths.get(file))){
+            System.out.println("Exists File:"+Arrays.toString(files));
+            return files;
+        }
+        
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
         mongo.check();
@@ -243,11 +257,6 @@ public class MSyaryoObjectShuffle {
 
         MapToJSON.toJSON(file, head);
         MapToJSON.toJSON(file2, head);
-
-        //ファイル名の取得
-        String[] files = new String[2];
-        files[0] = file;
-        files[1] = file2;
 
         mongo.close();
 

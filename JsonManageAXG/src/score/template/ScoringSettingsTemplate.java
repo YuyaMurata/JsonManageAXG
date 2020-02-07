@@ -7,6 +7,9 @@ package score.template;
 
 import exception.AISTProcessException;
 import file.MapToJSON;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,7 +52,12 @@ public class ScoringSettingsTemplate {
 
     private static String createUse(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_use_template.json";
-
+        
+        if(Files.exists(Paths.get(file))){
+            System.out.println("Exists File:"+file);
+            return file;
+        }
+        
         MHeaderObject hobj = mongo.getHeader();
         Optional<MSyaryoObject> syaryo = mongo.getKeyList().stream()
                 .map(sid -> (MSyaryoObject)mongo.getObj(sid))
@@ -96,6 +104,11 @@ public class ScoringSettingsTemplate {
     private static String createMainte(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_maintenance_template.json";
         
+        if(Files.exists(Paths.get(file))){
+            System.out.println("Exists File:"+file);
+            return file;
+        }
+        
         Map temp = new LinkedHashMap();
         temp.put("#EVALUATE", "DISABLE");
         temp.put("#COMMENT", "ユーザ定義ファイルにより設定された項目のみ評価項目に設定可能");
@@ -109,6 +122,11 @@ public class ScoringSettingsTemplate {
 
     private static String createAgeSMR(MongoDBPOJOData mongo, String path) throws AISTProcessException {
         String file = path + "\\score_agesmr_template.json";
+        
+        if(Files.exists(Paths.get(file))){
+            System.out.println("Exists File:"+file);
+            return file;
+        }
         
         Map temp = new LinkedHashMap();
         temp.put("#EVALUATE", "DISABLE");
