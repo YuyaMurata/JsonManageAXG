@@ -206,7 +206,7 @@ public class SyaryoObjectExtract {
         List<String> data;
 
         if (path.contains(".csv")) {
-            System.out.println("extract file=" + path);
+            //System.out.println("extract file=" + path);
             data = fileToSimplyList(path);
         } else {
             data = dataCodeSettings(path);
@@ -252,7 +252,7 @@ public class SyaryoObjectExtract {
     //汎用のコードマッチング情報取得メソッド SID+Keyを取得
     private List<String> dataCodeSettings(String codes) {
         String key = codes.split("\\.")[0];
-        System.out.println("extract code=" + codes);
+        //System.out.println("extract code=" + codes);
         int rowID = header.getHeaderIdx(key, codes.split("\\.")[1]);
         String code = codes.replace(codes.split("\\.")[0] + "." + codes.split("\\.")[1] + ".", "");
 
@@ -280,6 +280,7 @@ public class SyaryoObjectExtract {
                     .map(sid -> ((CompressExtractionObject) extDB.getObj(sid)).toObj())
                     .map(s -> new MSyaryoAnalizer(s))
                     .filter(sa -> sa.get() != null)
+                    .limit(10)
                     .collect(Collectors.toMap(sa -> sa.syaryo.getName(), sa -> sa));
         }
         System.out.println("分析用オブジェクト変換数:" + extDB.getKeyList().size() + "->" + analizeMap.size());

@@ -30,6 +30,7 @@ public class TimeSeriesObject {
         //日付系列をSMR系列に変換する
         List<Integer> t = sequence.stream()
                             .map(d -> s.getDateToSMR(d.split("#")[0]))
+                            .filter(smr -> smr != null)
                             .collect(Collectors.toList());
         
         return t;

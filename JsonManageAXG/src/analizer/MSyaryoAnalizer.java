@@ -97,7 +97,7 @@ public class MSyaryoAnalizer {
                 System.out.println(CNT + " Trans SyaryoAnalizer");
             }
         } catch (Exception e) {
-            System.err.println(obj.getName()+":分析用オブジェクトへの変換要件を満たしません");
+            System.err.println(obj.getName() + ":分析用オブジェクトへの変換要件を満たしません");
             this.syaryo = null;
         }
     }
@@ -263,16 +263,21 @@ public class MSyaryoAnalizer {
 
     //日付　-> SMR
     public Integer getDateToSMR(String date) {
-        Integer d = Integer.valueOf(date.split("#")[0]);
-        if (smrDate.values().contains(d)) {
-            return smrDate.entrySet().stream()
-                    .filter(v -> v.getValue().equals(d))
-                    .map(v -> v.getKey()).findFirst().get();
+        try {
+            Integer d = Integer.valueOf(date.split("#")[0]);
+            if (smrDate.values().contains(d)) {
+                return smrDate.entrySet().stream()
+                        .filter(v -> v.getValue().equals(d))
+                        .map(v -> v.getKey()).findFirst().get();
+            }
+
+            Integer smr = regression("date", Integer.valueOf(date));
+
+            return smr;
+        } catch (NumberFormatException ne) {
+            System.err.println("NumberFormatException:"+date);
+            return null;
         }
-
-        Integer smr = regression("date", Integer.valueOf(date));
-
-        return smr;
     }
 
     public Integer getDateToSVSMR(String date) {
@@ -340,12 +345,17 @@ public class MSyaryoAnalizer {
     private Map<String, String> dateSBN = new HashMap<>();
 
     public String getSBNToDate(String sbn, Boolean sw) {
-        if (sw) {
-            //SBN -> Date
-            return sbnDate.get(sbn.split("#")[0]);
-        } else {
-            //Date -> SBN
-            return dateSBN.get(sbn.split("#")[0]);
+        try {
+            if (sw) {
+                //SBN -> Date
+                return sbnDate.get(sbn.split("#")[0]);
+            } else {
+                //Date -> SBN
+                return dateSBN.get(sbn.split("#")[0]);
+            }
+        } catch (Exception e) {
+            System.err.println(sbn + ":" + sw + " Not Found Key!");
+            return null;
         }
     }
 

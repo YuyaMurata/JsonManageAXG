@@ -75,7 +75,8 @@ public class ScenarioBlock {
                             MSyaryoAnalizer s = analize.get(e.getKey());
                             List<String> dateSeq = e.getValue().stream()
                                     .map(d -> d.split(",")[1])
-                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true))
+                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true)!=null?s.getSBNToDate(d.split("\\.")[1], true):d.split("\\.")[1])
+                                    .filter(d -> d != null)
                                     .collect(Collectors.toList());
                             return new TimeSeriesObject(s, dateSeq);
                         })

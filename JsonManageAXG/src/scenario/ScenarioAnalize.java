@@ -13,6 +13,7 @@ import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,7 +22,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import score.time.TimeSeriesObject;
+import testmain.ScenarioCreateTest;
+import static testmain.ScenarioCreateTest.s0;
 
 /**
  *
@@ -36,12 +38,17 @@ public class ScenarioAnalize {
 
     //Test用
     public static void main(String[] args) throws AISTProcessException {
-        Map<String, String[]> score = ((Map<String, List<String>>) MapToJSON.toMapSJIS("project\\SMALLTEST_DB\\out\\scoring_results.json")).entrySet().stream()
+        Map<String, String[]> score = ((Map<String, List<String>>) MapToJSON.toMapSJIS("project\\KM_PC200_DB\\out\\scoring_results.json")).entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
         //抽出処理
         SyaryoObjectExtract objex = JsonManageAXGTestMain.extract();
-        JsonManageAXGTestMain.scenario(score, objex);
 
+        //シナリオの解析
+        ScenarioBlock.setSyaryoObjectExtract(objex);
+        ScenarioBlock root = ScenarioCreateTest.stest();
+
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
+        scenario.analize(root);
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -51,7 +58,7 @@ public class ScenarioAnalize {
 
     public void analize(ScenarioBlock root) throws AISTProcessException {
         errCheck(root);
-        
+
         try {
             scenarioMap = new LinkedHashMap<>();
             scenarioMap.put("適合シナリオ", new ArrayList<>());
@@ -62,7 +69,6 @@ public class ScenarioAnalize {
             //時系列作成
             BlockTimeSequence.DELTA = delta;
             List<BlockTimeSequence> times = timesSequece(root);
-
             Map<String, List<Integer>> timeDelays = timeSequenceDelay(times.get(0), times.get(1));
 
             //スコアの適合シナリオ件数更新
@@ -94,15 +100,25 @@ public class ScenarioAnalize {
     }
 
     private Map<String, List<Integer>> timeSequenceDelay(BlockTimeSequence start, BlockTimeSequence stop) {
-        System.out.println("2ブロックの時間遅れを解析");
+        System.out.println(start.block.item + "->" + stop.block.item + " 時間遅れを解析");
+        String timeTitle = start.block.item + "->" + stop.block.item;
         Map<String, List<Integer>> delays = new HashMap<>();
 
         for (String sid : stop.timeSeq.keySet()) {
             Integer[] st = start.timeSeq.get(sid);
             if (st == null) {
-                System.out.println(sid + " シナリオ不適合");
+                if (scenarioMap.get(timeTitle + "シナリオ不適合") == null) {
+                    scenarioMap.put(timeTitle + "シナリオ不適合", new ArrayList<>());
+                }
+                scenarioMap.get(timeTitle + "シナリオ不適合").add(sid);
                 continue;
+            } else {
+                if (scenarioMap.get(timeTitle + " シナリオ適合") == null) {
+                    scenarioMap.put(timeTitle + "シナリオ適合", new ArrayList<>());
+                }
+                scenarioMap.get(timeTitle + "シナリオ適合").add(sid);
             }
+
             Integer[] sp = stop.timeSeq.get(sid);
 
             //Diveide Time Area
@@ -138,9 +154,27 @@ public class ScenarioAnalize {
             delays.put(sid, delay);
         }
 
-        delays.entrySet().stream().map(tb -> tb.getKey() + ":" + tb.getValue()).forEach(System.out::println);
+        //テスト出力
+        System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
+        System.out.println(testTimePrint(timeTitle + "シナリオ不適合", scenarioMap.get(timeTitle + "シナリオ不適合"), delays, start, stop));
 
         return delays;
+    }
+
+    private String testTimePrint(String s, Collection<String> sids, Map m1, BlockTimeSequence t1, BlockTimeSequence t2) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(s);
+
+        if (sids == null) {
+            sb.append("\n None");
+        } else {
+            sids.stream()
+                    .map(sid -> "\n" + sid + ":" + m1.get(sid)
+                    + "\n  " + (t1.timeSeq.get(sid) != null ? Arrays.toString(t1.timeSeq.get(sid)) : " None")
+                    + "\n  " + (t2.timeSeq.get(sid) != null ? Arrays.toString(t2.timeSeq.get(sid)) : " None"))
+                    .forEach(sb::append);
+        }
+        return sb.toString();
     }
 
     public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
@@ -179,29 +213,29 @@ public class ScenarioAnalize {
             if (s.equals("-")) {
                 System.out.print(s + block.item);
             } else if (s.equals("|")) {
-                String indent = IntStream.range(0, nest * 10).boxed().map(i -> " ").collect(Collectors.joining());
+                String indent = IntStream.range(0, nest-4).boxed().map(i -> " ").collect(Collectors.joining());
                 System.out.println("");
                 System.out.print("|" + indent + s + block.item);
             } else {
                 System.out.print(s + block.item);
             }
 
-            nest++;
+            nest+=block.item.getBytes().length;
             getBlock("-", block.getAND());
-            nest--;
+            nest-=block.item.getBytes().length;
             getBlock("|", block.getOR());
             getBlock("\n", block.getNEXT());
         }
     }
-    
-    private void errCheck(ScenarioBlock root) throws AISTProcessException{
-        if(root == null){
+
+    private void errCheck(ScenarioBlock root) throws AISTProcessException {
+        if (root == null) {
             System.err.println("シナリオブロックの中身がNullです");
             throw new AISTProcessException("シナリオブロックエラー");
         }
         if (!root.getErrCheck().isEmpty()) {
-                System.err.println(root.getErrCheck());
-                throw new AISTProcessException("シナリオブロックエラー");
+            System.err.println(root.getErrCheck());
+            throw new AISTProcessException("シナリオブロックエラー");
         }
     }
 }
