@@ -209,7 +209,7 @@ public class ScenarioAnalize {
 
     private void getBlock(String s, ScenarioBlock block) {
         if (block != null) {
-            scenarioMap.put(block.item, block.data);
+            scenarioMap.put(block.item, block.data.toList());
             if (s.equals("-")) {
                 System.out.print(s + block.item);
             } else if (s.equals("|")) {

@@ -57,6 +57,7 @@ public abstract class EvaluateTemplate {
     public List<String> dateSeq(MSyaryoAnalizer a, List<String> sv){
         return sv.stream()
                 .map(d -> checkSV(a, d))
+                .filter(d -> d != null)  //古いデータが混入により登録作番が変わる可能性があるため
                 .collect(Collectors.toList());
     }
     
@@ -68,21 +69,22 @@ public abstract class EvaluateTemplate {
     }
     
     public ESyaryoObject trans(MSyaryoAnalizer a){
+        //評価用オブジェクト
         ESyaryoObject s = new ESyaryoObject(a);
         
-        if(check(s) || !enable){
+        if(check(a) || !enable){
             s.setData(headers());
             return s;
         }
         
         //評価対象データの抽出
-        Map<String, List<String>> sv = extract(s);
+        Map<String, List<String>> sv = extract(a);
 
         //評価対象データをSMRで集約
-        Map<String, List<String>> data = aggregate(s, sv);
+        Map<String, List<String>> data = aggregate(a, sv);
 
         //評価対象データの正規化
-        Map<String, Double> norm = normalize(s, data);
+        Map<String, Double> norm = normalize(a, data);
 
         //各データを検証にセット
         s.setData(headers(), sv, data, norm);
@@ -90,13 +92,13 @@ public abstract class EvaluateTemplate {
         return s;
     };
     
-    public abstract Boolean check(ESyaryoObject s);
+    public abstract Boolean check(MSyaryoAnalizer s);
     
-    public abstract Map<String, List<String>> extract(ESyaryoObject s);
+    public abstract Map<String, List<String>> extract(MSyaryoAnalizer s);
     
-    public abstract Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv);
+    public abstract Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv);
     
-    public abstract Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data);
+    public abstract Map<String, Double> normalize(MSyaryoAnalizer s, Map<String, List<String>> data);
     
     public abstract void scoring();
     

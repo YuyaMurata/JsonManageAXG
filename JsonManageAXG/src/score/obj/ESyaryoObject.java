@@ -24,8 +24,8 @@ import org.apache.commons.math3.ml.clustering.Clusterable;
  */
 public class ESyaryoObject implements Clusterable {
 
-    public MSyaryoAnalizer a;
-
+    //public MSyaryoAnalizer a;
+    public String name;
     double[] points;
     public Integer cid = 0;
     public Integer score = 1;
@@ -33,13 +33,15 @@ public class ESyaryoObject implements Clusterable {
     public Map<String, List<String>> data;
     public Map<String, Double> norm;
     public String date;
+    public Integer age;
     public Integer smr;
     private Boolean errflg;
 
-    public ESyaryoObject(MSyaryoAnalizer syaryo) {
-        this.a = syaryo;
-        date = a.LEAST_DATE;
-        smr = a.maxSMR;
+    public ESyaryoObject(MSyaryoAnalizer s) {
+        this.name = s.get().getName();
+        date = s.LEAST_DATE;
+        smr = s.maxSMR;
+        age = s.age(date);
     }
 
     public void setData(List<String> h, Map<String, List<String>> sv, Map<String, List<String>> data, Map<String, Double> norm) {
@@ -82,7 +84,7 @@ public class ESyaryoObject implements Clusterable {
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
         String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
         
-        return a.syaryo.getName() + "," + date + "," + a.age(date) + "," + smr + "," + p + "," + avg + "," + cid + "," + score;
+        return name + "," + date + "," + smr + "," + p + "," + avg + "," + cid + "," + score;
     }
 
     @Override

@@ -5,9 +5,8 @@
  */
 package extract;
 
+import analizer.MSyaryoAnalizer;
 import compress.CompressUtil;
-import compress.SnappyMap;
-import obj.MSyaryoObject;
 import org.bson.types.ObjectId;
 
 /**
@@ -22,8 +21,8 @@ public class CompressExtractionObject {
     public CompressExtractionObject() {
     }
     
-    public CompressExtractionObject(MSyaryoObject s) {
-        this.name = s.getName();
+    public CompressExtractionObject(MSyaryoAnalizer s) {
+        this.name = s.get().getName();
         this.data = CompressUtil.compress(s);
     }
     
@@ -51,8 +50,8 @@ public class CompressExtractionObject {
         this.data = data;
     }
     
-    public MSyaryoObject toObj(){
-        return (MSyaryoObject) CompressUtil.decompress(data);
+    public MSyaryoAnalizer toObj(){
+        return (MSyaryoAnalizer) CompressUtil.decompress(data);
     }
     
     @Override

@@ -25,22 +25,17 @@ public class CalculateBearingLife {
     Double[][] engine;
     Double[][] temprature;
     
-    MHeaderObject header;
-    ESyaryoObject syaryo;
-    
-    public CalculateBearingLife(ESyaryoObject s, MHeaderObject h){
-        this.header = h;
-        this.syaryo = s;
+    public CalculateBearingLife(MSyaryoAnalizer s, MHeaderObject h){
         //エンジン回転数VSトルク
-        engine = toMatrix("LOADMAP_実エンジン回転VSエンジントルク");
+        engine = toMatrix(s, h, "LOADMAP_実エンジン回転VSエンジントルク");
         //エンジン水温VS作動
-        temprature = toMatrix("LOADMAP_エンジン水温VS作動油温");
+        temprature = toMatrix(s, h, "LOADMAP_エンジン水温VS作動油温");
         
         //System.out.println(s.a.get("LOADMAP_DATE_SMR"));
     }
     
-    private Double[][] toMatrix(String dkey){
-        Map<String, List<String>> data = syaryo.a.get(dkey);
+    private Double[][] toMatrix(MSyaryoAnalizer s,MHeaderObject header, String dkey){
+        Map<String, List<String>> data = s.get(dkey);
         List<String> h = header.getHeader(dkey);
         
         Double[][] d = new Double[data.size()+2][h.size()+2];

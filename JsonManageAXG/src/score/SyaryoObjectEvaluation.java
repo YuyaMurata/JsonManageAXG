@@ -18,15 +18,15 @@ import file.CSVFileReadWrite;
 import file.DataConvertionUtil;
 import file.MapToJSON;
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import obj.MHeaderObject;
 import py.PythonCommand;
+import thread.ExecutableThreadPool;
 
 /**
  *
@@ -34,29 +34,37 @@ import py.PythonCommand;
  */
 public class SyaryoObjectEvaluation {
 
-    private SyaryoObjectExtract extract;
+    private SyaryoObjectExtract exObj;
 
-    public SyaryoObjectEvaluation(SyaryoObjectExtract extract) {
-        this.extract = extract;
+    public SyaryoObjectEvaluation(SyaryoObjectExtract exObj) {
+        this.exObj = exObj;
     }
 
     public Map<String, String[]> scoring(Map mainteSettings, Map useSettings, Map agesmrSettings, String outPath) throws AISTProcessException {
         try {
             System.out.println("スコアリング開始");
             //メンテナンス分析
-            EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, extract.getDefine());
+            EvaluateTemplate evalMainte = new MainteEvaluate(mainteSettings, exObj);
 
             //使われ方分析
-            EvaluateTemplate evalUse = new UseEvaluate(useSettings, extract.getHeader());
+            EvaluateTemplate evalUse = new UseEvaluate(useSettings, exObj.getHeader());
 
             //経年/SMR分析
-            EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, extract.getDefine());
+            EvaluateTemplate evalAgeSMR = new AgeSMREvaluate(agesmrSettings, exObj);
 
-            extract.getObjMap().values().parallelStream().forEach(s -> {
-                evalMainte.add(s);
-                evalUse.add(s);
-                evalAgeSMR.add(s);
-            });
+            /**
+             * スコアリング終了 メンテ　:　86230 使われ方　:　5569 経年　:　151826
+             */
+            long start = System.currentTimeMillis();
+            ExecutableThreadPool.getInstance().threadPool.submit(()
+                    -> exObj.keySet().parallelStream()
+                            .map(sid -> exObj.getAnalize(sid).toObj())
+                            .forEach(s -> {
+                                evalMainte.add(s);
+                                evalUse.add(s);
+                                evalAgeSMR.add(s);
+                            })).get();
+            long stop = System.currentTimeMillis();
 
             //クラスタリング
             ClusteringESyaryo.cluster(evalMainte._eval.values());
@@ -90,14 +98,16 @@ public class SyaryoObjectEvaluation {
                 d[5] = evalAgeSMR._eval.get(s).score.toString();
 
                 results.put(s, d);
-
             });
-            
+
             //スコアリング結果の出力
-            MapToJSON.toJSON(outPath+"\\scoring_results.json", results);
-            
+            MapToJSON.toJSON(outPath + "\\scoring_results.json", results);
+
+            System.out.println("スコアリング終了");
+            System.out.println("　スコアリング　　:　" + (stop - start));
+
             return results;
-        } catch (Exception e) {
+        } catch (AISTProcessException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
             throw new AISTProcessException("スコアリングエラー");
         }
@@ -130,8 +140,8 @@ public class SyaryoObjectEvaluation {
     }
 
     //メンテナンスのみ
-    private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) throws AISTProcessException {
-        String file = "file\\test_print_eval_" + eval.a.syaryo.getName() + ".csv";
+    /*private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) throws AISTProcessException {
+        String file = "file\\test_print_eval_" + eval.name + ".csv";
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             //評価結果
             pw.println("評価結果");
@@ -176,6 +186,5 @@ public class SyaryoObjectEvaluation {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-    }
-
+    }*/
 }

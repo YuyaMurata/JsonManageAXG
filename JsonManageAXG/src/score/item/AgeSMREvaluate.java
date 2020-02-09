@@ -7,6 +7,7 @@ package score.item;
 
 import axg.shuffle.form.util.FormalizeUtils;
 import analizer.MSyaryoAnalizer;
+import extract.SyaryoObjectExtract;
 import score.obj.ESyaryoObject;
 import score.time.TimeSeriesObject;
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import obj.MSyaryoObject;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import py.PythonCommand;
 import score.cluster.ClusteringESyaryo;
@@ -31,9 +31,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
     private Map<String, String> AGE_SMR_PARTS;
     private Map<String, String> AGE_SMR_SETTING;
-    private Map<String, List<String>> PARTS_DEF;
-
-    public AgeSMREvaluate(Map<String, String> settings, Map<String, List<String>> def) {
+    private SyaryoObjectExtract exObj;
+    
+    public AgeSMREvaluate(Map<String, String> settings, SyaryoObjectExtract exObj) {
         super.enable = settings.get("#EVALUATE").equals("ENABLE");
 
         super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT", "N"}));
@@ -45,18 +45,19 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
         super._settings = AGE_SMR_SETTING;
 
-        PARTS_DEF = def;
+        //PARTS_DEF = def;
+        this.exObj = exObj;
 
         //取得設定の出力
         infoPrint("経年/SMR設定", AGE_SMR_PARTS.keySet());
     }
 
     @Override
-    public Map<String, List<String>> extract(ESyaryoObject s) {
+    public Map<String, List<String>> extract(MSyaryoAnalizer s) {
         Map<String, List<String>> map = AGE_SMR_PARTS.keySet().stream()
                 .collect(Collectors.toMap(iv -> iv,
-                        iv -> PARTS_DEF.get(iv).stream()
-                                .filter(sv -> sv.split(",")[0].equals(s.a.get().getName()))
+                        iv -> exObj.getDefine(iv).toList().stream()
+                                .filter(sv -> sv.split(",")[0].equals(s.get().getName()))
                                 .collect(Collectors.toList())
                 )
                 );
@@ -64,14 +65,14 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
+    public Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
         String visual = AGE_SMR_SETTING.get("#VISUAL_X");
         Integer div = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_X"));
 
         //時系列情報の取得
         AGE_SMR_PARTS.keySet().stream().forEach(k -> {
-            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, sv.get(k)));
+            TimeSeriesObject t = new TimeSeriesObject(s, super.dateSeq(s, sv.get(k)));
 
             //生存解析のデータ作成
             if (!t.series.isEmpty()) {
@@ -80,15 +81,15 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                     data.put(k2, new ArrayList<>());
 
                     //納入年月
-                    data.get(k2).add(s.a.lifestart);
+                    data.get(k2).add(s.lifestart);
 
                     //最初のサービス実績
-                    String firstDate = s.a.getSMRToDate(ti).toString();//s.a.getSMRToDate(t.first()).toString();
+                    String firstDate = s.getSMRToDate(ti).toString();//s.a.getSMRToDate(t.first()).toString();
                     data.get(k2).add(firstDate);
 
                     //経年
                     if (visual.equals("AGE")) {
-                        Integer y = s.a.age(firstDate) / div;
+                        Integer y = s.age(firstDate) / div;
                         data.get(k2).add(y.toString());
                     } else {
                         //SMR
@@ -104,17 +105,17 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                     data.put(k, new ArrayList<>());
 
                     //納入年月
-                    data.get(k).add(s.a.lifestart);
+                    data.get(k).add(s.lifestart);
                 }
 
-                data.get(k).add(s.date);
+                data.get(k).add(s.LEAST_DATE);
                 //経年
                 if (visual.equals("AGE")) {
-                    Integer y = s.a.age(s.date) / div;
+                    Integer y = s.age(s.LEAST_DATE) / div;
                     data.get(k).add(y.toString());
                 } else {
                     //SMR
-                    Integer smr = s.smr / div;
+                    Integer smr = s.maxSMR / div;
                     data.get(k).add(smr.toString());
                 }
                 data.get(k).add("0");
@@ -126,7 +127,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
+    public Map<String, Double> normalize(MSyaryoAnalizer s, Map<String, List<String>> data) {
         List<String> mid = data.values().stream()
                 .sorted(Comparator.comparing(v -> v.get(1), Comparator.naturalOrder()))
                 .limit(1)
@@ -134,7 +135,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
                 .collect(Collectors.toList());
         mid.add(String.valueOf(data.size()));
         
-        System.out.println(_header.get("経年/SMR"));
+        //System.out.println(_header.get("経年/SMR"));
 
         Map norm = _header.get("経年/SMR").stream()
                 .collect(Collectors.toMap(
@@ -181,9 +182,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
         });
     }
 
-    public void testPrint(Map<String, List<String>> data, Map<String, Double> norm, ESyaryoObject s) {
+    public void testPrint(Map<String, List<String>> data, Map<String, Double> norm, MSyaryoAnalizer s) {
         //集約データのテスト出力
-        System.out.println(s.a.get().getName());
+        System.out.println(s.get().getName());
         data.entrySet().stream().map(d -> "  " + d.getKey() + ":" + d.getValue()).forEach(System.out::println);
 
         //正規化データのテスト出力
@@ -191,7 +192,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Boolean check(ESyaryoObject s) {
+    public Boolean check(MSyaryoAnalizer s) {
         //すべての車両を評価
         return false;
     }

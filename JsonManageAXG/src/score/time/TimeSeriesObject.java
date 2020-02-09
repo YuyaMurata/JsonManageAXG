@@ -11,32 +11,33 @@ import java.util.stream.Collectors;
 
 /**
  * サービス実績をSMR時系列データに変換するオブジェクト
+ *
  * @author ZZ17807
  */
 public class TimeSeriesObject {
-    private MSyaryoAnalizer s;
+    public String name;
     public List<Integer> series;
 
-    public TimeSeriesObject(MSyaryoAnalizer syaryo, List<String> datesq) {
-        this.s = syaryo;
-        this.series = toSeries(datesq);
+    public TimeSeriesObject(MSyaryoAnalizer s, List<String> datesq) {
+        this.name = s.get().getName();
+        this.series = toSeries(s, datesq);
     }
 
     //サービス実績の時系列を取得
-    private List<Integer> toSeries(List<String> svdates) {
+    private List<Integer> toSeries(MSyaryoAnalizer s, List<String> svdates) {
         //重複除去 同じ日に何度も壊れることを想定しない
         List<String> sequence = svdates.stream().distinct().collect(Collectors.toList());
-        
+
         //日付系列をSMR系列に変換する
         List<Integer> t = sequence.stream()
-                            .map(d -> s.getDateToSMR(d.split("#")[0]))
-                            .filter(smr -> smr != null)
-                            .collect(Collectors.toList());
-        
+                .map(d -> s.getDateToSMR(d.split("#")[0]))
+                .filter(smr -> smr != null)
+                .collect(Collectors.toList());
+
         return t;
     }
-    
-    public Integer first(){
+
+    public Integer first() {
         return series.get(0);
     }
 }

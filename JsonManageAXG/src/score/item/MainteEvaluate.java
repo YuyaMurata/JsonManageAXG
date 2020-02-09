@@ -6,6 +6,7 @@
 package score.item;
 
 import analizer.MSyaryoAnalizer;
+import extract.SyaryoObjectExtract;
 import score.cluster.ClusteringESyaryo;
 import score.cluster.DataVector;
 import score.obj.ESyaryoObject;
@@ -29,15 +30,15 @@ import py.PythonCommand;
 public class MainteEvaluate extends EvaluateTemplate {
 
     private Map<String, String> MAINTE_INTERVAL;
-    private Map<String, List<String>> PARTS_DEF;
+    private SyaryoObjectExtract exObj;
 
-    public MainteEvaluate(Map<String, String> settings, Map<String, List<String>> def) {
+    public MainteEvaluate(Map<String, String> settings, SyaryoObjectExtract exObj) {
         super.enable = settings.get("#EVALUATE").equals("ENABLE");
         
         MAINTE_INTERVAL = settings.entrySet().stream()
                                 .filter(e -> e.getKey().charAt(0) != '#')
                                 .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
-        PARTS_DEF = def;
+        this.exObj = exObj;
         super.setHeader("メンテナンス", new ArrayList<>(MAINTE_INTERVAL.keySet()));
         
         //取得設定の出力
@@ -46,11 +47,11 @@ public class MainteEvaluate extends EvaluateTemplate {
     
     //対象サービスの抽出
     @Override
-    public Map<String, List<String>> extract(ESyaryoObject s) {
+    public Map<String, List<String>> extract(MSyaryoAnalizer s) {
         Map<String, List<String>> map = MAINTE_INTERVAL.keySet().stream()
                 .collect(Collectors.toMap(iv -> iv,
-                        iv -> PARTS_DEF.get(iv).stream()
-                                .filter(sv -> sv.split(",")[0].equals(s.a.get().getName()))
+                        iv -> exObj.getDefine(iv).toList().stream()
+                                .filter(sv -> sv.split(",")[0].equals(s.get().getName()))
                                 .collect(Collectors.toList())
                 )
                 );
@@ -59,15 +60,15 @@ public class MainteEvaluate extends EvaluateTemplate {
 
     //時系列のメンテナンスデータ取得
     @Override
-    public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
+    public Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
 
         //時系列情報の取得
         MAINTE_INTERVAL.entrySet().stream().forEach(e -> {
-            TimeSeriesObject t = new TimeSeriesObject(s.a, super.dateSeq(s.a, sv.get(e.getKey())));
+            TimeSeriesObject t = new TimeSeriesObject(s, super.dateSeq(s, sv.get(e.getKey())));
 
             //最大SMRからSMR系列を取得
-            Integer len = s.a.maxSMR / Integer.valueOf(e.getValue());
+            Integer len = s.maxSMR / Integer.valueOf(e.getValue());
 
             //len == 0 SMRがインターバル時間に届いていない場合、無条件で1と評価
             List<String> series = len != 0 ? IntStream.range(0, len).boxed().map(i -> "0").collect(Collectors.toList()) : Arrays.asList(new String[]{"1"});
@@ -91,7 +92,7 @@ public class MainteEvaluate extends EvaluateTemplate {
 
     //正規化
     @Override
-    public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
+    public Map<String, Double> normalize(MSyaryoAnalizer s, Map<String, List<String>> data) {
         Map norm = MAINTE_INTERVAL.keySet().stream()
                 .collect(Collectors.toMap(
                         iv -> iv,
@@ -159,7 +160,7 @@ public class MainteEvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Boolean check(ESyaryoObject s) {
-        return s.a.get("受注") == null;
+    public Boolean check(MSyaryoAnalizer s) {
+        return s.get("受注") == null;
     }
 }

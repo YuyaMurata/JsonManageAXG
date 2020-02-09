@@ -27,12 +27,12 @@ import java.util.stream.IntStream;
  * @author ZZ17807
  */
 public class SurvivalESyaryo {
-    
+
     public static Map<String, List<String>> results = new HashMap<>();
     public static String PATH = "";
     public static String X = "";
     public static Integer DELTA = 1;
-    
+
     public static Map<String, List<String>> groupList;
     public static Map<String, String> fileList;
 
@@ -55,16 +55,21 @@ public class SurvivalESyaryo {
         Map<String, List<ESyaryoObject>> group = IntStream.range(1, 4).boxed()
                 .flatMap(i -> IntStream.range(1, 4).boxed().map(j -> i + "," + j))
                 .collect(Collectors.toMap(gij -> gij, gij -> new ArrayList()));
-        
+
         agesmr._eval.keySet().stream().forEach(s -> {
             String g = mainte._eval.get(s).score.toString()
                     + "," + use._eval.get(s).score.toString();
-            
+
             group.get(g).add(agesmr._eval.get(s));
         });
 
         //グループリストの取得
-        groupList = group.entrySet().stream().collect(Collectors.toMap(g -> g.getKey(), g -> g.getValue().stream().map(e -> e.a.get().getName()).collect(Collectors.toList())));
+        groupList = group.entrySet().stream()
+                .collect(Collectors.toMap(
+                        g -> g.getKey(),
+                        g -> g.getValue().stream()
+                                .map(e -> e.name)
+                                .collect(Collectors.toList())));
 
         //グループごとの故障分析
         for (String g : group.keySet()) {
@@ -76,7 +81,7 @@ public class SurvivalESyaryo {
     public static void analize(String gkey, List<ESyaryoObject> g) throws AISTProcessException {
         TreeMap<Double, Set<String>> fail = new TreeMap<>();
         TreeMap<Double, Integer> count = new TreeMap<>();
-        
+
         int xidx = 2;
         int svidx = 3;
 
@@ -92,14 +97,14 @@ public class SurvivalESyaryo {
                                 return d[svidx] == 1d;
                             }).map(d -> d[xidx])
                             .forEach(d -> {
-                                fail.get(d).add(gs.a.syaryo.getName());
+                                fail.get(d).add(gs.name);
                             });
                 });
 
         //故障時の残存台数
         fail.keySet().stream().forEach(ft -> {
             Long cnt = g.stream()
-                    .map(s -> X.equals("SMR") ? s.a.maxSMR : s.a.age(s.date))
+                    .map(gs -> X.equals("SMR") ? gs.smr : gs.age)
                     .filter(x -> ft <= x / DELTA)
                     .count();
             count.put(ft, cnt.intValue());
@@ -111,15 +116,15 @@ public class SurvivalESyaryo {
         for (Double smr : fail.keySet()) {
             Integer failCnt = fail.get(smr).size();
             Integer remN = count.get(smr);
-            
+
             if (remN == 0) {
                 System.err.println("残存台数の算出に誤りがあります.smr=" + smr + " fail=" + failCnt);
                 remN = 1;
             }
-            
+
             Double surv = before * (remN - failCnt) / remN;
             before = surv;
-            
+
             prob.put(smr, 1d - surv);
         }
 
@@ -131,7 +136,7 @@ public class SurvivalESyaryo {
                 .mapToLong(s -> s.getPoints().stream()
                 .filter(v -> v[svidx] == 1d).count())
                 .sum();
-        
+
         fileList.put(gkey, PATH + "\\" + gkey + "_FR.csv");
         printCSV(totalSyaryo, totalFail, fail, count, prob, PATH + "\\" + gkey + "_FR.csv");
     }
@@ -140,7 +145,7 @@ public class SurvivalESyaryo {
     private static Map<String, Double> mtbf(List<ESyaryoObject> data, int xidx, int svidx) {
         Map<String, Double> mtbfMap = data.stream()
                 .collect(Collectors.toMap(
-                        s -> s.a.syaryo.getName(),
+                        s -> s.name,
                         s -> s.getMTBF(xidx, svidx)));
         return mtbfMap;
     }
@@ -155,7 +160,7 @@ public class SurvivalESyaryo {
 
             //ヘッダ
             pw.println(X + ",COUNT,FAIL,RATE");
-            
+
             Optional<Integer> st = remain.values().stream().findFirst();
             pw.println("0," + (st.isPresent() ? st.get() : 0) + ",0,0");
             failur.entrySet().stream()

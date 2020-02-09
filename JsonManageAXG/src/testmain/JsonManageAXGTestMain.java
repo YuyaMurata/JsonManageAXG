@@ -113,13 +113,13 @@ public class JsonManageAXGTestMain {
         
         //スコアリングの生成物の確認
         //生成画像ファイル一覧の取得
-        System.out.println(eval.imageMap());
+        //System.out.println(eval.imageMap());
         //グループリスト
-        System.out.println(eval.groupMap());
+        //System.out.println(eval.groupMap());
         
         //比較
-        String compFile = eval.compare(new String[]{"project\\"+col+"\\out", "1,1", "2,1", "3,1"});
-        System.out.println(compFile);
+        //String compFile = eval.compare(new String[]{"project\\"+col+"\\out", "1,1", "2,1", "3,1"});
+        //System.out.println(compFile);
         
         return results;
     }

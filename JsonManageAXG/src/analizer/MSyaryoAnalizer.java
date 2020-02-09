@@ -9,6 +9,7 @@ import axg.shuffle.form.util.FormInfoMap;
 import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -23,10 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.Collection;
-import java.util.OptionalInt;
 import java.util.Queue;
-import java.util.Random;
-import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -36,8 +34,8 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  *
  * @author ZZ17390
  */
-public class MSyaryoAnalizer {
-
+public class MSyaryoAnalizer implements Serializable {
+    private static final long serialVersionUID = 1L;
     public MSyaryoObject syaryo;
     public String kind = "";
     public String type = "";
@@ -275,7 +273,7 @@ public class MSyaryoAnalizer {
 
             return smr;
         } catch (NumberFormatException ne) {
-            System.err.println("NumberFormatException:"+date);
+            System.err.println("NumberFormatException:" + date);
             return null;
         }
     }

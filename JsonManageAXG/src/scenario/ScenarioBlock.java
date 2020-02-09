@@ -7,6 +7,7 @@ package scenario;
 
 import analizer.MSyaryoAnalizer;
 import exception.AISTProcessException;
+import extract.CompressExtractionDefineFile;
 import extract.SyaryoObjectExtract;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,34 +22,30 @@ import score.time.TimeSeriesObject;
  */
 public class ScenarioBlock {
 
-    private static SyaryoObjectExtract extract;
-    private static Map<String, MSyaryoAnalizer> analize;
+    private static SyaryoObjectExtract exObj;
+    //private static Map<String, MSyaryoAnalizer> analize;
     private static Boolean enable = true;
     private static List<String> exception;
 
     //車両抽出オブジェクトの取得
-    public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) throws AISTProcessException {
-        try {
-            exception = new ArrayList<>();
-            extract = ex;
-            analize = extract.getObjMap().entrySet().stream()
+    public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) {
+
+        exception = new ArrayList<>();
+        exObj = ex;
+        /*analize = extract.getObjMap().entrySet().stream()
                     .collect(Collectors.toMap(
                             e -> e.getKey(),
-                            e -> e.getValue()));
-        } catch (Exception e) {
-            enable = false;
-            throw new AISTProcessException("抽出処理に問題があります．");
-        }
+                            e -> e.getValue()));*/
+
     }
 
     public String item;
-    public List<String> data;
-
+    public CompressExtractionDefineFile data;
     public ScenarioBlock(String item) throws AISTProcessException {
         try {
             check(item);
             this.item = item;
-            this.data = extract.getDefine().get(item);
+            this.data = exObj.getDefine(item);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -59,23 +56,23 @@ public class ScenarioBlock {
         if (!enable) {
             throw new AISTProcessException("抽出処理適用後のオブジェクトセットされていません．");
         }
-        if (extract.getDefine().get(item) == null) {
+        if (exObj.getDefine(item) == null) {
             exception.add(item);
             throw new AISTProcessException("定義にない項目が選択されています：" + item);
         }
     }
 
     public Map<String, TimeSeriesObject> getBlockTimeSequence() {
-        Map<String, List<String>> aggregate = data.stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
+        Map<String, List<String>> aggregate = data.toList().stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
         Map<String, TimeSeriesObject> times = aggregate.entrySet().stream()
-                .filter(e -> analize.get(e.getKey()) != null)
+                .filter(e -> exObj.getAnalize(e.getKey()) != null)
                 .collect(Collectors.toMap(
                         e -> e.getKey(),
                         e -> {
-                            MSyaryoAnalizer s = analize.get(e.getKey());
+                            MSyaryoAnalizer s = exObj.getAnalize(e.getKey()).toObj();
                             List<String> dateSeq = e.getValue().stream()
                                     .map(d -> d.split(",")[1])
-                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true)!=null?s.getSBNToDate(d.split("\\.")[1], true):d.split("\\.")[1])
+                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true) != null ? s.getSBNToDate(d.split("\\.")[1], true) : d.split("\\.")[1])
                                     .filter(d -> d != null)
                                     .collect(Collectors.toList());
                             return new TimeSeriesObject(s, dateSeq);
@@ -117,10 +114,10 @@ public class ScenarioBlock {
     }
 
     public Integer getN() {
-        return this.data.size();
+        return this.data.toList().size();
     }
-    
-    public List<String> getErrCheck(){
+
+    public List<String> getErrCheck() {
         return exception;
     }
 }

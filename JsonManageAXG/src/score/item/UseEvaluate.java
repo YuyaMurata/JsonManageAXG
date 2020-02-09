@@ -103,7 +103,7 @@ public class UseEvaluate extends EvaluateTemplate {
 
     //対象データキーの抽出
     @Override
-    public Map<String, List<String>> extract(ESyaryoObject s) {
+    public Map<String, List<String>> extract(MSyaryoAnalizer s) {
         Map<String, List<String>> map = USE_DATAKEYS.entrySet().stream()
             .collect(Collectors.toMap(
                 ld -> ld.getKey(),
@@ -115,7 +115,7 @@ public class UseEvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Map<String, List<String>> aggregate(ESyaryoObject s, Map<String, List<String>> sv) {
+    public Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = sv.entrySet().stream()
             .collect(Collectors.toMap(
                 e -> e.getKey(), //評価項目
@@ -132,18 +132,18 @@ public class UseEvaluate extends EvaluateTemplate {
         return data;
     }
 
-    private Stream<String> inData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d) {
+    private Stream<String> inData(Map<String, String> setting, List<String> h, MSyaryoAnalizer s, String d) {
         List<String> setH = Arrays.asList(setting.get("HEADER").split(","));
         List<String> dataH = h.stream().map(hi -> hi.split("\\.")[1]).collect(Collectors.toList());
 
         if (!setting.containsKey("SUM")) {
-            return nosum(setting, setH, dataH, s.a.get(d)).stream();
+            return nosum(setting, setH, dataH, s.get(d)).stream();
         } else {
-            return sum(setting, setH, dataH, s.a.get(d)).stream();
+            return sum(setting, setH, dataH, s.get(d)).stream();
         }
     }
 
-    private Stream<String> outData(Map<String, String> setting, List<String> h, ESyaryoObject s, String d) {
+    private Stream<String> outData(Map<String, String> setting, List<String> h, MSyaryoAnalizer s, String d) {
         List<String> list = new ArrayList<>();
         if (d.equals("ベアリング寿命")) {
             CalculateBearingLife be = new CalculateBearingLife(s, HEADER_OBJ);
@@ -189,12 +189,12 @@ public class UseEvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Map<String, Double> normalize(ESyaryoObject s, Map<String, List<String>> data) {
+    public Map<String, Double> normalize(MSyaryoAnalizer s, Map<String, List<String>> data) {
         int smridx = HEADER_OBJ.getHeaderIdx("LOADMAP_DATE_SMR", "SMR"); //LOADMAP_DATE_SMR Value
-        String date = s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").keySet().stream().findFirst().get() : "-1";
-        Double smr = Double.valueOf(s.a.get("LOADMAP_DATE_SMR") != null ? s.a.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
-
-        s.setDateSMR(date, smr.intValue());
+        String date = s.get("LOADMAP_DATE_SMR") != null ? s.get("LOADMAP_DATE_SMR").keySet().stream().findFirst().get() : "-1";
+        Double smr = Double.valueOf(s.get("LOADMAP_DATE_SMR") != null ? s.get("LOADMAP_DATE_SMR").values().stream().map(v -> v.get(smridx)).findFirst().get() : "-1");
+        
+        //s.setDateSMR(date, smr.intValue());
 
         Map<String, Double> norm = new LinkedHashMap<>();
         data.entrySet().stream().forEach(e -> {
@@ -204,7 +204,7 @@ public class UseEvaluate extends EvaluateTemplate {
                 if (data.get(e.getKey()).isEmpty()) {
                     norm.put(e.getKey() + "." + h, -1d);
                 } else {
-                    if (s.a.get(h.split("\\.")[0]) != null) {
+                    if (s.get(h.split("\\.")[0]) != null) {
                         norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)) / smr); // /smr
                     } else {
                         norm.put(e.getKey() + "." + h, Double.valueOf(e.getValue().get(i)));
@@ -299,8 +299,8 @@ public class UseEvaluate extends EvaluateTemplate {
     }
 
     @Override
-    public Boolean check(ESyaryoObject s) {
+    public Boolean check(MSyaryoAnalizer s) {
         //LOADMAP_DATE_SMRのデータが存在しないとき評価しない
-        return s.a.get("LOADMAP_DATE_SMR") == null;
+        return s.get("LOADMAP_DATE_SMR") == null;
     }
 }
