@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package score.time;
+package time;
 
 import analizer.MSyaryoAnalizer;
 import java.util.List;
@@ -15,12 +15,18 @@ import java.util.stream.Collectors;
  * @author ZZ17807
  */
 public class TimeSeriesObject {
+
     public String name;
     public List<Integer> series;
 
     public TimeSeriesObject(MSyaryoAnalizer s, List<String> datesq) {
-        this.name = s.get().getName();
-        this.series = toSeries(s, datesq);
+        try {
+            this.name = s.get().getName();
+            this.series = toSeries(s, datesq);
+        } catch (Exception e) {
+            System.err.println(s.get().getName()+":"+datesq);
+            System.exit(0);
+        }
     }
 
     //サービス実績の時系列を取得

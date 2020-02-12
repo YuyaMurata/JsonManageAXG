@@ -10,7 +10,7 @@ import extract.SyaryoObjectExtract;
 import score.cluster.ClusteringESyaryo;
 import score.cluster.DataVector;
 import score.obj.ESyaryoObject;
-import score.time.TimeSeriesObject;
+import time.TimeSeriesObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;

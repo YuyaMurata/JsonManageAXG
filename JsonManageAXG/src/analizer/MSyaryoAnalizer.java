@@ -261,7 +261,7 @@ public class MSyaryoAnalizer implements Serializable {
 
     //日付　-> SMR
     public Integer getDateToSMR(String date) {
-        try {
+        //try {
             Integer d = Integer.valueOf(date.split("#")[0]);
             if (smrDate.values().contains(d)) {
                 return smrDate.entrySet().stream()
@@ -272,10 +272,10 @@ public class MSyaryoAnalizer implements Serializable {
             Integer smr = regression("date", Integer.valueOf(date));
 
             return smr;
-        } catch (NumberFormatException ne) {
-            System.err.println("NumberFormatException:" + date);
-            return null;
-        }
+        //} catch (NumberFormatException ne) {
+        //    System.err.println("NumberFormatException:" + date);
+        //    return null;
+        //}
     }
 
     public Integer getDateToSVSMR(String date) {
@@ -341,7 +341,6 @@ public class MSyaryoAnalizer implements Serializable {
     //作番と日付をswで相互変換
     private Map<String, String> sbnDate = new HashMap<>();
     private Map<String, String> dateSBN = new HashMap<>();
-
     public String getSBNToDate(String sbn, Boolean sw) {
         try {
             if (sw) {

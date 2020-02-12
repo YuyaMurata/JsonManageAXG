@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import score.time.TimeSeriesObject;
+import time.TimeSeriesObject;
 
 /**
  * シナリオブロック 時系列解析の最小単位
@@ -72,7 +72,9 @@ public class ScenarioBlock {
                             MSyaryoAnalizer s = exObj.getAnalize(e.getKey()).toObj();
                             List<String> dateSeq = e.getValue().stream()
                                     .map(d -> d.split(",")[1])
-                                    .map(d -> s.getSBNToDate(d.split("\\.")[1], true) != null ? s.getSBNToDate(d.split("\\.")[1], true) : d.split("\\.")[1])
+                                    .map(d -> (d.split("\\.")[0].equals("受注") || d.split("\\.")[0].equals("部品") || d.split("\\.")[0].equals("作業")) ? 
+                                            s.getSBNToDate(d.split("\\.")[1], true) : 
+                                            d.split("\\.")[1])
                                     .filter(d -> d != null)
                                     .collect(Collectors.toList());
                             return new TimeSeriesObject(s, dateSeq);

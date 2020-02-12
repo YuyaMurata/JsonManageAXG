@@ -9,7 +9,7 @@ import axg.shuffle.form.util.FormalizeUtils;
 import analizer.MSyaryoAnalizer;
 import extract.SyaryoObjectExtract;
 import score.obj.ESyaryoObject;
-import score.time.TimeSeriesObject;
+import time.TimeSeriesObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
