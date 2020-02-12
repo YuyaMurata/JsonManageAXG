@@ -41,39 +41,25 @@ public class BlockTimeSequence {
     }
 
     int nest = 0;
-    List<String> timeOR = null;
+    List<String> timeOR = new ArrayList<>();
 
     private void parseBlock(String s, ScenarioBlock block) {
         if (block != null) {
-            if (s.equals("|")) {
-                timeOR = new ArrayList<>();
-            }
-
-            if (timeOR != null) {
-                timeOR.add(block.item);
-            } else {
-                timeParseSeq.push(block.item);
-            }
-
+            
+            timeParseSeq.push(block.item);
             nest++;
             parseBlock("&", block.getAND());
             nest--;
             parseBlock("|", block.getOR());
-
             //System.out.println(" " + block.item);
         } else {
-            if (timeOR != null) {
-                if (!timeOR.isEmpty()) {
-                    int orNest = nest - timeOR.size();
-                    String si;
-                    List<String> sil = new ArrayList<>();
-                    while ((orNest > 0) && (timeParseSeq.peek() != null)) {
-                        sil.add(timeParseSeq.pop());
-                        orNest--;
-                    }
-                    System.out.println(String.join("&", timeOR)+"|"+String.join("&", sil));
-                    
-                    timeOR = null;
+            //System.out.println("s="+s);
+            if (timeParseSeq.peek() != null) {
+                if (s.equals("&")) {
+                    timeOR.add(timeParseSeq.pop());
+                } else {
+                    System.out.println(String.join("|", timeOR)+"&"+timeParseSeq.pop());
+                    timeOR = new ArrayList<>();
                 }
             }
         }
