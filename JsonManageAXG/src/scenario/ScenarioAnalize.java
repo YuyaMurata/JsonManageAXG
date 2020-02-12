@@ -23,7 +23,6 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import testmain.ScenarioCreateTest;
-import static testmain.ScenarioCreateTest.s0;
 
 /**
  *
@@ -155,8 +154,8 @@ public class ScenarioAnalize {
         }
 
         //テスト出力
-        System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
-        System.out.println(testTimePrint(timeTitle + "シナリオ不適合", scenarioMap.get(timeTitle + "シナリオ不適合"), delays, start, stop));
+        //System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
+        //System.out.println(testTimePrint(timeTitle + "シナリオ不適合", scenarioMap.get(timeTitle + "シナリオ不適合"), delays, start, stop));
 
         return delays;
     }

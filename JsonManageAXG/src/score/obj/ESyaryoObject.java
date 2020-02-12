@@ -84,7 +84,7 @@ public class ESyaryoObject implements Clusterable {
         String p = Arrays.toString(getPoint()).replace("[", "").replace("]", "").replace(" ", "");
         String avg = String.valueOf(Arrays.stream(p.split(",")).mapToDouble(s -> Double.valueOf(s)).average().getAsDouble());
         
-        return name + "," + date + "," + smr + "," + p + "," + avg + "," + cid + "," + score;
+        return name + "," + date + "," + age +","+smr + "," + p + "," + avg + "," + cid + "," + score;
     }
 
     @Override

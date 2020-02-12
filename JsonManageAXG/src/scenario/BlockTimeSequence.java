@@ -7,8 +7,10 @@ package scenario;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import score.time.TimeSeriesObject;
@@ -22,40 +24,58 @@ public class BlockTimeSequence {
     static Integer DELTA;
     public ScenarioBlock block;
     public Map<String, Integer[]> timeSeq;
-    private List timeParseSeqAND;
+    private Deque<String> timeParseSeq;
 
     public BlockTimeSequence(ScenarioBlock block) {
         this.block = block;
         System.out.println(block.item + " 時系列での解析を実行");
         Map<String, TimeSeriesObject> times = block.getBlockTimeSequence();
         timeSeq = toTimeSequece(times);
-        
-        timeParseSeqAND = new ArrayList();
+
+        timeParseSeq = new LinkedBlockingDeque<>();
         parseBlock("", block);
-        timeParseSeqAND.stream().forEach(System.out::println);
-        
+        timeParseSeq.stream().forEach(System.out::println);
+
         //times.entrySet().stream().map(tb -> tb.getKey()+":"+tb.getValue().series).forEach(System.out::println);   
         //timeSeq.entrySet().stream().map(tb -> tb.getKey()+":"+Arrays.asList(tb.getValue())).forEach(System.out::println);
     }
 
+    int nest = 0;
+    List<String> timeOR = null;
+
     private void parseBlock(String s, ScenarioBlock block) {
         if (block != null) {
-            if (s.equals("-")) {
-                //System.out.print(s + block.item);
-            } else if (s.equals("|")) {
-                //System.out.print("|" + s + block.item);
+            if (s.equals("|")) {
+                timeOR = new ArrayList<>();
             }
 
-            parseBlock("-", block.getAND());
-            parseBlock("|", block.getOR());
-            
-            if (s.equals("-")) {
-                //System.out.print(s + block.item);
-                timeParseSeqAND.add(block.item);
-            } else if (s.equals("|")) {
-                timeParseSeqAND.set(timeParseSeqAND.size()-1, block.item+s+timeParseSeqAND.get(timeParseSeqAND.size()-1));
+            if (timeOR != null) {
+                timeOR.add(block.item);
+            } else {
+                timeParseSeq.push(block.item);
             }
-            
+
+            nest++;
+            parseBlock("&", block.getAND());
+            nest--;
+            parseBlock("|", block.getOR());
+
+            //System.out.println(" " + block.item);
+        } else {
+            if (timeOR != null) {
+                if (!timeOR.isEmpty()) {
+                    int orNest = nest - timeOR.size();
+                    String si;
+                    List<String> sil = new ArrayList<>();
+                    while ((orNest > 0) && (timeParseSeq.peek() != null)) {
+                        sil.add(timeParseSeq.pop());
+                        orNest--;
+                    }
+                    System.out.println(String.join("&", timeOR)+"|"+String.join("&", sil));
+                    
+                    timeOR = null;
+                }
+            }
         }
     }
 

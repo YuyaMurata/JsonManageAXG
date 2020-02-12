@@ -11,20 +11,18 @@ import score.item.AgeSMREvaluate;
 import score.item.EvaluateTemplate;
 import score.item.MainteEvaluate;
 import score.item.UseEvaluate;
-import score.obj.ESyaryoObject;
 import score.survive.SurvivalESyaryo;
 import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
-import file.DataConvertionUtil;
 import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import obj.MHeaderObject;
 import py.PythonCommand;
 import thread.ExecutableThreadPool;
 
@@ -56,8 +54,16 @@ public class SyaryoObjectEvaluation {
              * スコアリング終了 メンテ　:　86230 使われ方　:　5569 経年　:　151826
              */
             long start = System.currentTimeMillis();
+            Map sidsCounts = new ConcurrentHashMap();
+            int tenP = exObj.keySet().size() / 10;
             ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> exObj.keySet().parallelStream()
+                            .peek(sid -> {
+                                sidsCounts.put(sid, 0);
+                                if (sidsCounts.size() % tenP == 0) {
+                                    System.out.println("Scoring process :" + (10*(sidsCounts.size() / tenP)) + "%");
+                                }
+                            })
                             .map(sid -> exObj.getAnalize(sid).toObj())
                             .forEach(s -> {
                                 evalMainte.add(s);
