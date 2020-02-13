@@ -34,6 +34,7 @@ public class ScenarioAnalize {
     private Map<String, String[]> score;
     private String path;
     private int delta = 1000;
+    private int term = 10000;
 
     //Test用
     public static void main(String[] args) throws AISTProcessException {
@@ -66,6 +67,7 @@ public class ScenarioAnalize {
             System.out.println("");
 
             //時系列作成
+            BlockTimeSequence.TERM = term;
             BlockTimeSequence.DELTA = delta;
             List<BlockTimeSequence> times = timesSequece(root);
             Map<String, List<Integer>> timeDelays = timeSequenceDelay(times.get(0), times.get(1));

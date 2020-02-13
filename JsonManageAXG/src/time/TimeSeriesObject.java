@@ -24,7 +24,7 @@ public class TimeSeriesObject {
             this.name = s.get().getName();
             this.series = toSeries(s, datesq);
         } catch (Exception e) {
-            System.err.println(s.get().getName()+":"+datesq);
+            System.err.println(s.get().getName() + ":" + datesq);
             System.exit(0);
         }
     }
