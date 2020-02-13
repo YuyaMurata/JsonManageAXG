@@ -55,13 +55,13 @@ public class SyaryoObjectEvaluation {
              */
             long start = System.currentTimeMillis();
             Map sidsCounts = new ConcurrentHashMap();
-            int tenP = exObj.keySet().size() / 10;
+            int tenP = (exObj.keySet().size() / 10) == 0 ? 1 : (exObj.keySet().size() / 10);
             ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> exObj.keySet().parallelStream()
                             .peek(sid -> {
                                 sidsCounts.put(sid, 0);
                                 if (sidsCounts.size() % tenP == 0) {
-                                    System.out.println("Scoring process :" + (10*(sidsCounts.size() / tenP)) + "%");
+                                    System.out.println("Scoring process :" + (10 * (sidsCounts.size() / tenP)) + "%");
                                 }
                             })
                             .map(sid -> exObj.getAnalize(sid).toObj())
@@ -77,14 +77,20 @@ public class SyaryoObjectEvaluation {
             ClusteringESyaryo.cluster(evalUse._eval.values());
 
             //スコアリング
-            evalMainte.scoring();
-            evalUse.scoring();
-            evalAgeSMR.scoring();
+            try {
+                evalMainte.scoring();
+                evalUse.scoring();
+                evalAgeSMR.scoring();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             //故障解析
+            System.out.println("故障解析");
             SurvivalESyaryo.acmfailure(evalMainte, evalUse, evalAgeSMR, outPath);
 
             //データ出力
+            System.out.println("データ出力");
             print(evalMainte, outPath + "\\mainte_score.csv");
             MainteEvaluate.printImage(outPath + "\\mainte_score.csv", "AGE", "AVG", "SCORE");
             AgeSMREvaluate.printImage(outPath);

@@ -9,6 +9,8 @@ import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import scenario.ScenarioAnalize;
 import scenario.ScenarioBlock;
 import score.SyaryoObjectEvaluation;
@@ -27,6 +29,7 @@ import score.template.ScoringSettingsTemplate;
 public class JsonManageAXGTestMain {
     static String db = "json";
     static String col = "KM_PC200_DB";
+    //static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
@@ -34,9 +37,10 @@ public class JsonManageAXGTestMain {
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
         Map<String, String[]> score = scoring(objex);
-        //scenario(score, objex);
+        scenario(score, objex);
     }
     
+    //クレンジング
     public static void cleansing() throws AISTProcessException{
         try{
         MSyaryoObjectCleansing clean = new MSyaryoObjectCleansing(db, col);
@@ -59,6 +63,7 @@ public class JsonManageAXGTestMain {
         }
     }
     
+    //整形
     public static void shuffle() throws AISTProcessException{
         MSyaryoObjectShuffle shuffle = new MSyaryoObjectShuffle(db, col);
         
@@ -71,6 +76,7 @@ public class JsonManageAXGTestMain {
         shuffle.shuffle("project\\"+col+"\\config\\shuffle_settings.json", "project\\"+col+"\\config\\layout_settings.json");
     }
     
+    //抽出
     public static SyaryoObjectExtract extract() throws AISTProcessException{
         SyaryoObjectExtract objex = new SyaryoObjectExtract(db, col);
         
@@ -85,7 +91,7 @@ public class JsonManageAXGTestMain {
         
         //サマリー
         String summary = objex.getSummary();
-        //System.out.println(summary);
+        System.out.println(summary);
         
         //シナリオ解析の項目
         //System.out.println(objex.getDefineItem());
@@ -93,6 +99,7 @@ public class JsonManageAXGTestMain {
         return objex;
     }
     
+    //スコアリング
     public static Map<String, String[]> scoring(SyaryoObjectExtract objex) throws AISTProcessException{
         //スコアリングのテンプレート生成
         String[] templates = ScoringSettingsTemplate.createTemplate(db, col, "project\\"+col+"\\config");
@@ -124,12 +131,15 @@ public class JsonManageAXGTestMain {
         return results;
     }
     
+    //シナリオ
     public static void scenario(Map<String, String[]> score, SyaryoObjectExtract objex) throws AISTProcessException{
         //シナリオの作成
         ScenarioBlock startBlock = createScenarioBlock(objex);
+        getBlock("", startBlock);
+        System.out.println("");
         
         //シナリオの解析
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\"+col+"\\out");
+        /*ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\"+col+"\\out");
         scenario.analize(startBlock);
         
         //各項目の件数とシナリオ件数
@@ -141,9 +151,10 @@ public class JsonManageAXGTestMain {
         //類似検索
         List<String> syaryoList = new ArrayList();   //選択した車両リスト
         scenario.similar(syaryoList, "");
-        System.out.println(scenario.getSearchResults());
+        System.out.println(scenario.getSearchResults());*/
     }
     
+    //テスト用
     public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex) throws AISTProcessException{
         ScenarioBlock.setSyaryoObjectExtract(objex);
         
@@ -176,5 +187,27 @@ public class JsonManageAXGTestMain {
         sc32.setAND(sc33);
         
         return start;
+    }
+    
+    //シナリオブロックの表示テスト
+    static int nest = 0;
+    public static void getBlock(String s, ScenarioBlock block){
+        if (block != null) {
+            if (s.equals("-")) {
+                System.out.print(s + block.item);
+            } else if (s.equals("|")) {
+                String indent = IntStream.range(0, nest-4).boxed().map(i -> " ").collect(Collectors.joining());
+                System.out.println("");
+                System.out.print("|" + indent + s + block.item);
+            } else {
+                System.out.print(s + block.item);
+            }
+
+            nest+=block.item.getBytes().length;
+            getBlock("-", block.getAND());
+            nest-=block.item.getBytes().length;
+            getBlock("|", block.getOR());
+            getBlock("\n", block.getNEXT());
+        }
     }
 }

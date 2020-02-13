@@ -45,7 +45,7 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.stest();
+        ScenarioBlock root = ScenarioCreateTest.s0();
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
@@ -65,12 +65,17 @@ public class ScenarioAnalize {
             System.out.println("登録されたシナリオ：");
             getBlock("", root);
             System.out.println("");
-
-            //時系列作成
+            
+            //時系列作成 
             BlockTimeSequence.TERM = term;
             BlockTimeSequence.DELTA = delta;
             List<BlockTimeSequence> times = timesSequece(root);
-            Map<String, List<Integer>> timeDelays = timeSequenceDelay(times.get(0), times.get(1));
+            Map<String, List<Integer>> timeDelays = new HashMap<>();
+            for(int i=0; i < times.size()-1; i++){
+                System.out.println("PC200-8-N1-350012:t1"+Arrays.toString(times.get(i).timeSeq.get("PC200-8-N1-350012")));
+                System.out.println("PC200-8-N1-350012:t2"+Arrays.toString(times.get(i+1).timeSeq.get("PC200-8-N1-350012")));
+                timeDelays = timeSequenceDelay(times.get(i), times.get(i+1));
+            }
 
             //スコアの適合シナリオ件数更新
             //適合シナリオ件数
@@ -80,7 +85,9 @@ public class ScenarioAnalize {
                         String[] sc = score.get(td.getKey());
                         sc[scidx] = String.valueOf(td.getValue().size());
                         score.put(td.getKey(), sc);
-
+                        
+                        //System.out.println(td.getKey()+td.getValue());
+                        
                         td.getValue().stream()
                                 .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey() + "," + tdi));
                     });
@@ -156,7 +163,7 @@ public class ScenarioAnalize {
         }
 
         //テスト出力
-        //System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
+        System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
         //System.out.println(testTimePrint(timeTitle + "シナリオ不適合", scenarioMap.get(timeTitle + "シナリオ不適合"), delays, start, stop));
 
         return delays;

@@ -218,6 +218,7 @@ public class UseEvaluate extends EvaluateTemplate {
 
     @Override
     public void scoring() {
+        System.out.println("使われ方のスコアリング");
         //評価適用　無効
         if (!super.enable) {
             return;

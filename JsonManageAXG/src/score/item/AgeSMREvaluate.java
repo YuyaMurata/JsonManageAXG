@@ -154,6 +154,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
     @Override
     public void scoring() {
+        System.out.println("経年/SMRのスコアリング");
         //評価適用　無効
         if (!super.enable) {
             return;
@@ -167,6 +168,8 @@ public class AgeSMREvaluate extends EvaluateTemplate {
 
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
+        if(splitor==null) return ;
+        
         List<Integer> sort = IntStream.range(0, splitor.size()).boxed()
                 .sorted(Comparator.comparing(i -> splitor.get(i).getPoints().stream().mapToDouble(d -> d.p).average().getAsDouble(), Comparator.naturalOrder()))
                 .map(i -> i).collect(Collectors.toList());

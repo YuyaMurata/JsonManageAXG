@@ -23,20 +23,13 @@ import time.TimeSeriesObject;
 public class ScenarioBlock {
 
     private static SyaryoObjectExtract exObj;
-    //private static Map<String, MSyaryoAnalizer> analize;
     private static Boolean enable = true;
     private static List<String> exception;
 
     //車両抽出オブジェクトの取得
     public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) {
-
         exception = new ArrayList<>();
         exObj = ex;
-        /*analize = extract.getObjMap().entrySet().stream()
-                    .collect(Collectors.toMap(
-                            e -> e.getKey(),
-                            e -> e.getValue()));*/
-
     }
 
     public String item;
@@ -107,7 +100,6 @@ public class ScenarioBlock {
     private ScenarioBlock next;
 
     public void setNEXT(ScenarioBlock block) {
-        System.out.println(block.item);
         this.next = block;
     }
 
