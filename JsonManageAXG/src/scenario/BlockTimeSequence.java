@@ -14,29 +14,29 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import scenario.valid.ValidateCalculateBlock;
 import time.TimeSeriesObject;
 
 /**
+ * AND-ORで接続されたシナリオブロックを１つにまとめる |ブロック1| － |ブロック2| -> |ブロック123| L |ブロック3|
  *
  * @author ZZ17807
  */
 public class BlockTimeSequence {
 
-    static Integer DELTA;
-    static Integer TERM;
     public ScenarioBlock block;
-    public Map<String, Integer[]> timeSeq;
+    public ScenarioBlock pBlock;
+    private ValidateCalculateBlock valid;
 
     public BlockTimeSequence(ScenarioBlock block) {
         this.block = block;
-        System.out.println(block.item + " 時系列での解析を実行");
-        //Map<String, TimeSeriesObject> times = block.getBlockTimeSequence();
-        //timeSeq = toTimeSequece(times);
-
-        timeSeq = parseBlock(block);
-        //times.entrySet().stream().map(tb -> tb.getKey()+":"+tb.getValue().series).forEach(System.out::println);   
-        //timeSeq.entrySet().stream().map(tb -> tb.getKey()+":"+Arrays.asList(tb.getValue())).forEach(System.out::println);
+        System.out.println(block.item + " の解析を実行");
+        this.valid = new ValidateCalculateBlock();
+        this.pBlock = parseBlock(block);
+        this.pBlock = reject0(pBlock);
+        
+        this.valid.setFinBlock(pBlock);
+        this.valid.toFile(block.item.replace(":", "") + ".csv");
     }
 
     int nest = 0;
@@ -66,188 +66,114 @@ public class BlockTimeSequence {
         return list;
     }
 
-    //シナリオブロックをパースして1系列にまとめる
-    private Map<String, Integer[]> parseBlock(ScenarioBlock block) {
+    //シナリオブロックをパースしてまとめる
+    private ScenarioBlock parseBlock(ScenarioBlock block) {
         List<ScenarioBlock> list = parseALL(new ArrayList<>(), block);
         
-        //OR-AND解析
-        Map<ScenarioBlock, List<ScenarioBlock>> or = list.parallelStream()
+        //ORブロックにANDで接続されたブロックの集約
+        Map<ScenarioBlock, List<ScenarioBlock>> or = list.stream()
+                .peek(b -> valid.setBlock(b))
                 .filter(b -> b.getOR() != null)
                 .collect(Collectors.toMap(b -> b, b -> parseAND(new ArrayList(), b.getOR())));
-        
-        //テスト出力
-        /*or.entrySet().stream()
-                .map(ob -> "OR-"+ob.getKey().item+
-                        ":"+ob.getValue().stream().map(oab -> oab.item).collect(Collectors.toList()))
-                .forEach(System.out::println);
-        */
-        
-        //ORブロック部を優先計算
+
+        //上記で集約したブロックを計算
         Queue<ScenarioBlock> priority = new LinkedBlockingQueue<>(or.keySet());
-        Map<ScenarioBlock, Map<String, Integer[]>> orTimeAnalize = new HashMap<>();
+        Map<ScenarioBlock, ScenarioBlock> orTimeAnalize = new HashMap<>();
         while (priority.peek() != null) {
             ScenarioBlock orBlock = priority.poll();
             List<ScenarioBlock> orList = or.get(orBlock);
-            System.out.println(orBlock.item);
-            
-            System.out.println("orList:"+orList.stream().map(ob -> ob.item).collect(Collectors.toList()));
-            
+
             //演算の優先度を確認
             Optional<ScenarioBlock> check = orList.stream().filter(b -> priority.contains(b)).findFirst();
             if (check.isPresent()) {
                 priority.offer(orBlock);
                 continue;
             }
-            
-            Map<String, Integer[]> result = toTimeSequece(orBlock.getBlockTimeSequence());
+
+            ScenarioBlock result = orBlock;
+
             if (!orList.isEmpty()) {
-                //時系列から数字配列に変換
-                List<Map<String, Integer[]>> seqList = orList.parallelStream()
+                //計算の終わったシナリオブロックを更新
+                List<ScenarioBlock> seqList = orList.parallelStream()
                         .map(o -> orTimeAnalize.get(o) == null
-                        ? toTimeSequece(o.getBlockTimeSequence())
+                        ? o
                         : orTimeAnalize.get(o))
                         .collect(Collectors.toList());
 
                 //演算
-                Map<String, Integer[]> andResult = seqList.stream()
-                        .reduce((a, b) -> calcTimeSequence("AND", a, b))
+                ScenarioBlock andResult = seqList.stream()
+                        .reduce((a, b) -> calcBlock("AND", a, b))
                         .orElse(null);
-                
-               result = calcTimeSequence("OR", result, andResult);
+
+                result = calcBlock("OR", result, andResult);
             }
-            
             orTimeAnalize.put(orBlock, result);
         }
-        
-        //計算結果
-        /*orTimeAnalize.entrySet().stream()
-                .map(e -> e.getKey().item+"\n"+e.getValue().entrySet().stream()
-                                .map(ei -> "  "+ei.getKey()+Arrays.toString(ei.getValue())).collect(Collectors.joining("\n")))
-                .forEach(System.out::println);
-        */
-        
+
         list = parseAND(new ArrayList<>(), block);
-        System.out.println(list.stream().map(li -> li.item).collect(Collectors.toList()));
-        Map<String, Integer[]> parseResult = new HashMap<>();
+        ScenarioBlock parseResult;
         if (list.size() > 1) {
             parseResult = list.stream()
-                    .map(lb -> orTimeAnalize.get(lb) != null ? orTimeAnalize.get(lb) : toTimeSequece(lb.getBlockTimeSequence()))
-                    .reduce((b1, b2) -> calcTimeSequence("AND", b1, b2)).orElse(null);
-        }else{
-            parseResult = orTimeAnalize.get(list.get(0)) != null ? orTimeAnalize.get(list.get(0)) : toTimeSequece(list.get(0).getBlockTimeSequence());
+                    .map(lb -> orTimeAnalize.get(lb) != null ? orTimeAnalize.get(lb) : lb)
+                    .reduce((b1, b2) -> calcBlock("AND", b1, b2)).orElse(null);
+        } else {
+            parseResult = orTimeAnalize.get(list.get(0)) != null ? orTimeAnalize.get(list.get(0)) : list.get(0);
         }
         
-        //演算のテスト出力
-        //calcTestPrint(list);
+        //ブロックの0系列車両を削除
+        
         
         return parseResult;
     }
 
-    private Map<String, Integer[]> calcTimeSequence(String op, Map<String, Integer[]> b1, Map<String, Integer[]> b2) {
+    private ScenarioBlock calcBlock(String op, ScenarioBlock b1, ScenarioBlock b2) {
         if (b1 == null || b2 == null) {
             return null;
         }
+
+        //2ブロックの登録されているSIDを集約
         List<String> sids = new ArrayList<>();
-        sids.addAll(b1.keySet());
-        sids.addAll(b2.keySet());
+        sids.addAll(b1.getBlockSeq().keySet());
+        sids.addAll(b2.getBlockSeq().keySet());
         sids = sids.stream().distinct().collect(Collectors.toList());
 
-        return sids.stream().collect(Collectors.toMap(sid -> sid, sid -> {
-            Integer[] b1arr = b1.get(sid) != null ? b1.get(sid) : zero();
-            Integer[] b2arr = b2.get(sid) != null ? b2.get(sid) : zero();
+        Map<String, TimeSeriesObject> result = sids.stream().collect(Collectors.toMap(sid -> sid, sid -> {
+            TimeSeriesObject b1t = b1.getBlock1Seq(sid);
+            TimeSeriesObject b2t = b2.getBlock1Seq(sid);
 
-            //AND演算
+            //演算
             if (op.equals("AND")) {
-                return IntStream.range(0, b1arr.length).boxed()
-                        .map(i -> Math.min(b1arr[i], b2arr[i]))
-                        .toArray(Integer[]::new);
+                return b1t.and(b2t);
             } else {
-                return IntStream.range(0, b1arr.length).boxed()
-                        .map(i -> Math.max(b1arr[i], b2arr[i]))
-                        .toArray(Integer[]::new);
+                return b1t.or(b2t);
             }
         }));
+
+        ScenarioBlock calcBlock = new ScenarioBlock(b1.item + op + b2.item, result);
+
+        valid.setBlock(b1);
+        valid.setBlock(b2);
+        valid.setBlock(calcBlock);
+
+        return calcBlock;
     }
 
-    private Map<String, Integer[]> toTimeSequece(Map<String, TimeSeriesObject> times) {
-        return times.entrySet().stream()
-                .collect(Collectors.toMap(
-                        t -> t.getKey(),
-                        t -> {
-                            int n = TERM / DELTA;
-                            Integer[] seq = new Integer[n];
-                            Arrays.fill(seq, 0);
-
-                            t.getValue().series.stream()
-                                    .filter(ti -> ti < TERM && ti > -1)
-                                    .map(ti -> ti / DELTA)
-                                    .forEach(tidx -> seq[tidx] += 1);
-                            return seq;
-                        }
-                ));
-    }
-
-    private Integer[] zero() {
-        Integer[] z = new Integer[TERM / DELTA];
-        Arrays.fill(z, 0);
-        return z;
-    }
-
-    public void reject(String sid, List<Integer> fit) {
-        Integer[] tseq = timeSeq.get(sid);
-        IntStream.range(0, tseq.length)
-                .filter(t -> !fit.contains(t))
-                .forEach(t -> tseq[t] = 0);
-        timeSeq.put(sid, tseq);
+    private ScenarioBlock reject0(ScenarioBlock p) {
+        System.out.println("before:"+p.blockSeq.size());
+        List<String> rejectIDs = p.blockSeq.entrySet().stream()
+                                    .filter(pb -> !Arrays.stream(pb.getValue().arrSeries).filter(pbi -> pbi > 0).findFirst().isPresent())
+                                    .map(pb -> pb.getKey())
+                                    .collect(Collectors.toList());
+        System.out.println(rejectIDs);
+        rejectIDs.stream().forEach(p.blockSeq::remove);
+        System.out.println("after:"+p.blockSeq.size());
+        return p;
     }
 
     public void print() {
         System.out.println(block.item);
-        timeSeq.entrySet().stream()
-                .map(tb -> tb.getKey() + ":" + Arrays.asList(tb.getValue()))
-                .forEach(System.out::println);
-    }
-
-    private void calcTestPrint(ScenarioBlock orblock, List<ScenarioBlock> list) {
-        List<String> items = list.stream().map(li -> li.item).collect(Collectors.toList());
-        List<Map<String, Integer[]>> bl = list.stream()
-                .map(l -> toTimeSequece(l.getBlockTimeSequence()))
-                .collect(Collectors.toList());
-
-        System.out.println(bl);
-
-        //演算テスト
-        Map<String, Integer[]> bans = bl.size() == 1 ? bl.get(0) : bl.stream()
-                .reduce((b1, b2) -> calcTimeSequence("AND", b1, b2)).orElse(null);
-
-        Map<String, Integer[]> ormap = toTimeSequece(orblock.getBlockTimeSequence());
-        Map<String, Integer[]> results = calcTimeSequence("OR", ormap, bans);
-
-        System.out.println(String.join("|", items));
-
-        results.entrySet().stream()
-                .map(b -> {
-                    Integer[] bansarr = bans.get(b.getKey());
-
-                    StringBuilder s = new StringBuilder();
-                    s.append(b.getKey());
-                    IntStream.range(0, items.size())
-                            .forEach(i -> {
-                                Integer[] barr = bl.get(i).get(b.getKey());
-                                String it = items.get(i).split(":")[0];
-                                if (barr != null) {
-                                    s.append("\n  " + it + ":" + Arrays.toString(barr));
-                                } else {
-                                    s.append("\n  " + it + ":None");
-                                }
-                            });
-
-                    s.append("\n  and  :" + Arrays.toString(bansarr));
-                    s.append("\n  " + orblock.item.split(":")[0] + ":" + Arrays.toString(ormap.get(b.getKey())));
-                    s.append("\n       :" + Arrays.toString(b.getValue()));
-
-                    return s.toString();
-                })
+        pBlock.getBlockSeq().entrySet().stream()
+                .map(tb -> tb.getKey() + ":" + Arrays.asList(tb.getValue().arrSeries))
                 .forEach(System.out::println);
     }
 }

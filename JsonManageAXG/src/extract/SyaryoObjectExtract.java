@@ -15,6 +15,7 @@ import file.ListToCSV;
 import file.MapToJSON;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -102,7 +103,9 @@ public class SyaryoObjectExtract {
         List<String> exception = new ArrayList<>();
 
         //コードチェック
-        settings.entrySet().stream().forEach(f -> {
+        settings.entrySet().stream()
+                .filter(f -> !f.getKey().equals("#SCENARIO_TERM_DELTA"))
+                .forEach(f -> {
             f.getValue().stream()
                     .filter(fi -> !fi.contains(".csv"))
                     .filter(fi -> fi.split("\\.").length < 3)
@@ -259,6 +262,18 @@ public class SyaryoObjectExtract {
         }
     }
 
+    public Map<String, Integer> getScenarioSetting() {
+        List<String> scenarioSettings = settings.get("SCENARIO_TERM_DELTA");
+        if (scenarioSettings != null) {
+            Map<String, Integer> map = new HashMap<>();
+            map.put("TERM", Integer.valueOf(scenarioSettings.get(0)));
+            map.put("DELTA", Integer.valueOf(scenarioSettings.get(1)));
+
+            return map;
+        }
+        return null;
+    }
+
     public String getDataList() {
         StringBuilder sb = new StringBuilder();
 
@@ -335,7 +350,6 @@ public class SyaryoObjectExtract {
         //確認用
         //extDB.clear();
         //defDB.clear();
-
         try {
             extDB.check();
             defDB.check();
@@ -362,8 +376,10 @@ public class SyaryoObjectExtract {
     private String summary() {
         StringBuilder sb = new StringBuilder();
         sb.append("車両数の変化：変化前,変化後\n");
-        sb.append(info.getInfo("MACHINE_KIND"));sb.append(":");
-        sb.append(orgDB.getKeyList().size());sb.append(",");
+        sb.append(info.getInfo("MACHINE_KIND"));
+        sb.append(":");
+        sb.append(orgDB.getKeyList().size());
+        sb.append(",");
         sb.append(extDB.getKeyList().size());
 
         List<String> rec;
@@ -394,6 +410,16 @@ public class SyaryoObjectExtract {
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
 
+        sb.append("\n\nシナリオ設定情報,値\n");
+        if (getScenarioSetting() != null) {
+            rec = getScenarioSetting().entrySet().stream()
+                    .map(e -> "  " + e.getKey() + "," + e.getValue())
+                    .collect(Collectors.toList());
+            sb.append(recToString(rec));
+        }else{
+            sb.append("  None,None");
+        }
+
         return sb.toString();
     }
 
@@ -411,10 +437,10 @@ public class SyaryoObjectExtract {
     }
 
     //抽出処理適用後の車両分析器を取得
-    public List<String> keySet(){
+    public List<String> keySet() {
         return extDB.getKeyList();
     }
-    
+
     public CompressExtractionObject getAnalize(String sid) {
         return (CompressExtractionObject) extDB.getObj(sid);
     }

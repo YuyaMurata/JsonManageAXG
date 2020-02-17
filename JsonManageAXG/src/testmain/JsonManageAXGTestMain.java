@@ -6,12 +6,9 @@ import axg.shuffle.MSyaryoObjectShuffle;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import scenario.ScenarioAnalize;
 import scenario.ScenarioBlock;
 import score.SyaryoObjectEvaluation;
 import score.template.ScoringSettingsTemplate;
@@ -36,7 +33,14 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
+        //車両の確認
+        System.out.println("PC200-8-N1-315119"+":"+(objex.getAnalize("PC200-8-N1-315119")!=null));
+        System.out.println("PC200-10- -452030"+":"+(objex.getAnalize("PC200-10--452030")!=null));
+        System.out.println("PC200-8-N1-310933"+":"+(objex.getAnalize("PC200-8-N1-310933")!=null));
+        System.out.println("PC200-8-N1-313776"+":"+(objex.getAnalize("PC200-8-N1-313776")!=null));
+        System.out.println("PC200-8- -305351"+":"+(objex.getAnalize("PC200-8--305351")!=null));
+        
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     

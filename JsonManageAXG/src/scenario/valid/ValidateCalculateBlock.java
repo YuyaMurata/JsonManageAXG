@@ -1,0 +1,73 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package scenario.valid;
+
+import exception.AISTProcessException;
+import file.CSVFileReadWrite;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import scenario.ScenarioBlock;
+import time.TimeSeriesObject;
+
+/**
+ *
+ * @author ZZ17807
+ */
+public class ValidateCalculateBlock {
+    Map<String, Map<String, Integer[]>> map;
+    
+    public ValidateCalculateBlock() {
+        map = new HashMap<>();
+    }
+    
+    public void setBlock(ScenarioBlock b){
+        b.getBlockSeq().entrySet().stream().forEach(bi ->{
+            if(map.get(bi.getKey())==null){
+                map.put(bi.getKey(), new LinkedHashMap<>());
+            }
+            
+            TimeSeriesObject obj = bi.getValue();
+            map.get(bi.getKey()).put(b.item, obj.arrSeries);
+        });
+    }
+    
+    public void setFinBlock(ScenarioBlock b){
+        b.getBlockSeq().entrySet().stream().forEach(bi ->{
+            if(map.get(bi.getKey())==null){
+                map.put(bi.getKey(), new LinkedHashMap<>());
+            }
+            
+            TimeSeriesObject obj = bi.getValue();
+            map.get(bi.getKey()).put("Fin."+b.item, obj.arrSeries);
+        });
+        map = map.entrySet().stream()
+                .filter(m -> b.blockSeq.containsKey(m.getKey()))
+                .collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
+    }
+    
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append("ブロックの計算検証:\n");
+        map.entrySet().stream()
+                .map(e -> e.getKey()+",\n  "+e.getValue().entrySet().stream()
+                            .map(ei -> ","+ei.getKey()+","+Arrays.stream(ei.getValue()).map(eij -> eij.toString()).collect(Collectors.joining(",")))
+                            .collect(Collectors.joining("\n"))+"\n")
+                .forEach(sb::append);
+        return sb.toString();
+    }
+    
+    public void toFile(String filename){
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)){
+            pw.println(toString());
+        } catch (AISTProcessException ex) {
+            ex.printStackTrace();
+        }
+    }
+}

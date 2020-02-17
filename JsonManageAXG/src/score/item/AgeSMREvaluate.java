@@ -147,9 +147,9 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     }
 
     //画像生成
-    public static void printImage(String deirectory) {
+    public static void printImage(String directory) {
         System.out.println("経年/SMRの画像を生成．");
-        PythonCommand.py("py\\agesmr_visualize.py", new String[]{deirectory});
+        PythonCommand.py("py\\agesmr_visualize.py", new String[]{directory});
     }
 
     @Override

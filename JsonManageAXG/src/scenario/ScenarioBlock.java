@@ -25,15 +25,32 @@ public class ScenarioBlock {
     private static SyaryoObjectExtract exObj;
     private static Boolean enable = true;
     private static List<String> exception;
+    public static Integer TERM = 10000;
+    public static Integer DELTA = 1000;
+    public Map<String, TimeSeriesObject> blockSeq;
 
     //車両抽出オブジェクトの取得
     public static void setSyaryoObjectExtract(SyaryoObjectExtract ex) {
         exception = new ArrayList<>();
         exObj = ex;
-    }
 
+        //シナリオ設定が存在する時の処理
+        Map<String, Integer> settings = exObj.getScenarioSetting();
+        if (settings != null) {
+            TERM = settings.get("TERM");
+            DELTA = settings.get("DELTA");
+        }
+    }
+    
+    //計算用のシナリオブロック
+    public ScenarioBlock(String item, Map<String, TimeSeriesObject> blockSeq){
+        this.item = item;
+        this.blockSeq = blockSeq;
+    }
+    
     public String item;
     public CompressExtractionDefineFile data;
+
     public ScenarioBlock(String item) throws AISTProcessException {
         try {
             check(item);
@@ -54,10 +71,10 @@ public class ScenarioBlock {
             throw new AISTProcessException("定義にない項目が選択されています：" + item);
         }
     }
-
-    public Map<String, TimeSeriesObject> getBlockTimeSequence() {
+    
+    private void setBlockSeq(){
         Map<String, List<String>> aggregate = data.toList().stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
-        Map<String, TimeSeriesObject> times = aggregate.entrySet().parallelStream()
+        this.blockSeq = aggregate.entrySet().parallelStream()
                 .filter(e -> exObj.getAnalize(e.getKey()) != null)
                 .collect(Collectors.toMap(
                         e -> e.getKey(),
@@ -65,15 +82,35 @@ public class ScenarioBlock {
                             MSyaryoAnalizer s = exObj.getAnalize(e.getKey()).toObj();
                             List<String> dateSeq = e.getValue().stream()
                                     .map(d -> d.split(",")[1])
-                                    .map(d -> (d.split("\\.")[0].equals("受注") || d.split("\\.")[0].equals("部品") || d.split("\\.")[0].equals("作業")) ? 
-                                            s.getSBNToDate(d.split("\\.")[1], true) : 
-                                            d.split("\\.")[1])
+                                    .map(d -> (d.split("\\.")[0].equals("受注") || d.split("\\.")[0].equals("部品") || d.split("\\.")[0].equals("作業"))
+                                    ? s.getSBNToDate(d.split("\\.")[1], true)
+                                    : d.split("\\.")[1])
                                     .filter(d -> d != null)
                                     .collect(Collectors.toList());
-                            return new TimeSeriesObject(s, dateSeq);
+                            return new TimeSeriesObject(s, dateSeq, TERM, DELTA);
                         })
                 );
-        return times;
+    }
+    
+    public Map<String, TimeSeriesObject> getBlockSeq() {
+        if (this.blockSeq == null) {
+            setBlockSeq();
+        }
+        
+        return this.blockSeq;
+    }
+    
+    public TimeSeriesObject getBlock1Seq(String sid) {
+        if (this.blockSeq == null) {
+            setBlockSeq();
+        }
+        
+        TimeSeriesObject tobj = this.blockSeq.get(sid);
+        if(tobj == null){
+            tobj = TimeSeriesObject.getZeroObject(item, TERM, DELTA);
+        }
+        
+        return tobj;
     }
 
     //シナリオブロックの作成

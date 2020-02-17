@@ -33,8 +33,6 @@ public class ScenarioAnalize {
     private Map<String, List<String>> scenarioMap;
     private Map<String, String[]> score;
     private String path;
-    private int delta = 1000;
-    private int term = 10000;
 
     //Test用
     public static void main(String[] args) throws AISTProcessException {
@@ -45,13 +43,10 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s0();
-
+        ScenarioBlock root = ScenarioCreateTest.stest();
+        
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
-        
-        //test
-        testFileOut(scenario.scenarioMap);
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -65,15 +60,15 @@ public class ScenarioAnalize {
         try {
             scenarioMap = new LinkedHashMap<>();
             scenarioMap.put("適合シナリオ", new ArrayList<>());
+
+            //ブロックの出力
             System.out.println("登録されたシナリオ：");
             getBlock("", root);
             System.out.println("");
-            
+
             //時系列作成 
-            BlockTimeSequence.TERM = term;
-            BlockTimeSequence.DELTA = delta;
             List<BlockTimeSequence> times = timesSequece(root);
-            Map<String, List<Integer>> timeDelays = new HashMap<>();
+            /*Map<String, List<Integer>> timeDelays = new HashMap<>();
             for(int i=0; i < times.size()-1; i++){
                 timeDelays = timeSequenceDelay(times.get(i), times.get(i+1));
             }
@@ -90,6 +85,7 @@ public class ScenarioAnalize {
                         td.getValue().stream()
                                 .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey() + "," + tdi));
                     });
+             */
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -106,6 +102,7 @@ public class ScenarioAnalize {
         return times;
     }
 
+    /*
     private Map<String, List<Integer>> timeSequenceDelay(BlockTimeSequence start, BlockTimeSequence stop) {
         System.out.println(start.block.item + "->" + stop.block.item + " 時間遅れを解析");
         String timeTitle = start.block.item + "->" + stop.block.item;
@@ -182,8 +179,7 @@ public class ScenarioAnalize {
                     .forEach(sb::append);
         }
         return sb.toString();
-    }
-
+    }*/
     public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
 
         //テスト用
@@ -220,16 +216,16 @@ public class ScenarioAnalize {
             if (s.equals("-")) {
                 System.out.print(s + block.item);
             } else if (s.equals("|")) {
-                String indent = IntStream.range(0, nest-4).boxed().map(i -> " ").collect(Collectors.joining());
+                String indent = IntStream.range(0, nest - 4).boxed().map(i -> " ").collect(Collectors.joining());
                 System.out.println("");
                 System.out.print("|" + indent + s + block.item);
             } else {
                 System.out.print(s + block.item);
             }
 
-            nest+=block.item.getBytes().length;
+            nest += block.item.getBytes().length;
             getBlock("-", block.getAND());
-            nest-=block.item.getBytes().length;
+            nest -= block.item.getBytes().length;
             getBlock("|", block.getOR());
             getBlock("\n", block.getNEXT());
         }
@@ -244,17 +240,5 @@ public class ScenarioAnalize {
             System.err.println(root.getErrCheck());
             throw new AISTProcessException("シナリオブロックエラー");
         }
-    }
-    
-    private static void testFileOut(Map<String, List<String>> map){
-        map.entrySet().stream().forEach(System.out::println);
-        map.keySet().stream().forEach(k ->{
-            try(PrintWriter pw = CSVFileReadWrite.writerSJIS(k.replace("->", "").replace(":", "")+".csv")){
-                pw.println("sid,data");
-                map.get(k).stream().forEach(pw::println);
-            } catch (AISTProcessException ex) {
-                ex.printStackTrace();
-            }
-        });
     }
 }
