@@ -13,12 +13,9 @@ import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,7 +40,7 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.stest();
+        ScenarioBlock root = ScenarioCreateTest.s0();
         
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);

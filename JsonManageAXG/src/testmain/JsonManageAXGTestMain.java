@@ -33,12 +33,6 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        //車両の確認
-        System.out.println("PC200-8-N1-315119"+":"+(objex.getAnalize("PC200-8-N1-315119")!=null));
-        System.out.println("PC200-10- -452030"+":"+(objex.getAnalize("PC200-10--452030")!=null));
-        System.out.println("PC200-8-N1-310933"+":"+(objex.getAnalize("PC200-8-N1-310933")!=null));
-        System.out.println("PC200-8-N1-313776"+":"+(objex.getAnalize("PC200-8-N1-313776")!=null));
-        System.out.println("PC200-8- -305351"+":"+(objex.getAnalize("PC200-8--305351")!=null));
         
         //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
