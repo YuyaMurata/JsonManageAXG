@@ -119,10 +119,7 @@ public class BlockTimeSequence {
         } else {
             parseResult = orTimeAnalize.get(list.get(0)) != null ? orTimeAnalize.get(list.get(0)) : list.get(0);
         }
-        
-        //ブロックの0系列車両を削除
-        
-        
+
         return parseResult;
     }
 
