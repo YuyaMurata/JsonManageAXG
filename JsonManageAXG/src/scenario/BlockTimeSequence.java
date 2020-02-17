@@ -7,14 +7,11 @@ package scenario;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -72,18 +69,19 @@ public class BlockTimeSequence {
     //シナリオブロックをパースして1系列にまとめる
     private Map<String, Integer[]> parseBlock(ScenarioBlock block) {
         List<ScenarioBlock> list = parseALL(new ArrayList<>(), block);
-
+        
         //OR-AND解析
-        Map<ScenarioBlock, List<ScenarioBlock>> or = list.stream()
+        Map<ScenarioBlock, List<ScenarioBlock>> or = list.parallelStream()
                 .filter(b -> b.getOR() != null)
                 .collect(Collectors.toMap(b -> b, b -> parseAND(new ArrayList(), b.getOR())));
-
+        
         //テスト出力
         /*or.entrySet().stream()
-                .map(ob -> ob.getKey().item+
+                .map(ob -> "OR-"+ob.getKey().item+
                         ":"+ob.getValue().stream().map(oab -> oab.item).collect(Collectors.toList()))
                 .forEach(System.out::println);
-         */
+        */
+        
         //ORブロック部を優先計算
         Queue<ScenarioBlock> priority = new LinkedBlockingQueue<>(or.keySet());
         Map<ScenarioBlock, Map<String, Integer[]>> orTimeAnalize = new HashMap<>();
@@ -91,17 +89,20 @@ public class BlockTimeSequence {
             ScenarioBlock orBlock = priority.poll();
             List<ScenarioBlock> orList = or.get(orBlock);
             System.out.println(orBlock.item);
+            
+            System.out.println("orList:"+orList.stream().map(ob -> ob.item).collect(Collectors.toList()));
+            
             //演算の優先度を確認
             Optional<ScenarioBlock> check = orList.stream().filter(b -> priority.contains(b)).findFirst();
             if (check.isPresent()) {
                 priority.offer(orBlock);
                 continue;
             }
-
+            
             Map<String, Integer[]> result = toTimeSequece(orBlock.getBlockTimeSequence());
             if (!orList.isEmpty()) {
                 //時系列から数字配列に変換
-                List<Map<String, Integer[]>> seqList = orList.stream()
+                List<Map<String, Integer[]>> seqList = orList.parallelStream()
                         .map(o -> orTimeAnalize.get(o) == null
                         ? toTimeSequece(o.getBlockTimeSequence())
                         : orTimeAnalize.get(o))
@@ -111,31 +112,35 @@ public class BlockTimeSequence {
                 Map<String, Integer[]> andResult = seqList.stream()
                         .reduce((a, b) -> calcTimeSequence("AND", a, b))
                         .orElse(null);
-
-                result = calcTimeSequence("OR", result, andResult);
-
+                
+               result = calcTimeSequence("OR", result, andResult);
             }
+            
             orTimeAnalize.put(orBlock, result);
         }
         
-        
-        list = parseAND(new ArrayList<>(), block);
-        System.out.println(list.stream().map(li -> li.item).collect(Collectors.toList()));
-        if (list.size() > 1) {
-            return list.stream()
-                    .map(lb -> orTimeAnalize.get(lb) != null ? orTimeAnalize.get(lb) : toTimeSequece(lb.getBlockTimeSequence()))
-                    .reduce((b1, b2) -> calcTimeSequence("AND", b1, b2)).orElse(null);
-        }else{
-            return toTimeSequece(list.get(0).getBlockTimeSequence());
-        }
         //計算結果
         /*orTimeAnalize.entrySet().stream()
                 .map(e -> e.getKey().item+"\n"+e.getValue().entrySet().stream()
                                 .map(ei -> "  "+ei.getKey()+Arrays.toString(ei.getValue())).collect(Collectors.joining("\n")))
                 .forEach(System.out::println);
-         */
+        */
+        
+        list = parseAND(new ArrayList<>(), block);
+        System.out.println(list.stream().map(li -> li.item).collect(Collectors.toList()));
+        Map<String, Integer[]> parseResult = new HashMap<>();
+        if (list.size() > 1) {
+            parseResult = list.stream()
+                    .map(lb -> orTimeAnalize.get(lb) != null ? orTimeAnalize.get(lb) : toTimeSequece(lb.getBlockTimeSequence()))
+                    .reduce((b1, b2) -> calcTimeSequence("AND", b1, b2)).orElse(null);
+        }else{
+            parseResult = orTimeAnalize.get(list.get(0)) != null ? orTimeAnalize.get(list.get(0)) : toTimeSequece(list.get(0).getBlockTimeSequence());
+        }
+        
         //演算のテスト出力
         //calcTestPrint(list);
+        
+        return parseResult;
     }
 
     private Map<String, Integer[]> calcTimeSequence(String op, Map<String, Integer[]> b1, Map<String, Integer[]> b2) {

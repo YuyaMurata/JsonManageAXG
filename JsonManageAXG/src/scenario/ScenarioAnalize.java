@@ -49,6 +49,9 @@ public class ScenarioAnalize {
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
+        
+        //test
+        testFileOut(scenario.scenarioMap);
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -72,8 +75,6 @@ public class ScenarioAnalize {
             List<BlockTimeSequence> times = timesSequece(root);
             Map<String, List<Integer>> timeDelays = new HashMap<>();
             for(int i=0; i < times.size()-1; i++){
-                System.out.println("PC200-8-N1-350012:t1"+Arrays.toString(times.get(i).timeSeq.get("PC200-8-N1-350012")));
-                System.out.println("PC200-8-N1-350012:t2"+Arrays.toString(times.get(i+1).timeSeq.get("PC200-8-N1-350012")));
                 timeDelays = timeSequenceDelay(times.get(i), times.get(i+1));
             }
 
@@ -85,8 +86,6 @@ public class ScenarioAnalize {
                         String[] sc = score.get(td.getKey());
                         sc[scidx] = String.valueOf(td.getValue().size());
                         score.put(td.getKey(), sc);
-                        
-                        //System.out.println(td.getKey()+td.getValue());
                         
                         td.getValue().stream()
                                 .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey() + "," + tdi));
@@ -163,7 +162,7 @@ public class ScenarioAnalize {
         }
 
         //テスト出力
-        System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
+        //System.out.println(testTimePrint(timeTitle + "シナリオ適合", scenarioMap.get(timeTitle + "シナリオ適合"), delays, start, stop));
         //System.out.println(testTimePrint(timeTitle + "シナリオ不適合", scenarioMap.get(timeTitle + "シナリオ不適合"), delays, start, stop));
 
         return delays;
@@ -245,5 +244,17 @@ public class ScenarioAnalize {
             System.err.println(root.getErrCheck());
             throw new AISTProcessException("シナリオブロックエラー");
         }
+    }
+    
+    private static void testFileOut(Map<String, List<String>> map){
+        map.entrySet().stream().forEach(System.out::println);
+        map.keySet().stream().forEach(k ->{
+            try(PrintWriter pw = CSVFileReadWrite.writerSJIS(k.replace("->", "").replace(":", "")+".csv")){
+                pw.println("sid,data");
+                map.get(k).stream().forEach(pw::println);
+            } catch (AISTProcessException ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 }

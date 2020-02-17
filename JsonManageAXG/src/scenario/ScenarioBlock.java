@@ -57,7 +57,7 @@ public class ScenarioBlock {
 
     public Map<String, TimeSeriesObject> getBlockTimeSequence() {
         Map<String, List<String>> aggregate = data.toList().stream().collect(Collectors.groupingBy(d -> d.split(",")[0]));
-        Map<String, TimeSeriesObject> times = aggregate.entrySet().stream()
+        Map<String, TimeSeriesObject> times = aggregate.entrySet().parallelStream()
                 .filter(e -> exObj.getAnalize(e.getKey()) != null)
                 .collect(Collectors.toMap(
                         e -> e.getKey(),
