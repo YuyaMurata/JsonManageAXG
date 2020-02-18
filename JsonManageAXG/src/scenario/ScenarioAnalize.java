@@ -44,8 +44,8 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s0();
-        
+        ScenarioBlock root = ScenarioCreateTest.s01();
+
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
     }
@@ -56,6 +56,7 @@ public class ScenarioAnalize {
     }
 
     ValidateCalculateBlock valid;
+
     public void analize(ScenarioBlock root) throws AISTProcessException {
         errCheck(root);
 
@@ -72,24 +73,37 @@ public class ScenarioAnalize {
             //時系列作成 
             List<BlockTimeSequence> blockList = timesSequece(root);
             Map<String, Map<String, List<Integer>>> timeMap = new LinkedHashMap<>();
-            for(int i=0; i < blockList.size()-1; i++){
+            List<String> fit = new ArrayList<>(blockList.get(0).pBlock.blockSeq.keySet());
+            for (int i = 0; i < blockList.size() - 1; i++) {
                 BlockTimeSequence start = blockList.get(i);
-                BlockTimeSequence stop = blockList.get(i+1);
-                timeMap.put(start.block.item+"->"+stop.block.item, diffTimeSequenceDelay(start, stop));
+                BlockTimeSequence stop = blockList.get(i + 1);
+                Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
+                timeMap.put(start.block.item + "->" + stop.block.item, delay);
+                
+                //適合チェック
+                fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
+            
+            //全系列で共通する車両IDを抽出
 
-            //スコアの適合シナリオ件数更新
-            //適合シナリオ件数
-            int scidx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
-            timeDelays.entrySet().stream()
-                    .forEach(td -> {
-                        String[] sc = score.get(td.getKey());
-                        sc[scidx] = String.valueOf(td.getValue().size());
-                        score.put(td.getKey(), sc);
-                        
-                        td.getValue().stream()
-                                .forEach(tdi -> scenarioMap.get("適合シナリオ").add(td.getKey() + "," + tdi));
-                    });
+            //時系列評価
+            Map<String, List<Integer>> eval = new HashMap();
+            fit.stream().forEach(sid ->{
+                timeMap.values().stream().map(t -> t.get(sid))
+                        .forEach(v ->{
+                            if(eval.get(sid) == null)
+                                eval.put(sid, new ArrayList<>());
+                            eval.get(sid).addAll(v);
+                        }); 
+            });
+            
+            System.out.println("評価対象:"+eval.size());
+            
+            blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
+            valid.setDelay("Fin.Scenario", eval);
+            valid.filter(eval.keySet());
+            valid.toFile("Scenario.csv");
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -113,9 +127,10 @@ public class ScenarioAnalize {
         
         //2ブロックに共通して存在する車両リスト
         List<String> fitSIDs = start.pBlock.blockSeq.keySet().stream()
-                                .filter(sid -> stop.pBlock.blockSeq.get(sid) != null)
-                                .collect(Collectors.toList());
-        
+                    .filter(sid -> stop.pBlock.blockSeq.get(sid) != null)
+                    .collect(Collectors.toList());
+            
+
         for (String sid : fitSIDs) {
             TimeSeriesObject stobj = start.pBlock.getBlock1Seq(sid);
             TimeSeriesObject spobj = stop.pBlock.getBlock1Seq(sid);
@@ -144,13 +159,19 @@ public class ScenarioAnalize {
 
                 i = j + 1;
             }
-            
-            //選択されなかった時系列の削除
-            start.reject(sid, fitStart);
-            stop.reject(sid, fitStop);
 
-            delays.put(sid, delay);
+            //選択されなかった時系列の削除
+            stobj.delete(fitStart);
+            spobj.delete(fitStop);
+
+            //valid.setStrBlock("Del", start.pBlock);
+            //valid.setStrBlock("Del", stop.pBlock);
+            
+            if(!delay.isEmpty())
+                delays.put(sid, delay);
         }
+
+        //valid.setDelay(timeTitle, delays);
 
         return delays;
     }

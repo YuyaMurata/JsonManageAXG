@@ -35,7 +35,7 @@ public class BlockTimeSequence {
         this.pBlock = parseBlock(block);
         this.pBlock = reject0(pBlock);
         
-        this.valid.setFinBlock(pBlock);
+        this.valid.setStrBlock("Fin", pBlock);
         this.valid.toFile(block.item.replace(":", "") + ".csv");
     }
 

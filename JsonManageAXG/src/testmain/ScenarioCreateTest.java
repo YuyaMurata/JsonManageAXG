@@ -65,4 +65,18 @@ public class ScenarioCreateTest {
 
         return b1;
     }
+    
+    //検証シナリオ0
+    public static ScenarioBlock s01() throws AISTProcessException {
+        ScenarioBlock b1 = new ScenarioBlock("充電電圧異常低下(AB00KE)");
+        ScenarioBlock b11 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");
+        ScenarioBlock b12 = new ScenarioBlock("ラジエータ水位異常低下(B@BCZK)");
+        ScenarioBlock b31 = new ScenarioBlock("ガスケット(品番)");
+
+        b1.setAND(b11);
+        b11.setAND(b12);
+        b1.setNEXT(b31);
+
+        return b1;
+    }
 }

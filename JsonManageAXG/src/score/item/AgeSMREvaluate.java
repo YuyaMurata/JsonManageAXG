@@ -68,7 +68,7 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     public Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
         String visual = AGE_SMR_SETTING.get("#VISUAL_X");
-        Integer div = Integer.valueOf(AGE_SMR_SETTING.get("#DIVIDE_X"));
+        Integer div = Integer.valueOf(AGE_SMR_SETTING.get("#DELTA_X"));
 
         //時系列情報の取得
         AGE_SMR_PARTS.keySet().stream().forEach(k -> {

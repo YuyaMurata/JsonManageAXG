@@ -84,6 +84,14 @@ public class TimeSeriesObject {
         return new TimeSeriesObject(name, seq);
     }
     
+    //適合しなかった系列の削除
+    public void delete(List<Integer> fit){
+        Integer[] arr = IntStream.range(0, arrSeries.length).boxed()
+                                .map(i -> fit.contains(i)?arrSeries[i]:0)
+                                .toArray(Integer[]::new);
+        arrSeries = arr;
+    }
+    
     public TimeSeriesObject and(TimeSeriesObject t){
         Integer[] tarr =  IntStream.range(0, this.arrSeries.length).boxed()
                         .map(i -> Math.min(this.arrSeries[i], t.arrSeries[i]))

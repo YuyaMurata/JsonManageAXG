@@ -13,7 +13,11 @@ import java.util.Arrays;
  */
 public class ArrayGetTets {
     public static void main(String[] args) {
-        String s = "1,2,3,,,,,";
-        Arrays.stream(s.split(",")).forEach(System.out::println);
+        Integer[] a = new Integer[]{1,2,3,4,5};
+        System.out.println(Arrays.toString(a));
+        Integer[] b = a.clone();
+        b[0] = 5; b[4] = 1;
+        System.out.println(Arrays.toString(a));
+        System.out.println(Arrays.toString(b));
     }
 }

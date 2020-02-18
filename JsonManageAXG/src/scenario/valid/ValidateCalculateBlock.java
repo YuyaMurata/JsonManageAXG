@@ -9,8 +9,10 @@ import exception.AISTProcessException;
 import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import scenario.ScenarioBlock;
@@ -38,18 +40,32 @@ public class ValidateCalculateBlock {
         });
     }
     
-    public void setFinBlock(ScenarioBlock b){
+    public void setStrBlock(String str, ScenarioBlock b){
         b.getBlockSeq().entrySet().stream().forEach(bi ->{
             if(map.get(bi.getKey())==null){
                 map.put(bi.getKey(), new LinkedHashMap<>());
             }
             
             TimeSeriesObject obj = bi.getValue();
-            map.get(bi.getKey()).put("Fin."+b.item, obj.arrSeries);
+            map.get(bi.getKey()).put(str+"."+b.item, obj.arrSeries);
         });
         map = map.entrySet().stream()
                 .filter(m -> b.blockSeq.containsKey(m.getKey()))
                 .collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
+    }
+    
+    public void setDelay(String title, Map<String, List<Integer>> del){
+        del.entrySet().stream().forEach(di ->{
+            if(map.get(di.getKey())==null){
+                map.put(di.getKey(), new LinkedHashMap<>());
+            }
+            
+            map.get(di.getKey()).put(title, di.getValue().toArray(new Integer[di.getValue().size()]));
+        });
+    }
+    
+    public void filter(Collection keys){
+        map = map.entrySet().stream().filter(m -> keys.contains(m.getKey())).collect(Collectors.toMap(m -> m.getKey(), m -> m.getValue()));
     }
     
     public String toString(){
