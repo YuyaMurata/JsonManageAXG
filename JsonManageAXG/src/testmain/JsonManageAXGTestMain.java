@@ -6,6 +6,7 @@ import axg.shuffle.MSyaryoObjectShuffle;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,8 +26,8 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "KM_PC200_DB";
-    //static String col = "SMALLTEST_DB";
+    //static String col = "KM_PC200_DB";
+    static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
         //cleansing();
@@ -34,7 +35,7 @@ public class JsonManageAXGTestMain {
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
         
-        //Map<String, String[]> score = scoring(objex);
+        Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -127,6 +128,11 @@ public class JsonManageAXGTestMain {
         //System.out.println(compFile);
         
         return results;
+    }
+    
+    public static Map<String, String[]> getScoring() throws AISTProcessException{
+        return ((Map<String, List<String>>) MapToJSON.toMapSJIS("project\\"+col+"\\out\\scoring_results.json")).entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
     }
     
     //シナリオ

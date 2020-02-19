@@ -35,10 +35,9 @@ public class ScenarioBlock {
         exObj = ex;
 
         //シナリオ設定が存在する時の処理
-        Map<String, Integer> settings = exObj.getScenarioSetting();
-        if (settings != null) {
-            TERM = settings.get("TERM");
-            DELTA = settings.get("DELTA");
+        if (exObj.getDefine("#SCENARIO_TERM") != null) {
+            TERM = Integer.valueOf(exObj.getDefine("#SCENARIO_TERM").toList().get(0));
+            DELTA = Integer.valueOf(exObj.getDefine("#SCENARIO_DELTA").toList().get(0));
         }
     }
     
@@ -52,10 +51,12 @@ public class ScenarioBlock {
     public CompressExtractionDefineFile data;
 
     public ScenarioBlock(String item) throws AISTProcessException {
+        System.out.println("生成ブロック:"+item);
         try {
             check(item);
             this.item = item;
             this.data = exObj.getDefine(item);
+            System.out.println("      "+this.data.toList());
             this.blockSeq = null;
         } catch (Exception e) {
             e.printStackTrace();

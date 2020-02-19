@@ -43,7 +43,7 @@ public class SurvivalESyaryo {
 
         //出力ファイル設定
         X = agesmr._settings.get("#VISUAL_X");
-        DELTA = Integer.valueOf(agesmr._settings.get("#DIVIDE_X"));
+        DELTA = Integer.valueOf(agesmr._settings.get("#DELTA_X"));
 
         //初期化
         fileList = new HashMap<>();

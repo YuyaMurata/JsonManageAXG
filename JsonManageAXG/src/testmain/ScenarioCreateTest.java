@@ -51,6 +51,18 @@ public class ScenarioCreateTest {
     }
 
     //検証シナリオ0
+    public static ScenarioBlock t0() throws AISTProcessException {
+        ScenarioBlock b1 = new ScenarioBlock("部品1");
+        ScenarioBlock b2 = new ScenarioBlock("部品2");
+        ScenarioBlock b3 = new ScenarioBlock("部品3");
+
+        b1.setNEXT(b2);
+        b2.setNEXT(b3);
+
+        return b1;
+    }
+    
+    //検証シナリオ0
     public static ScenarioBlock s0() throws AISTProcessException {
         ScenarioBlock b1 = new ScenarioBlock("充電電圧異常低下(AB00KE)");
         ScenarioBlock b11 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");

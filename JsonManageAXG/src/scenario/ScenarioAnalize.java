@@ -37,14 +37,13 @@ public class ScenarioAnalize {
 
     //Test用
     public static void main(String[] args) throws AISTProcessException {
-        Map<String, String[]> score = ((Map<String, List<String>>) MapToJSON.toMapSJIS("project\\KM_PC200_DB\\out\\scoring_results.json")).entrySet().stream()
-                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
+        Map<String, String[]> score = JsonManageAXGTestMain.getScoring();
         //抽出処理
         SyaryoObjectExtract objex = JsonManageAXGTestMain.extract();
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s01();
+        ScenarioBlock root = ScenarioCreateTest.t0();
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
