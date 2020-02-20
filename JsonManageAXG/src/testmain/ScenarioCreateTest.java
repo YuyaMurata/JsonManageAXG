@@ -83,11 +83,11 @@ public class ScenarioCreateTest {
         ScenarioBlock b1 = new ScenarioBlock("充電電圧異常低下(AB00KE)");
         ScenarioBlock b11 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");
         ScenarioBlock b12 = new ScenarioBlock("ラジエータ水位異常低下(B@BCZK)");
-        ScenarioBlock b31 = new ScenarioBlock("ガスケット(品番)");
+        ScenarioBlock b3 = new ScenarioBlock("C1-1:エンジンOH");
 
         b1.setAND(b11);
         b11.setAND(b12);
-        b1.setNEXT(b31);
+        b1.setNEXT(b3);
 
         return b1;
     }

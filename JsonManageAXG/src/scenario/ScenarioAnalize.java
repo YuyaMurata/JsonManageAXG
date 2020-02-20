@@ -43,7 +43,7 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.t0();
+        ScenarioBlock root = ScenarioCreateTest.s01();
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
@@ -52,6 +52,7 @@ public class ScenarioAnalize {
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
         this.score = score;
         this.path = outPath;
+        ValidateCalculateBlock.OUTPATH = outPath;
     }
 
     ValidateCalculateBlock valid;
@@ -101,7 +102,7 @@ public class ScenarioAnalize {
             blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
             valid.setDelay("Fin.Scenario", eval);
             valid.filter(eval.keySet());
-            valid.toFile("Scenario.csv");
+            valid.toFile("Result.csv");
             
         } catch (Exception e) {
             e.printStackTrace();

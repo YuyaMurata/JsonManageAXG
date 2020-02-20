@@ -23,6 +23,7 @@ import time.TimeSeriesObject;
  * @author ZZ17807
  */
 public class ValidateCalculateBlock {
+    public static String OUTPATH = "";
     Map<String, Map<String, Integer[]>> map;
     
     public ValidateCalculateBlock() {
@@ -80,7 +81,7 @@ public class ValidateCalculateBlock {
     }
     
     public void toFile(String filename){
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(filename)){
+        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(OUTPATH+"\\Scenario_"+filename)){
             pw.println(toString());
         } catch (AISTProcessException ex) {
             ex.printStackTrace();
