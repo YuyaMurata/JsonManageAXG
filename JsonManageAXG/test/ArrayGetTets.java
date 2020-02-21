@@ -1,5 +1,7 @@
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -19,5 +21,12 @@ public class ArrayGetTets {
         b[0] = 5; b[4] = 1;
         System.out.println(Arrays.toString(a));
         System.out.println(Arrays.toString(b));
+        
+        String[] s = new String[]{"a","b","c"};
+        Map<String, String[]> map = new HashMap();
+        map.put("s", s);
+        System.out.println("s:"+Arrays.asList(map.get("s")));
+        map.get("s")[0] = "c";
+        System.out.println("s:"+Arrays.asList(map.get("s")));
     }
 }

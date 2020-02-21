@@ -9,7 +9,6 @@ import testmain.JsonManageAXGTestMain;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
-import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +34,9 @@ public class ScenarioAnalize {
     private Map<String, String[]> score;
     private String path;
 
+    //ブロックの計算検証用
+    private ValidateCalculateBlock valid;
+
     //Test用
     public static void main(String[] args) throws AISTProcessException {
         Map<String, String[]> score = JsonManageAXGTestMain.getScoring();
@@ -55,15 +57,13 @@ public class ScenarioAnalize {
         ValidateCalculateBlock.OUTPATH = outPath;
     }
 
-    ValidateCalculateBlock valid;
-
+    //シナリオ解析
     public void analize(ScenarioBlock root) throws AISTProcessException {
         errCheck(root);
 
         try {
             valid = new ValidateCalculateBlock();
             scenarioMap = new LinkedHashMap<>();
-            scenarioMap.put("適合シナリオ", new ArrayList<>());
 
             //ブロックの出力
             System.out.println("登録されたシナリオ：");
@@ -79,37 +79,49 @@ public class ScenarioAnalize {
                 BlockTimeSequence stop = blockList.get(i + 1);
                 Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
                 timeMap.put(start.block.item + "->" + stop.block.item, delay);
-                
+
                 //適合チェック
                 fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
-            
-            //全系列で共通する車両IDを抽出
 
             //時系列評価
             Map<String, List<Integer>> eval = new HashMap();
-            fit.stream().forEach(sid ->{
+            fit.stream().forEach(sid -> {
                 timeMap.values().stream().map(t -> t.get(sid))
-                        .forEach(v ->{
-                            if(eval.get(sid) == null)
+                        .forEach(v -> {
+                            if (eval.get(sid) == null) {
                                 eval.put(sid, new ArrayList<>());
+                            }
                             eval.get(sid).addAll(v);
-                        }); 
+                        });
             });
-            
-            System.out.println("評価対象:"+eval.size());
-            
+            System.out.println("評価対象車両:" + eval.size() + " 台");
+
+            //適合シナリオの登録
+            List<String> evalN = eval.entrySet().stream()
+                    .flatMap(e -> e.getValue().stream().map(ei -> e.getKey() + "," + ei))
+                    .collect(Collectors.toList());
+            scenarioMap.put("適合シナリオ", new ArrayList<>(evalN));
+
+            //シナリオ適合結果
+            int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
+            eval.entrySet().stream().forEach(e -> {
+                //シナリオ解析が ブロックA->B->C の評価で A->B,B->Cが行われるため
+                int bn = blockList.size() > 1 ? blockList.size() - 1 : 1;
+                score.get(e.getKey())[scIdx] = String.valueOf(e.getValue().size() / bn);
+            });
+
             blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
             valid.setDelay("Fin.Scenario", eval);
             valid.filter(eval.keySet());
             valid.toFile("Result.csv");
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    //各時系列ブロックのAND OR解析
+    ////シナリオブロックを横(AND・OR)方向に解析
     private List<BlockTimeSequence> timesSequece(ScenarioBlock block) {
         List<BlockTimeSequence> times = new ArrayList<>();
         ScenarioBlock b = block;
@@ -120,16 +132,16 @@ public class ScenarioAnalize {
         return times;
     }
 
+    //シナリオブロックを縦(時間)方向に解析
     private Map<String, List<Integer>> diffTimeSequenceDelay(BlockTimeSequence start, BlockTimeSequence stop) {
         System.out.println(start.block.item + "->" + stop.block.item + " 時間遅れを解析");
         String timeTitle = start.block.item + "->" + stop.block.item;
         Map<String, List<Integer>> delays = new HashMap<>();
-        
+
         //2ブロックに共通して存在する車両リスト
         List<String> fitSIDs = start.pBlock.blockSeq.keySet().stream()
-                    .filter(sid -> stop.pBlock.blockSeq.get(sid) != null)
-                    .collect(Collectors.toList());
-            
+                .filter(sid -> stop.pBlock.blockSeq.get(sid) != null)
+                .collect(Collectors.toList());
 
         for (String sid : fitSIDs) {
             TimeSeriesObject stobj = start.pBlock.getBlock1Seq(sid);
@@ -166,13 +178,12 @@ public class ScenarioAnalize {
 
             //valid.setStrBlock("Del", start.pBlock);
             //valid.setStrBlock("Del", stop.pBlock);
-            
-            if(!delay.isEmpty())
+            if (!delay.isEmpty()) {
                 delays.put(sid, delay);
+            }
         }
 
         //valid.setDelay(timeTitle, delays);
-
         return delays;
     }
 

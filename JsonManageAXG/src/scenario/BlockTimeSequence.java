@@ -156,14 +156,14 @@ public class BlockTimeSequence {
     }
 
     private ScenarioBlock reject0(ScenarioBlock p) {
-        System.out.println("before:"+p.blockSeq.size());
+        int before = p.blockSeq.size();
         List<String> rejectIDs = p.blockSeq.entrySet().stream()
                                     .filter(pb -> !Arrays.stream(pb.getValue().arrSeries).filter(pbi -> pbi > 0).findFirst().isPresent())
                                     .map(pb -> pb.getKey())
                                     .collect(Collectors.toList());
-        System.out.println(rejectIDs);
+        //System.out.println(rejectIDs);
         rejectIDs.stream().forEach(p.blockSeq::remove);
-        System.out.println("after:"+p.blockSeq.size());
+        System.out.println("   "+before+" -> "+p.blockSeq.size());
         return p;
     }
 

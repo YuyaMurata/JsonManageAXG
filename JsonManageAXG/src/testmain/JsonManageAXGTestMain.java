@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import scenario.ScenarioAnalize;
 import scenario.ScenarioBlock;
 import score.SyaryoObjectEvaluation;
 import score.template.ScoringSettingsTemplate;
@@ -34,9 +35,8 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        
         Map<String, String[]> score = scoring(objex);
-        //scenario(score, objex);
+        scenario(score, objex);
     }
     
     //クレンジング
@@ -143,7 +143,7 @@ public class JsonManageAXGTestMain {
         System.out.println("");
         
         //シナリオの解析
-        /*ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\"+col+"\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\"+col+"\\out");
         scenario.analize(startBlock);
         
         //各項目の件数とシナリオ件数
@@ -153,22 +153,22 @@ public class JsonManageAXGTestMain {
         System.out.println(scenario.getSearchResults());
         
         //類似検索
-        List<String> syaryoList = new ArrayList();   //選択した車両リスト
+        List<String> syaryoList = objex.keySet();   //選択した車両リスト
         scenario.similar(syaryoList, "");
-        System.out.println(scenario.getSearchResults());*/
+        System.out.println(scenario.getSearchResults());
     }
     
     //テスト用
     public static ScenarioBlock createScenarioBlock(SyaryoObjectExtract objex) throws AISTProcessException{
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        
+        return ScenarioCreateTest.s0();
+        /*
         ScenarioBlock start = new ScenarioBlock("部品1-1");
         ScenarioBlock sc12 = new ScenarioBlock("部品1-2");
         ScenarioBlock sc13 = new ScenarioBlock("部品1-3");
         ScenarioBlock sc14 = new ScenarioBlock("部品1-4");
         ScenarioBlock sc15 = new ScenarioBlock("部品1-5");
         ScenarioBlock sc16 = new ScenarioBlock("部品1-6");
-        ScenarioBlock sc161 = new ScenarioBlock("部品1-6");
         ScenarioBlock sc21 = new ScenarioBlock("部品2-1");
         ScenarioBlock sc22 = new ScenarioBlock("部品2-2");
         ScenarioBlock sc31 = new ScenarioBlock("部品3-1");
@@ -190,7 +190,7 @@ public class JsonManageAXGTestMain {
         sc31.setOR(sc32);
         sc32.setAND(sc33);
         
-        return start;
+        return start;*/
     }
     
     //シナリオブロックの表示テスト

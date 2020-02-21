@@ -56,7 +56,7 @@ public class ScenarioBlock {
             check(item);
             this.item = item;
             this.data = exObj.getDefine(item);
-            System.out.println("      "+this.data.toList());
+            //System.out.println("      "+this.data.toList());
             this.blockSeq = null;
         } catch (Exception e) {
             e.printStackTrace();
