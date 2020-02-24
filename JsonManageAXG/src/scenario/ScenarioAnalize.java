@@ -12,12 +12,14 @@ import file.CSVFileReadWrite;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import scenario.valid.ValidateCalculateBlock;
@@ -33,6 +35,7 @@ public class ScenarioAnalize {
     private Map<String, List<String>> scenarioMap;
     private Map<String, String[]> score;
     private String path;
+    private Map<String, List<Integer>> eval;
 
     //ブロックの計算検証用
     private ValidateCalculateBlock valid;
@@ -45,10 +48,12 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s01();
+        ScenarioBlock root = ScenarioCreateTest.s0();
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
+        scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
+        scenario.similar(score.keySet(), "PC200-8-N1-351412");
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -83,9 +88,9 @@ public class ScenarioAnalize {
                 //適合チェック
                 fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
-
+            
             //時系列評価
-            Map<String, List<Integer>> eval = new HashMap();
+            eval = new TreeMap<>();
             fit.stream().forEach(sid -> {
                 timeMap.values().stream().map(t -> t.get(sid))
                         .forEach(v -> {
@@ -108,9 +113,14 @@ public class ScenarioAnalize {
             eval.entrySet().stream().forEach(e -> {
                 //シナリオ解析が ブロックA->B->C の評価で A->B,B->Cが行われるため
                 int bn = blockList.size() > 1 ? blockList.size() - 1 : 1;
+                try{
                 score.get(e.getKey())[scIdx] = String.valueOf(e.getValue().size() / bn);
+                }catch(Exception e1){
+                    System.err.println(e.getKey()+":"+score.get(e.getKey()));
+                    e1.printStackTrace();
+                }
             });
-
+            
             blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
             valid.setDelay("Fin.Scenario", eval);
             valid.filter(eval.keySet());
@@ -118,6 +128,7 @@ public class ScenarioAnalize {
 
         } catch (Exception e) {
             e.printStackTrace();
+            throw new AISTProcessException("シナリオ解析エラー");
         }
     }
 
@@ -187,23 +198,50 @@ public class ScenarioAnalize {
         return delays;
     }
 
-    public void similar(List<String> syaryoList, String syaryo) throws AISTProcessException {
-
-        //テスト用
-        Random rand = new Random();
-        List<String> h = Arrays.asList(score.get("#HEADER"));
-        for (String sid : score.keySet()) {
-            if (sid.equals("#HEADER")) {
-                continue;
-            }
-
-            String[] s = score.get(sid);
-            s[h.indexOf("類似度")] = String.valueOf(Math.abs(rand.nextDouble()));
-        }
+    //類似検索
+    public void similar(Collection<String> syaryoList, String target) throws AISTProcessException {
+        //車両リスト中およびターゲットの確認
+        errCheck(target);
+        
+        int hidx = Arrays.asList(score.get("#HEADER")).indexOf("類似度");
+        
+        //Jaccard係数の算出
+        List<Integer> evalTarget = eval.get(target);
+        eval.entrySet().stream()
+                .filter(e -> syaryoList.contains(e.getKey()))
+                .forEach(e ->{
+                    List<Integer> set = new ArrayList<>();
+                    set.addAll(e.getValue());
+                    set.addAll(evalTarget);
+                    Long u = set.stream().distinct().count();
+                    Long x = evalTarget.stream()
+                                    .filter(ti -> e.getValue().contains(ti))
+                                    .distinct().count();
+                    score.get(e.getKey())[hidx] = String.valueOf(x.doubleValue() / u.doubleValue());
+                });
 
         //CSV出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(path + "\\simular_search_results.csv")) {
-            score.entrySet().stream().map(e -> e.getKey() + "," + String.join(",", e.getValue())).forEach(pw::println);
+            //header
+            pw.println(String.join(",", score.get("#HEADER")));
+            
+            //スコア
+            score.entrySet().stream()
+                    .filter(e -> e.getKey().charAt(0) != '#')
+                    .map(e -> String.join(",", e.getValue()))
+                    .forEach(pw::println);
+        }
+    }
+
+    private void errCheck(String target) throws AISTProcessException {
+        if (eval == null) {
+            System.err.println("シナリオ評価がされていません");
+            throw new AISTProcessException("類似検索エラー");
+        } else {
+            if (eval.get(target) == null) {
+                System.err.println("選択車両はシナリオ評価対象外です");
+                throw new AISTProcessException("類似検索エラー");
+            }
         }
     }
 

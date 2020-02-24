@@ -154,7 +154,7 @@ public class JsonManageAXGTestMain {
         
         //類似検索
         List<String> syaryoList = objex.keySet();   //選択した車両リスト
-        scenario.similar(syaryoList, "");
+        scenario.similar(syaryoList, "PC200-8-N1-351412");
         System.out.println(scenario.getSearchResults());
     }
     
