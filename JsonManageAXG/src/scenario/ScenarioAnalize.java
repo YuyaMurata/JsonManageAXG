@@ -211,11 +211,17 @@ public class ScenarioAnalize {
 
     //類似検索
     public void similar(Collection<String> syaryoList, String target) throws AISTProcessException {
-        if(target.equals("")){
-            scoreShowResult = score;
+        System.out.println(target);
+        if(target.length() < 5){
+            int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
+            //スコアの解析結果並び替える
+            scoreShowResult = score.entrySet().stream()
+                                    .filter(sc -> sc.getKey().charAt(0) != '#')
+                                    .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
+                                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
+            return;
         }
-            
-        
+          
         //車両リスト中およびターゲットの確認
         errCheck(target);
         
