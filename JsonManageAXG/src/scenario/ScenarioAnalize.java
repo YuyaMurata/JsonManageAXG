@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ public class ScenarioAnalize {
 
     private Map<String, List<String>> scenarioMap;
     private Map<String, String[]> score;
+    private Map<String, String[]> scoreShowResult;
     private String path;
     private Map<String, List<Integer>> eval;
 
@@ -88,7 +90,7 @@ public class ScenarioAnalize {
                 fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
             
-            System.err.println("PC200-8-N1-310415:");
+            //System.err.println("PC200-8-N1-310415:");
             //timeMap.entrySet().stream().map(t -> "  "+t.getKey()+":"+)
             
             //時系列評価
@@ -122,6 +124,13 @@ public class ScenarioAnalize {
                     e1.printStackTrace();
                 }
             });
+            
+            //スコアの解析結果並び替える
+            scoreShowResult = score.entrySet().stream()
+                                    .filter(sc -> sc.getKey().charAt(0) != '#')
+                                    .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
+                                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
+            
             
             blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
             valid.setDelay("Fin.Scenario", eval);
@@ -202,10 +211,15 @@ public class ScenarioAnalize {
 
     //類似検索
     public void similar(Collection<String> syaryoList, String target) throws AISTProcessException {
+        if(target.equals("")){
+            scoreShowResult = score;
+        }
+            
+        
         //車両リスト中およびターゲットの確認
         errCheck(target);
         
-        int hidx = Arrays.asList(score.get("#HEADER")).indexOf("類似度");
+        int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("類似度");
         
         //Jaccard係数の算出
         List<Integer> evalTarget = eval.get(target);
@@ -219,9 +233,17 @@ public class ScenarioAnalize {
                     Long x = evalTarget.stream()
                                     .filter(ti -> e.getValue().contains(ti))
                                     .distinct().count();
-                    score.get(e.getKey())[hidx] = String.valueOf(x.doubleValue() / u.doubleValue());
+                    score.get(e.getKey())[scIdx] = String.valueOf(x.doubleValue() / u.doubleValue());
                 });
-
+        
+        //スコアの解析結果並び替える
+        scoreShowResult = score.entrySet().stream()
+                                .filter(sc -> sc.getKey().charAt(0) != '#')
+                                .filter(sc -> !sc.getValue()[scIdx].equals("0"))
+                                .sorted(Comparator.comparing(sc -> Double.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
+                                .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
+            
+        
         //CSV出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(path + "\\simular_search_results.csv")) {
             //header
@@ -252,7 +274,7 @@ public class ScenarioAnalize {
     }
 
     public Map<String, String[]> getSearchResults() {
-        return score;
+        return scoreShowResult;
     }
 
     int nest = 0;

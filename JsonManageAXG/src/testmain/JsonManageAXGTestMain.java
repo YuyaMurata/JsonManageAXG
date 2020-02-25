@@ -36,7 +36,7 @@ public class JsonManageAXGTestMain {
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
         Map<String, String[]> score = scoring(objex);
-        scenario(score, objex);
+        //scenario(score, objex);
     }
     
     //クレンジング
@@ -90,11 +90,11 @@ public class JsonManageAXGTestMain {
         
         //サマリー
         String summary = objex.getSummary();
-        System.out.println(summary);
+        System.out.println(objex.getDefineItem());
         
         //シナリオ解析の項目
         //System.out.println(objex.getDefineItem());
-
+        
         return objex;
     }
     

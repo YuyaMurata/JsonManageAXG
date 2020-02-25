@@ -65,7 +65,7 @@ public class ScenarioBlock {
 
     //シナリオ解析が可能か確認
     private void check(String item) throws AISTProcessException {
-        if (!enable) {
+        if (!enable || exObj == null) {
             throw new AISTProcessException("抽出処理適用後のオブジェクトセットされていません．");
         }
         if (exObj.getDefine(item) == null) {

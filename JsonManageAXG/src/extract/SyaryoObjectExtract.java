@@ -31,9 +31,9 @@ import thread.ExecutableThreadPool;
  */
 public class SyaryoObjectExtract {
     
-    private static MongoDBPOJOData orgDB;
-    private static MongoDBPOJOData extDB;
-    private static MongoDBPOJOData defDB;
+    private MongoDBPOJOData orgDB;
+    private MongoDBPOJOData extDB;
+    private MongoDBPOJOData defDB;
     private String userDefFileHash;
     //private Map<String, MSyaryoAnalizer> analizeMap;
     private MHeaderObject header;
@@ -55,7 +55,6 @@ public class SyaryoObjectExtract {
         orgDB.check();
         
         header = orgDB.getHeader();
-        
         keys = orgDB.getKeyList();
 
         //整形時の情報を取得
@@ -444,6 +443,7 @@ public class SyaryoObjectExtract {
     public List<String> getDefineItem() {
         return defDB.getKeyList().stream()
                 .filter(k -> k.charAt(0) != '#')
+                .sorted()
                 .collect(Collectors.toList());
     }
     

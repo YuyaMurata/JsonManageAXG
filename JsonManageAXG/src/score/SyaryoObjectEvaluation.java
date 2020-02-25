@@ -100,7 +100,7 @@ public class SyaryoObjectEvaluation {
             //スコアの集約
             Map<String, String[]> results = new LinkedHashMap();
             results.put("#HEADER", new String[]{"SID", "シナリオ", "類似度", "メンテナンス", "使われ方", "経年/SMR"});
-            evalMainte._eval.keySet().stream().forEach(s -> {
+            exObj.keySet().stream().forEach(s -> {
                 String[] d = new String[6];
                 d[0] = s;
                 d[1] = "0";
