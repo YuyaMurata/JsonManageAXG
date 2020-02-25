@@ -107,13 +107,11 @@ public class ScenarioCreateTest {
     }
     
     //検証シナリオ1
-    public static ScenarioBlock s2() throws AISTProcessException {
-        ScenarioBlock b1 = new ScenarioBlock("M1:燃料メインフィルタ");
-        ScenarioBlock b11 = new ScenarioBlock("M4:燃料プレフィルタ");
-        ScenarioBlock b2 = new ScenarioBlock("燃料無圧送エラー(CA559)");
-        ScenarioBlock b3 = new ScenarioBlock("C1-4:サプライポンプ");
-
-        b1.setOR(b11);
+    public static ScenarioBlock s4() throws AISTProcessException {
+        ScenarioBlock b1 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");
+        ScenarioBlock b2 = new ScenarioBlock("C1-3:冷却装置");
+        ScenarioBlock b3 = new ScenarioBlock("C1-1:エンジンOH");
+        
         b1.setNEXT(b2);
         b2.setNEXT(b3);
 

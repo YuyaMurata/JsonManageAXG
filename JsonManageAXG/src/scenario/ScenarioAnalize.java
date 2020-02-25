@@ -47,12 +47,12 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s0();
+        ScenarioBlock root = ScenarioCreateTest.s1();
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
-        //scenario.similar(score.keySet(), "PC200-8-N1-351412");
+        scenario.similar(score.keySet(), "PC200-8-N1-313649");
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
@@ -87,6 +87,9 @@ public class ScenarioAnalize {
                 //適合チェック
                 fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
+            
+            System.err.println("PC200-8-N1-310415:");
+            //timeMap.entrySet().stream().map(t -> "  "+t.getKey()+":"+)
             
             //時系列評価
             eval = new TreeMap<>();
