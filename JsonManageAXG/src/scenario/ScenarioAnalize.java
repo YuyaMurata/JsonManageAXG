@@ -18,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -53,7 +52,7 @@ public class ScenarioAnalize {
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
-        scenario.similar(score.keySet(), "PC200-8-N1-351412");
+        //scenario.similar(score.keySet(), "PC200-8-N1-351412");
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {

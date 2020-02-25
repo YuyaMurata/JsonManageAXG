@@ -26,10 +26,9 @@ public class FormOwner extends FormItem{
         
         Integer ownerID = indexList.indexOf("顧客.納入先コード");
         if (ownerID < 0) {
-            return data.entrySet().stream()
-                    .collect(Collectors.toMap(
-                            d -> d.getKey().split("#")[0], 
-                            d -> d.getValue()));
+            Map newdata = new TreeMap();
+            data.entrySet().stream().forEach(d -> newdata.put(d.getKey().split("#")[0], d.getValue()));
+            return newdata;
         }
 
         //ID重複排除 ##排除
