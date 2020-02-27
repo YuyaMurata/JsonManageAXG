@@ -25,9 +25,9 @@ public class ScenarioCreateTest {
         ScenarioBlock b7 = new ScenarioBlock("C1-7:吸気系");
         ScenarioBlock b8 = new ScenarioBlock("C1-8:オルタネータ");
         ScenarioBlock b9 = new ScenarioBlock("C1-9:ガスケット");
-        ScenarioBlock b10 = new ScenarioBlock("C1-10:ベルト");
+        ScenarioBlock b10 = new ScenarioBlock("C1-10:ファンベルト");
         ScenarioBlock b11 = new ScenarioBlock("C1-11:オイルポンプ");
-        ScenarioBlock b12 = new ScenarioBlock("C1-12:パッキンガスケット");
+        ScenarioBlock b12 = new ScenarioBlock("C1-12:ヘッドガスケット");
         ScenarioBlock b13 = new ScenarioBlock("C1-13:フュエルクーラ");
         ScenarioBlock b14 = new ScenarioBlock("C1-14:エンジンオイルクーラ");
         ScenarioBlock b15 = new ScenarioBlock("C1-15:ダンパ");
@@ -66,9 +66,9 @@ public class ScenarioCreateTest {
     public static ScenarioBlock s0() throws AISTProcessException {
         ScenarioBlock b1 = new ScenarioBlock("充電電圧異常低下(AB00KE)");
         ScenarioBlock b11 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");
-        ScenarioBlock b2 = new ScenarioBlock("C1-10:ベルト");
+        ScenarioBlock b2 = new ScenarioBlock("C1-10:ファンベルト");
         ScenarioBlock b3 = new ScenarioBlock("C1-1:エンジンOH");
-        ScenarioBlock b31 = new ScenarioBlock("C1-12:パッキンガスケット");
+        ScenarioBlock b31 = new ScenarioBlock("C1-12:ヘッドガスケット");
 
         b1.setAND(b11);
         b1.setNEXT(b2);
@@ -97,7 +97,7 @@ public class ScenarioCreateTest {
         ScenarioBlock b1 = new ScenarioBlock("M1:燃料メインフィルタ");
         ScenarioBlock b11 = new ScenarioBlock("M4:燃料プレフィルタ");
         ScenarioBlock b2 = new ScenarioBlock("燃料無圧送エラー(CA559)");
-        ScenarioBlock b3 = new ScenarioBlock("C1-4:サプライポンプ");
+        ScenarioBlock b3 = new ScenarioBlock("C1-4:噴射系");
 
         b1.setOR(b11);
         b1.setNEXT(b2);

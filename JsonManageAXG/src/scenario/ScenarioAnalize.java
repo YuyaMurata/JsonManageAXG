@@ -49,12 +49,11 @@ public class ScenarioAnalize {
 
         //シナリオの解析
         ScenarioBlock.setSyaryoObjectExtract(objex);
-        ScenarioBlock root = ScenarioCreateTest.s1();
+        ScenarioBlock root = ScenarioCreateTest.s0();
 
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
-        scenario.similar(score.keySet(), "PC200-8-N1-313649");
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
