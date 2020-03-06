@@ -35,6 +35,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
  * @author ZZ17390
  */
 public class MSyaryoAnalizer implements Serializable {
+
     private static final long serialVersionUID = 1L;
     public MSyaryoObject syaryo;
     public String kind = "";
@@ -55,6 +56,7 @@ public class MSyaryoAnalizer implements Serializable {
     public Integer numWorks = 0;
     public Integer acmLCC = 0;
     public Integer maxSMR = 0;
+    public Boolean enable;  //車両を分析用オブジェクトに変換できたか確認
     public Integer[] cluster = new Integer[3];
     public TreeMap<String, Map.Entry<Integer, Integer>> ageSMR = new TreeMap<>();
     public TreeMap<Integer, Integer> smrDate = new TreeMap<>();
@@ -84,19 +86,20 @@ public class MSyaryoAnalizer implements Serializable {
     }
 
     public MSyaryoAnalizer(MSyaryoObject obj) {
+        CNT++;
+        this.syaryo = obj;
+
+        //分析器の設定
         try {
-            CNT++;
-            this.syaryo = obj;
-
-            //設定
+            this.enable = true;
             settings();
-
-            if (CNT % 1000 == 0 && DISP_COUNT) {
-                System.out.println(CNT + " Trans SyaryoAnalizer");
-            }
         } catch (Exception e) {
             System.err.println(obj.getName() + ":分析用オブジェクトへの変換要件を満たしません");
-            this.syaryo = null;
+            this.enable = false;
+        }
+        
+        if ((CNT % 1000 == 0) && DISP_COUNT) {
+            System.out.println(CNT + " Trans SyaryoAnalizer");
         }
     }
 
@@ -262,16 +265,16 @@ public class MSyaryoAnalizer implements Serializable {
     //日付　-> SMR
     public Integer getDateToSMR(String date) {
         //try {
-            Integer d = Integer.valueOf(date.split("#")[0]);
-            if (smrDate.values().contains(d)) {
-                return smrDate.entrySet().stream()
-                        .filter(v -> v.getValue().equals(d))
-                        .map(v -> v.getKey()).findFirst().get();
-            }
+        Integer d = Integer.valueOf(date.split("#")[0]);
+        if (smrDate.values().contains(d)) {
+            return smrDate.entrySet().stream()
+                    .filter(v -> v.getValue().equals(d))
+                    .map(v -> v.getKey()).findFirst().get();
+        }
 
-            Integer smr = regression("date", Integer.valueOf(date));
+        Integer smr = regression("date", Integer.valueOf(date));
 
-            return smr;
+        return smr;
         //} catch (NumberFormatException ne) {
         //    System.err.println("NumberFormatException:" + date);
         //    return null;
@@ -341,6 +344,7 @@ public class MSyaryoAnalizer implements Serializable {
     //作番と日付をswで相互変換
     private Map<String, String> sbnDate = new HashMap<>();
     private Map<String, String> dateSBN = new HashMap<>();
+
     public String getSBNToDate(String sbn, Boolean sw) {
         try {
             if (sw) {

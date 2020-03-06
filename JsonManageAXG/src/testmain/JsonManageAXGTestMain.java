@@ -27,7 +27,7 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "KM_PC200_DB_P";
+    static String col = "KM_PC200_DB";
     //static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
@@ -35,7 +35,7 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        Map<String, String[]> score = scoring(objex);
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     
@@ -90,7 +90,7 @@ public class JsonManageAXGTestMain {
         
         //サマリー
         String summary = objex.getSummary();
-        System.out.println(objex.getDefineItem());
+        System.out.println(summary);
         
         //シナリオ解析の項目
         //System.out.println(objex.getDefineItem());

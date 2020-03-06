@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
@@ -30,7 +32,7 @@ import thread.ExecutableThreadPool;
  * @author ZZ17807
  */
 public class SyaryoObjectExtract {
-    
+
     private MongoDBPOJOData orgDB;
     private MongoDBPOJOData extDB;
     private MongoDBPOJOData defDB;
@@ -41,19 +43,19 @@ public class SyaryoObjectExtract {
     private Map<String, List<String>> settings;
     private FormInfoMap info;
     private Map<String, String> kisyKibanToSID;
-    
+
     public SyaryoObjectExtract(String dbn, String collection) throws AISTProcessException {
         if (!collection.contains("_Form")) {
             collection = collection + "_Form";
         }
-        
+
         if (orgDB == null) {
             orgDB = MongoDBPOJOData.create();
             orgDB.set(dbn, collection, MSyaryoObject.class);
         }
-        
+
         orgDB.check();
-        
+
         header = orgDB.getHeader();
         keys = orgDB.getKeyList();
 
@@ -63,7 +65,7 @@ public class SyaryoObjectExtract {
             info = MSyaryoObjectFormatting.setFormInfo(orgDB, dbn + "." + collection);
         }
     }
-    
+
     private void setSyaryoAnalizer() throws AISTProcessException {
         MSyaryoAnalizer.initialize(header, info);
         //analizeMap = null;
@@ -76,7 +78,7 @@ public class SyaryoObjectExtract {
         //ユーザー定義ファイルのハッシュ値の取得
         this.userDefFileHash = FileMD5.hash(settingFile);
         this.settings = MapToJSON.toMapSJIS(settingFile);
-        
+
         errorCheck(settings);
 
         //車両分析器の作成
@@ -131,7 +133,7 @@ public class SyaryoObjectExtract {
 
                     //定義DBに登録
                     defDB.coll.insertOne(new CompressExtractionDefineFile(def.getKey(), del));
-                    
+
                     return del.stream();
                 }).distinct().collect(Collectors.toList());
 
@@ -147,20 +149,22 @@ public class SyaryoObjectExtract {
 
                     //定義DBに登録
                     defDB.coll.insertOne(new CompressExtractionDefineFile(def.getKey(), del));
-                    
+
                     return del.stream();
                 }).collect(Collectors.groupingBy(l -> l.split(",")[0]));
 
         //SID+データ削除
         deleteRecord(deleteSID, deleteSIDandKey);
+
     }
 
     //SID+KEYで対象データレコードの削除と登録
-    private void deleteRecord(List<String> deleateSID, Map<String, List<String>> records) {
+    private void deleteRecord(List<String> deleteSID, Map<String, List<String>> records) {
         try {
+            Map<String, String> notAnalizeSyaryo = new ConcurrentHashMap<>();
             ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> orgDB.getKeyList().parallelStream()
-                            .filter(sid -> !deleateSID.contains(sid))
+                            .filter(sid -> !deleteSID.contains(sid))
                             .map(sid -> (MSyaryoObject) orgDB.getObj(sid))
                             .map(s -> {
                                 if (records.get(s.getName()) != null) {
@@ -168,12 +172,23 @@ public class SyaryoObjectExtract {
                                             .map(reci -> reci.split(",")[1])
                                             .forEach(id -> s.getData(id.split("\\.")[0]).remove(id.split("\\.")[1]));
                                 }
-                                return new MSyaryoAnalizer(s);
+                                MSyaryoAnalizer a = new MSyaryoAnalizer(s);
+                                
+                                //分析不可車両の記録
+                                if(!a.enable)
+                                    notAnalizeSyaryo.put(s.getName(), "");
+                                
+                                return a;
                             })
-                            .filter(s -> s != null)
+                            .filter(s -> s.enable)
                             .map(s -> new CompressExtractionObject(s))
                             .forEach(extDB.coll::insertOne)).get();
+            
+            //分析不可能車両を定義DBに保存
+            defDB.coll.insertOne((new CompressExtractionDefineFile("#DELOBJECT_分析不可車両", new ArrayList<>(notAnalizeSyaryo.keySet()))));
         } catch (InterruptedException | ExecutionException ex) {
+            ex.printStackTrace();
+            System.exit(0);
             System.err.println(ex.getMessage());
         }
     }
@@ -200,10 +215,10 @@ public class SyaryoObjectExtract {
         } else {
             data = dataCodeSettings(path);
         }
-        
+
         return data;
     }
-    
+
     private List<String> fileToSimplyList(String path) {
         try {
             List<String> exceptionItem = new ArrayList<>();
@@ -221,7 +236,7 @@ public class SyaryoObjectExtract {
                 System.err.println(exceptionItem);
                 throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません");
             }
-            
+
             return ExecutableThreadPool.getInstance().threadPool.submit(()
                     -> list.parallelStream()
                             .map(l -> l.split(","))
@@ -259,7 +274,7 @@ public class SyaryoObjectExtract {
             return null;
         }
     }
-    
+
     public void scenarioSetting(Map<String, List<String>> settings) {
         settings.entrySet().stream()
                 .filter(def -> def.getKey().contains("#SCENARIO_"))
@@ -268,10 +283,10 @@ public class SyaryoObjectExtract {
                     defDB.coll.insertOne(new CompressExtractionDefineFile(def.getKey(), def.getValue()));
                 });
     }
-    
+
     public String getDataList() {
         StringBuilder sb = new StringBuilder();
-        
+
         List<String> rec;
         sb.append("定義データ項目\n");
         rec = settings.keySet().stream()
@@ -284,7 +299,7 @@ public class SyaryoObjectExtract {
         } else {
             sb.append(String.join("\n", rec));
         }
-        
+
         sb.append("\n\n削除データ項目\n");
         rec = settings.keySet().stream()
                 .filter(s -> s.contains("#DELRECORD_"))
@@ -296,15 +311,15 @@ public class SyaryoObjectExtract {
         } else {
             sb.append(String.join("\n", rec));
         }
-        
+
         return sb.toString();
     }
-    
+
     public String getObjectList() {
         StringBuilder sb = new StringBuilder();
-        
+
         List<String> rec;
-        
+
         sb.append("削除オブジェクト項目\n");
         rec = settings.keySet().stream()
                 .filter(s -> s.contains("#DELOBJECT_"))
@@ -315,14 +330,14 @@ public class SyaryoObjectExtract {
         } else {
             sb.append(String.join("\n", rec));
         }
-        
+
         return sb.toString();
     }
 
     //抽出ボタン押下処理
     public String getSummary() {
         createExtractionDB();
-        
+
         return summary();
     }
 
@@ -330,12 +345,12 @@ public class SyaryoObjectExtract {
     private void createExtractionDB() {
         String dbn = "extraction";
         String col = userDefFileHash;
-        
+
         if (extDB == null) {
             extDB = MongoDBPOJOData.create();
             extDB.set(dbn, col, CompressExtractionObject.class);
         }
-        
+
         dbn = "definition";
         if (defDB == null) {
             defDB = MongoDBPOJOData.create();
@@ -343,8 +358,9 @@ public class SyaryoObjectExtract {
         }
 
         //確認用
-        //extDB.clear();
-        //defDB.clear();
+        extDB.clear();
+        defDB.clear();
+
         try {
             extDB.check();
             defDB.check();
@@ -362,7 +378,7 @@ public class SyaryoObjectExtract {
             importSettings(settings);
             scenarioSetting(settings);
             long fin = System.currentTimeMillis();
-            
+
             System.out.println("削除:" + (stop - start));
             System.out.println("挿入:" + (fin - stop));
         }
@@ -377,9 +393,9 @@ public class SyaryoObjectExtract {
         sb.append(orgDB.getKeyList().size());
         sb.append(",");
         sb.append(extDB.getKeyList().size());
-        
+
         List<String> rec;
-        
+
         sb.append("\n\n定義データ項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.charAt(0) != '#')
@@ -388,7 +404,7 @@ public class SyaryoObjectExtract {
                 .sorted()
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
-        
+
         sb.append("\n\n削除データ項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.contains("#DELRECORD_"))
@@ -397,7 +413,7 @@ public class SyaryoObjectExtract {
                 .sorted()
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
-        
+
         sb.append("\n\n削除オブジェクト項目,レコード数\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.contains("#DELOBJECT_"))
@@ -405,7 +421,7 @@ public class SyaryoObjectExtract {
                 .map(def -> "  " + def.getName().replace("#DELOBJECT_", "") + "," + def.toList().size())
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
-        
+
         sb.append("\n\nシナリオ設定情報,値\n");
         rec = defDB.getKeyList().stream()
                 .filter(item -> item.contains("#SCENARIO_"))
@@ -413,10 +429,10 @@ public class SyaryoObjectExtract {
                 .map(def -> "  " + def.getName().replace("#SCENARIO_", "") + "," + def.toList().get(0))
                 .collect(Collectors.toList());
         sb.append(recToString(rec));
-        
+
         return sb.toString();
     }
-    
+
     private String recToString(List<String> rec) {
         if (!rec.isEmpty()) {
             return String.join("\n", rec);
@@ -434,7 +450,7 @@ public class SyaryoObjectExtract {
     public List<String> keySet() {
         return extDB.getKeyList();
     }
-    
+
     public CompressExtractionObject getAnalize(String sid) {
         return (CompressExtractionObject) extDB.getObj(sid);
     }
@@ -446,7 +462,7 @@ public class SyaryoObjectExtract {
                 .sorted()
                 .collect(Collectors.toList());
     }
-    
+
     public CompressExtractionDefineFile getDefine(String item) {
         return (CompressExtractionDefineFile) defDB.getObj(item);
     }

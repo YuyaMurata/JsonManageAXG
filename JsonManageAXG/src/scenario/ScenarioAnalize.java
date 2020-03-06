@@ -51,7 +51,7 @@ public class ScenarioAnalize {
         ScenarioBlock.setSyaryoObjectExtract(objex);
         ScenarioBlock root = ScenarioCreateTest.s0();
 
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
     }
@@ -88,10 +88,7 @@ public class ScenarioAnalize {
                 //適合チェック
                 fit = fit.stream().filter(sid -> delay.get(sid) != null).collect(Collectors.toList());
             }
-            
-            //System.err.println("PC200-8-N1-310415:");
-            //timeMap.entrySet().stream().map(t -> "  "+t.getKey()+":"+)
-            
+
             //時系列評価
             eval = new TreeMap<>();
             fit.stream().forEach(sid -> {
