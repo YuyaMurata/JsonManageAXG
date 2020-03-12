@@ -35,7 +35,7 @@ public class JsonManageAXGTestMain {
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
         SyaryoObjectExtract objex = extract();
-        //Map<String, String[]> score = scoring(objex);
+        Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
     

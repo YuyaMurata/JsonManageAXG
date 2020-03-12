@@ -358,8 +358,8 @@ public class SyaryoObjectExtract {
         }
 
         //確認用
-        extDB.clear();
-        defDB.clear();
+        //extDB.clear();
+        //defDB.clear();
 
         try {
             extDB.check();
