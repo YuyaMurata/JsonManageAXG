@@ -51,7 +51,7 @@ public class ScenarioAnalize {
         ScenarioBlock.setSyaryoObjectExtract(objex);
         ScenarioBlock root = ScenarioCreateTest.s0();
 
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
     }
@@ -124,6 +124,7 @@ public class ScenarioAnalize {
             //スコアの解析結果並び替える
             scoreShowResult = score.entrySet().stream()
                                     .filter(sc -> sc.getKey().charAt(0) != '#')
+                                    .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0)  //評価されていない車両は除外
                                     .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
                                     .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
             
@@ -207,12 +208,15 @@ public class ScenarioAnalize {
 
     //類似検索
     public void similar(Collection<String> syaryoList, String target) throws AISTProcessException {
-        System.out.println(target);
+        System.out.println("Target:"+target);
+        target = target.split(":")[0]; //車両IDに余計ない情報が付加されている場合の除去
+        
         if(target.length() < 5){
             int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
             //スコアの解析結果並び替える
             scoreShowResult = score.entrySet().stream()
                                     .filter(sc -> sc.getKey().charAt(0) != '#')
+                                    .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0)  //評価されていない車両は除外
                                     .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
                                     .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
             return;
