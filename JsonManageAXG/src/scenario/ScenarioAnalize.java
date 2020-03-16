@@ -279,7 +279,10 @@ public class ScenarioAnalize {
         return scenarioMap;
     }
 
-    public Map<String, String[]> getSearchResults() {
+    public Map<String, String[]> getSearchResults() throws AISTProcessException {
+        if(scoreShowResult.isEmpty())
+            throw new AISTProcessException("シナリオ適合車両が存在しません");
+        System.out.println(scoreShowResult);
         return scoreShowResult;
     }
 
