@@ -51,7 +51,7 @@ public class ScenarioAnalize {
         ScenarioBlock.setSyaryoObjectExtract(objex);
         ScenarioBlock root = ScenarioCreateTest.s0();
 
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
     }
@@ -79,9 +79,14 @@ public class ScenarioAnalize {
             List<BlockTimeSequence> blockList = timesSequece(root);
             Map<String, Map<String, List<Integer>>> timeMap = new LinkedHashMap<>();
             List<String> fit = new ArrayList<>(blockList.get(0).pBlock.blockSeq.keySet());
-            for (int i = 0; i < blockList.size() - 1; i++) {
+            for (int i = 0; i < blockList.size()-1; i++) {
                 BlockTimeSequence start = blockList.get(i);
-                BlockTimeSequence stop = blockList.get(i + 1);
+                BlockTimeSequence stop = blockList.get(i+1);
+                Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
+            }
+            for (int i = blockList.size()-1; i > 0; i--) {
+                BlockTimeSequence start = blockList.get(i-1);
+                BlockTimeSequence stop = blockList.get(i);
                 Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
                 timeMap.put(start.block.item + "->" + stop.block.item, delay);
 

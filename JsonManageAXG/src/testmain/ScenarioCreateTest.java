@@ -68,12 +68,12 @@ public class ScenarioCreateTest {
         ScenarioBlock b11 = new ScenarioBlock("冷却水オーバーヒート(B@BCNS)");
         ScenarioBlock b2 = new ScenarioBlock("C1-10:ファンベルト");
         ScenarioBlock b3 = new ScenarioBlock("C1-1:エンジンOH");
-        ScenarioBlock b31 = new ScenarioBlock("C1-12:ヘッドガスケット");
+        //ScenarioBlock b31 = new ScenarioBlock("C1-12:ヘッドガスケット");
 
         b1.setAND(b11);
         b1.setNEXT(b2);
         b2.setNEXT(b3);
-        b3.setOR(b31);
+        //b3.setOR(b31);
 
         return b1;
     }
