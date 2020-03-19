@@ -51,7 +51,7 @@ public class ScenarioAnalize {
         ScenarioBlock.setSyaryoObjectExtract(objex);
         ScenarioBlock root = ScenarioCreateTest.s0();
 
-        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
+        ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB\\out");
         scenario.analize(root);
         scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
     }

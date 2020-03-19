@@ -27,7 +27,7 @@ import score.template.ScoringSettingsTemplate;
  */
 public class JsonManageAXGTestMain {
     static String db = "json";
-    static String col = "KM_PC200_DB_P";
+    static String col = "KM_PC200_DB";
     //static String col = "SMALLTEST_DB";
     
     public static void main(String[] args) throws AISTProcessException {
