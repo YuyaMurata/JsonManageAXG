@@ -72,7 +72,7 @@ public class MSyaryoObjectShuffle {
 
         try {
             //シャッフリング実行
-            ExecutableThreadPool.getInstance().threadPool.submit(()
+            ExecutableThreadPool.getInstance().getPool().submit(()
                     -> cleanDB.getKeyList().parallelStream()
                             .map(sid -> (MSyaryoObject)cleanDB.getObj(sid))
                             .map(obj -> shuffleOne(hobj, obj, index))

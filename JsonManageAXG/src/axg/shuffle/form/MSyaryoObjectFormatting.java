@@ -57,7 +57,7 @@ public class MSyaryoObjectFormatting {
 
         try {
             //整形実行
-            ExecutableThreadPool.getInstance().threadPool.submit(()
+            ExecutableThreadPool.getInstance().getPool().submit(()
                     -> shuffleDB.getKeyList().parallelStream()
                             .map(sid -> formOne(header, (MSyaryoObject)shuffleDB.getObj(sid)))
                             .forEach(formDB.coll::insertOne)).get();
@@ -176,7 +176,7 @@ public class MSyaryoObjectFormatting {
             int idx = formDB.getHeader().getHeaderIdx("受注", "作業完了日");
             //整形実行
             Integer maxLeastDate =
-                    ExecutableThreadPool.getInstance().threadPool.submit(()
+                    ExecutableThreadPool.getInstance().getPool().submit(()
                     -> formDB.getKeyList().parallelStream()
                             .map(sid -> (MSyaryoObject)formDB.getObj(sid))
                             .filter(obj -> obj.getData("KOMTRAX_SMR") != null)

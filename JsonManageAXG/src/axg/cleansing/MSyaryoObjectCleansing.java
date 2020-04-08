@@ -86,7 +86,7 @@ public class MSyaryoObjectCleansing {
 
         //車両のクレンジング実行
         try {
-            ExecutableThreadPool.getInstance().threadPool.submit(()
+            ExecutableThreadPool.getInstance().getPool().submit(()
                     -> originDB.getKeyList().parallelStream()
                             .map(sid -> originDB.get(sid))
                             //.map(obj -> spaceReject(obj))
@@ -206,7 +206,7 @@ public class MSyaryoObjectCleansing {
         //ログ用にクレンジング処理をもう１度行う
         try {
             List<byte[]> compressLogList
-                    = ExecutableThreadPool.getInstance().threadPool.submit(()
+                    = ExecutableThreadPool.getInstance().getPool().submit(()
                             -> originDB.getKeyList().parallelStream()
                             .map(sid -> originDB.get(sid))
                             .map(obj -> cleanLog(obj))

@@ -56,7 +56,7 @@ public class SyaryoObjectEvaluation {
             long start = System.currentTimeMillis();
             Map sidsCounts = new ConcurrentHashMap();
             int tenP = (exObj.keySet().size() / 10) == 0 ? 1 : (exObj.keySet().size() / 10);
-            ExecutableThreadPool.getInstance().threadPool.submit(()
+            ExecutableThreadPool.getInstance().getPool().submit(()
                     -> exObj.keySet().parallelStream()
                             .peek(sid -> {
                                 sidsCounts.put(sid, 0);

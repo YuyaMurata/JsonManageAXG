@@ -162,7 +162,7 @@ public class SyaryoObjectExtract {
     private void deleteRecord(List<String> deleteSID, Map<String, List<String>> records) {
         try {
             Map<String, String> notAnalizeSyaryo = new ConcurrentHashMap<>();
-            ExecutableThreadPool.getInstance().threadPool.submit(()
+            ExecutableThreadPool.getInstance().getPool().submit(()
                     -> orgDB.getKeyList().parallelStream()
                             .filter(sid -> !deleteSID.contains(sid))
                             .map(sid -> (MSyaryoObject) orgDB.getObj(sid))
@@ -237,7 +237,7 @@ public class SyaryoObjectExtract {
                 throw new AISTProcessException("定義中の参照ファイルの項目がヘッダに存在しません");
             }
 
-            return ExecutableThreadPool.getInstance().threadPool.submit(()
+            return ExecutableThreadPool.getInstance().getPool().submit(()
                     -> list.parallelStream()
                             .map(l -> l.split(","))
                             .map(l -> listHeader.stream()
@@ -261,7 +261,7 @@ public class SyaryoObjectExtract {
 
         //入力コードに合う車両IDを抽出
         try {
-            return ExecutableThreadPool.getInstance().threadPool.submit(()
+            return ExecutableThreadPool.getInstance().getPool().submit(()
                     -> orgDB.getKeyList().parallelStream()
                             .map(sid -> (MSyaryoObject) orgDB.getObj(sid))
                             .filter(s -> s.getData(key) != null)

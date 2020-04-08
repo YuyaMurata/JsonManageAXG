@@ -9,10 +9,10 @@ import testmain.JsonManageAXGTestMain;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
+import file.MapToJSON;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -53,22 +53,25 @@ public class ScenarioAnalize {
 
         ScenarioAnalize scenario = new ScenarioAnalize(score, "project\\KM_PC200_DB_P\\out");
         scenario.analize(root);
-        scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey()+":"+re.getValue().size()).forEach(System.out::println);
+        scenario.getScenarioResults().entrySet().stream().map(re -> re.getKey() + ":" + re.getValue().size()).forEach(System.out::println);
     }
 
     public ScenarioAnalize(Map<String, String[]> score, String outPath) {
-        this.score = score;
         this.path = outPath;
+        this.score = score;
         ValidateCalculateBlock.OUTPATH = outPath;
     }
 
     //シナリオ解析
     public void analize(ScenarioBlock root) throws AISTProcessException {
         errCheck(root);
+        
 
         try {
             valid = new ValidateCalculateBlock();
             scenarioMap = new LinkedHashMap<>();
+            scoreShowResult = new LinkedHashMap<>(score);
+            scoreShowResult.remove("#HEADER");
 
             //ブロックの出力
             System.out.println("登録されたシナリオ：");
@@ -79,13 +82,13 @@ public class ScenarioAnalize {
             List<BlockTimeSequence> blockList = timesSequece(root);
             Map<String, Map<String, List<Integer>>> timeMap = new LinkedHashMap<>();
             List<String> fit = new ArrayList<>(blockList.get(0).pBlock.blockSeq.keySet());
-            for (int i = 0; i < blockList.size()-1; i++) {
+            for (int i = 0; i < blockList.size() - 1; i++) {
                 BlockTimeSequence start = blockList.get(i);
-                BlockTimeSequence stop = blockList.get(i+1);
+                BlockTimeSequence stop = blockList.get(i + 1);
                 Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
             }
-            for (int i = blockList.size()-1; i > 0; i--) {
-                BlockTimeSequence start = blockList.get(i-1);
+            for (int i = blockList.size() - 1; i > 0; i--) {
+                BlockTimeSequence start = blockList.get(i - 1);
                 BlockTimeSequence stop = blockList.get(i);
                 Map<String, List<Integer>> delay = diffTimeSequenceDelay(start, stop);
                 timeMap.put(start.block.item + "->" + stop.block.item, delay);
@@ -114,26 +117,25 @@ public class ScenarioAnalize {
             scenarioMap.put("適合シナリオ", new ArrayList<>(evalN));
 
             //シナリオ適合結果
-            int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
+            String[] header = score.get("#HEADER");
+            int scIdx = Arrays.asList(header).indexOf("シナリオ");
             eval.entrySet().stream().forEach(e -> {
                 //シナリオ解析が ブロックA->B->C の評価で A->B,B->Cが行われるため
                 int bn = blockList.size() > 1 ? blockList.size() - 1 : 1;
-                try{
-                score.get(e.getKey())[scIdx] = String.valueOf(e.getValue().size() / bn);
-                }catch(Exception e1){
-                    System.err.println(e.getKey()+":"+score.get(e.getKey()));
+                try {
+                    scoreShowResult.get(e.getKey())[scIdx] = String.valueOf(e.getValue().size() / bn);
+                } catch (Exception e1) {
+                    System.err.println(e.getKey() + ":" + score.get(e.getKey()));
                     e1.printStackTrace();
                 }
             });
-            
+
             //スコアの解析結果並び替える
-            scoreShowResult = score.entrySet().stream()
-                                    .filter(sc -> sc.getKey().charAt(0) != '#')
-                                    .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0)  //評価されていない車両は除外
-                                    .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
-                                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
-            
-            
+            scoreShowResult = scoreShowResult.entrySet().stream()
+                    .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0) //評価されていない車両は除外
+                    .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
+                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a, b) -> b, LinkedHashMap::new));
+
             blockList.stream().forEach(b -> valid.setBlock(b.pBlock));
             valid.setDelay("Fin.Scenario", eval);
             valid.filter(eval.keySet());
@@ -212,56 +214,54 @@ public class ScenarioAnalize {
     }
 
     //類似検索
-    public void similar(Collection<String> syaryoList, String target) throws AISTProcessException {
-        System.out.println("Target:"+target);
+    public void similar(List<String> syaryoList, String target) throws AISTProcessException {
+        System.out.println("Target:" + target);
         target = target.split(":")[0]; //車両IDに余計ない情報が付加されている場合の除去
-        
-        if(target.length() < 5){
-            int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
+
+        if (target.length() < 5) {
+            /*int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("シナリオ");
             //スコアの解析結果並び替える
             scoreShowResult = score.entrySet().stream()
                                     .filter(sc -> sc.getKey().charAt(0) != '#')
                                     .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0)  //評価されていない車両は除外
                                     .sorted(Comparator.comparing(sc -> Integer.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
-                                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
+                                    .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));*/
             return;
         }
-          
+
         //車両リスト中およびターゲットの確認
         errCheck(target);
-        
-        int scIdx = Arrays.asList(score.get("#HEADER")).indexOf("類似度");
-        
+
+        String[] header = score.get("#HEADER");
+        int scIdx = Arrays.asList(header).indexOf("類似度");
+
         //Jaccard係数の算出
         List<Integer> evalTarget = eval.get(target);
         eval.entrySet().stream()
                 .filter(e -> syaryoList.contains(e.getKey()))
-                .forEach(e ->{
+                .forEach(e -> {
                     List<Integer> set = new ArrayList<>();
                     set.addAll(e.getValue());
                     set.addAll(evalTarget);
                     Long u = set.stream().distinct().count();
                     Long x = evalTarget.stream()
-                                    .filter(ti -> e.getValue().contains(ti))
-                                    .distinct().count();
-                    score.get(e.getKey())[scIdx] = String.valueOf(x.doubleValue() / u.doubleValue());
+                            .filter(ti -> e.getValue().contains(ti))
+                            .distinct().count();
+                    scoreShowResult.get(e.getKey())[scIdx] = String.valueOf(x.doubleValue() / u.doubleValue());
                 });
-        
+
         //スコアの解析結果並び替える
-        scoreShowResult = score.entrySet().stream()
-                                .filter(sc -> sc.getKey().charAt(0) != '#')
-                                .filter(sc -> !sc.getValue()[scIdx].equals("0"))
-                                .sorted(Comparator.comparing(sc -> Double.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
-                                .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a,b) -> b, LinkedHashMap::new));
-            
-        
+        scoreShowResult = scoreShowResult.entrySet().stream()
+                .sorted(Comparator.comparing(sc -> Double.valueOf(sc.getValue()[scIdx]), Comparator.reverseOrder()))
+                .collect(Collectors.toMap(sc -> sc.getKey(), sc -> sc.getValue(), (a, b) -> b, LinkedHashMap::new));
+
         //CSV出力
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(path + "\\simular_search_results.csv")) {
             //header
             pw.println(String.join(",", score.get("#HEADER")));
-            
+
             //スコア
-            score.entrySet().stream()
+            scoreShowResult.entrySet().stream()
                     .filter(e -> e.getKey().charAt(0) != '#')
                     .map(e -> String.join(",", e.getValue()))
                     .forEach(pw::println);
@@ -285,8 +285,8 @@ public class ScenarioAnalize {
     }
 
     public Map<String, String[]> getSearchResults() throws AISTProcessException {
-        if(scoreShowResult.isEmpty())
-            throw new AISTProcessException("シナリオ適合車両が存在しません");
+        /*if(scoreShowResult.isEmpty())
+            throw new AISTProcessException("シナリオ適合車両が存在しません");*/
         return scoreShowResult;
     }
 
@@ -321,6 +321,11 @@ public class ScenarioAnalize {
         if (!root.getErrCheck().isEmpty()) {
             System.err.println(root.getErrCheck());
             throw new AISTProcessException("シナリオブロックエラー");
+        }
+        if (this.score == null) {
+            System.err.println("スコアリングが行われていません．");
+            this.score = ((Map<String, List<String>>) MapToJSON.toMapSJIS(this.path + "\\scoring_results.json")).entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().toArray(new String[e.getValue().size()])));
         }
     }
 }

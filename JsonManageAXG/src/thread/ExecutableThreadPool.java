@@ -13,14 +13,17 @@ import java.util.concurrent.ForkJoinPool;
  */
 public class ExecutableThreadPool {
     private static ExecutableThreadPool instance = new ExecutableThreadPool();
-    public ForkJoinPool threadPool;
+    private ForkJoinPool pool;
     
     private ExecutableThreadPool(){
-        int N = Runtime.getRuntime().availableProcessors();
-        threadPool = new ForkJoinPool(N);
+        pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
     }
     
     public static ExecutableThreadPool getInstance(){
         return instance;
+    }
+    
+    public ForkJoinPool getPool(){
+        return pool;
     }
 }
