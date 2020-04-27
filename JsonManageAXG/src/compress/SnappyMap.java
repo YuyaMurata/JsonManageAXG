@@ -22,17 +22,19 @@ public class SnappyMap {
     public static byte[] toSnappy(Object obj){
         try {
             return Snappy.compress(getBytes(obj));
-        } catch (IOException ex) {
+        } catch (Exception ex) {
+            System.err.println("Null");
+            return null;
         }
-        return null;
     }
     
     public static Object toObject(byte[] bytes){
         try {
             return getObject(Snappy.uncompress(bytes));
-        } catch (IOException ex) {
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
         }
-        return null;
     }
     
     private static byte[] getBytes(Object obj) {

@@ -29,17 +29,35 @@ public class FormKomtrax extends FormItem{
     }
 
     private static Map formKMSMR(Map<String, List<String>> data, List<String> index) {
-        if(check(data))
+        if(check(data)){
             return null;
+        }
         
-        TreeMap<Integer, List<String>> map = new TreeMap<>();
-
         int dbIdx = index.indexOf("KOMTRAX_SMR.DB");
         int smrIdx = index.indexOf("KOMTRAX_SMR.SMR_VALUE");
         int unitIdx = index.indexOf("KOMTRAX_SMR.DAILY_UNIT");
         
-        if(dbIdx < 0 || smrIdx < 0 || unitIdx < 0)
+        if(dbIdx < 0 || smrIdx < 0 || unitIdx < 0){
             return null;
+        }
+        
+        Map newMap = new TreeMap();
+        
+        if(data.values().stream()
+                .filter(d -> d.get(dbIdx).equals("KOMTRAX_ACT"))
+                .findFirst().isPresent())
+            newMap = blendACTD(data, dbIdx, smrIdx, unitIdx);
+        else
+            newMap = data;
+        
+        //List<String> initValue = Arrays.asList(new String[]{"EQP車両", "0", "1"});
+        //newMap.put(initDate, initValue);
+        
+        return newMap;
+    }
+    
+    private static Map blendACTD(Map<String, List<String>> data, int dbIdx, int smrIdx, int unitIdx){
+        TreeMap<Integer, List<String>> map = new TreeMap<>();
         
         //KOMTRAX_ACT を取得
         Map<String, List<String>> actSMR = data.entrySet().parallelStream()
@@ -81,9 +99,6 @@ public class FormKomtrax extends FormItem{
 
             newMap.put(k.toString(), v);
         });
-        
-        //List<String> initValue = Arrays.asList(new String[]{"EQP車両", "0", "1"});
-        //newMap.put(initDate, initValue);
         
         return newMap;
     }

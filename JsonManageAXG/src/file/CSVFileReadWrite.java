@@ -50,4 +50,20 @@ public class CSVFileReadWrite {
             throw new AISTProcessException("読み込みファイルが存在しません:"+filename);
         }
     }
+    
+    public static PrintWriter writerUTF8(String filename) throws AISTProcessException{
+        try {
+            return  new PrintWriter(new OutputStreamWriter(new FileOutputStream(filename), "UTF8"));
+        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+            throw new AISTProcessException("出力先フォルダが存在しません:"+filename);
+        }
+    }
+    
+    public static BufferedReader readerUTF8(String filename) throws AISTProcessException{
+        try {
+            return new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF8"));
+        } catch (UnsupportedEncodingException | FileNotFoundException ex) {
+            throw new AISTProcessException("読み込みファイルが存在しません:"+filename);
+        }
+    }
 }

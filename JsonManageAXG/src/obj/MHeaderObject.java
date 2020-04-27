@@ -20,6 +20,7 @@ public class MHeaderObject {
     private List<String> header;
     private Boolean isCompleted;
     public transient Map<String, List<String>> map;
+    public transient Map<String, String> mapSubkey;
     
     public MHeaderObject(){
     }
@@ -32,6 +33,7 @@ public class MHeaderObject {
     public void setHeaderMap(){
         //header Map
         map = new HashMap<>();
+        mapSubkey = new HashMap<>();
         for(String s : header){
             if(s.equals("id "))
                 continue;
@@ -46,7 +48,10 @@ public class MHeaderObject {
         }
         
         //車両オブジェクトのヘッダの調整
-        map.values().stream().forEach(l -> l.remove(0));
+        map.entrySet().stream().forEach(e -> {
+            mapSubkey.put(e.getKey(), e.getValue().get(0));
+            e.getValue().remove(0);
+        });
     }
     
     public ObjectId getId() {

@@ -59,20 +59,20 @@ public class MSyaryoObjectFormatting {
             //整形実行
             ExecutableThreadPool.getInstance().getPool().submit(()
                     -> shuffleDB.getKeyList().parallelStream()
-                            .map(sid -> formOne(header, (MSyaryoObject)shuffleDB.getObj(sid)))
+                            .map(sid -> formOne(header, (MSyaryoObject) shuffleDB.getObj(sid)))
                             .forEach(formDB.coll::insertOne)).get();
         } catch (InterruptedException | ExecutionException ex) {
             System.err.println("整形エラー");
             ex.printStackTrace();
             throw new AISTProcessException("整形エラー");
         }
-        
+
         //整形情報の登録
-        setFormInfo(formDB, db+"."+collection+"_Form");
-        
+        setFormInfo(formDB, db + "." + collection + "_Form");
+
         long stop = System.currentTimeMillis();
         System.out.println("FormattingTime=" + (stop - start) + "ms");
-        
+
         //インデックスの作成
         formDB.createIndexes();
         formDB.close();
@@ -88,7 +88,7 @@ public class MSyaryoObjectFormatting {
         DataRejectRule rule = new DataRejectRule();
 
         //キーの整形
-        formKey(obj);
+        formKey(obj, header);
 
         //生産の整形
         obj.setData("生産", FormProduct.form(obj.getData("生産"), obj.getName()));
@@ -139,7 +139,7 @@ public class MSyaryoObjectFormatting {
     }
 
     //キーをまとめて整形
-    private static void formKey(MSyaryoObject syaryo) {
+    private static void formKey(MSyaryoObject syaryo, MHeaderObject h) {
         Map<String, Map<String, List<String>>> map = syaryo.getMap();
         map.keySet().stream().forEach(k -> {
             Map m = map.get(k).entrySet().stream()
@@ -151,11 +151,18 @@ public class MSyaryoObjectFormatting {
 
         //日付修正
         Map<String, Map<String, List<String>>> dmap = syaryo.getMap();
-        dmap.keySet().stream().forEach(k -> {
+        dmap.keySet().stream().filter(k -> FormalizeUtils.checkDateKey(h.mapSubkey.get(k))).forEach(k -> {
             Map m = new TreeMap();
-
+            
             dmap.get(k).entrySet().stream().forEach(d -> {
-                m.put(FormalizeUtils.dup(FormalizeUtils.dateFormalize(d.getKey()), m), d.getValue());
+                try {
+                    m.put(FormalizeUtils.dup(FormalizeUtils.dateFormalize(d.getKey()), m), d.getValue());
+                } catch (Exception e) {
+                    System.err.println(h.mapSubkey.get(k));
+                    System.err.println(k+":"+d);
+                    e.printStackTrace();
+                    System.exit(0);
+                }
             });
 
             syaryo.setData(k, m);
@@ -175,22 +182,22 @@ public class MSyaryoObjectFormatting {
         try {
             int idx = formDB.getHeader().getHeaderIdx("受注", "作業完了日");
             //整形実行
-            Integer maxLeastDate =
-                    ExecutableThreadPool.getInstance().getPool().submit(()
-                    -> formDB.getKeyList().parallelStream()
-                            .map(sid -> (MSyaryoObject)formDB.getObj(sid))
+            Integer maxLeastDate
+                    = ExecutableThreadPool.getInstance().getPool().submit(()
+                            -> formDB.getKeyList().parallelStream()
+                            .map(sid -> (MSyaryoObject) formDB.getObj(sid))
                             .filter(obj -> obj.getData("KOMTRAX_SMR") != null)
                             .filter(obj -> obj.getData("受注") != null)
                             .flatMap(obj -> obj.getData("受注").values().stream())
                             .mapToInt(odr -> Integer.valueOf(odr.get(idx))).max().getAsInt()).get();
-        
+
             Map infoMap = new HashMap();
             infoMap.put("MAX_LEAST_DATE", maxLeastDate.toString());
             infoMap.put("MACHINE_KIND", formDB.getKeyList().get(0).split("-")[0]);
-            
+
             FormInfoMap info = new FormInfoMap(dbcoll, infoMap);
             FormalizeUtils.createFormInfo(info);
-            
+
             return info;
         } catch (InterruptedException | ExecutionException ex) {
             System.err.println("KOMTRAX_SMR、受注情報が紐づいていません．");

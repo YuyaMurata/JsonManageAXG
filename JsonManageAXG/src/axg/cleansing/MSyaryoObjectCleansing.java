@@ -69,8 +69,8 @@ public class MSyaryoObjectCleansing {
         //設定ファイルとヘッダ読み込み
         ruleMap = MapToJSON.toMapSJIS(cleanSetting);
         hobj = originDB.getHeaderObj();
-        previousMap = new LinkedHashMap<>();
-        cleansingResults = new LinkedHashMap<>();
+        previousMap = new ConcurrentHashMap();
+        cleansingResults = new ConcurrentHashMap();
 
         //検証
         checkSettings(hobj, ruleMap);
@@ -89,7 +89,6 @@ public class MSyaryoObjectCleansing {
             ExecutableThreadPool.getInstance().getPool().submit(()
                     -> originDB.getKeyList().parallelStream()
                             .map(sid -> originDB.get(sid))
-                            //.map(obj -> spaceReject(obj))
                             .map(obj -> cleanOne(obj))
                             .filter(obj -> obj != null)
                             .forEach(cleanDB.coll::insertOne)).get();
@@ -125,7 +124,6 @@ public class MSyaryoObjectCleansing {
         obj.setMap(map);
         return obj;
     }*/
-
     //1台のクレンジング
     private MSyaryoObject cleanOne(MSyaryoObject obj) {
         ruleMap.entrySet().stream().forEach(c -> {
@@ -344,12 +342,12 @@ public class MSyaryoObjectCleansing {
     //テンプレート生成
     public String createTemplate(String templatePath) throws AISTProcessException {
         String fileName = templatePath + "\\cleansing_template.json";
-        
-        if(Files.exists(Paths.get(fileName))){
-            System.out.println("Exists File:"+fileName);
+
+        if (Files.exists(Paths.get(fileName))) {
+            System.out.println("Exists File:" + fileName);
             return fileName;
         }
-        
+
         MongoDBData mongo = MongoDBData.create();
         mongo.set(db, collection);
         mongo.check();

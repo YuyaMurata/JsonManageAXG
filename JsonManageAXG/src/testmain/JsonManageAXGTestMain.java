@@ -2,6 +2,7 @@ package testmain;
 
 import axg.cleansing.MSyaryoObjectCleansing;
 import axg.shuffle.MSyaryoObjectShuffle;
+import axg.shuffle.form.MSyaryoObjectFormatting;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
 import file.MapToJSON;
@@ -28,25 +29,15 @@ import score.template.ScoringSettingsTemplate;
 public class JsonManageAXGTestMain {
 
     static String db = "json";
-    static String col = "KM_PC200_DB";
+    static String col = "KM_PC200_DB_P";
     //static String col = "SMALLTEST_DB";
 
     public static void main(String[] args) throws AISTProcessException {
-        //cleansing();
+        cleansing();
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
-        SyaryoObjectExtract objex = extract();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Map<String, String[]> score = scoring(objex);
-                } catch (AISTProcessException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        };
-        new Thread(runnable).start();
+        //SyaryoObjectExtract objex = extract();
+        //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
 
@@ -65,7 +56,7 @@ public class JsonManageAXGTestMain {
             //クレンジングログ出力
             //clean.logPrint("project\\"+col+"\\log");
             //サマリの出力
-            //System.out.println(clean.getSummary());
+            System.out.println(clean.getSummary());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,7 +71,7 @@ public class JsonManageAXGTestMain {
         //System.out.println("テンプレートファイル:"+Arrays.toString(templates));
         //シャッフリング処理
         //shuffle.shuffle(templates[0], templates[1]);
-        shuffle.shuffle("project\\" + col + "\\config\\shuffle_settings.json", "project\\" + col + "\\config\\layout_settings.json");
+        shuffle.shuffle("project\\" + col + "\\config\\shuffle_settings_dist.json", "project\\" + col + "\\config\\layout_settings_dist.json");
     }
 
     //抽出
