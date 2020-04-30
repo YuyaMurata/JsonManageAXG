@@ -34,7 +34,10 @@ public class UseEvaluate extends EvaluateTemplate {
     private List<String> SCORE_TARGET;
 
     public UseEvaluate(Map settings, MHeaderObject h) {
-        super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
+        if(!((Map<String, String>)settings).keySet().stream().filter(key -> key.charAt(0)!='#').findFirst().isPresent())
+            super.enable = false;
+        else
+            super.enable = ((Map<String, String>) settings).get("#EVALUATE").equals("ENABLE");
 
         //スコア基準値の取得
         SCORE_TARGET = new ArrayList();

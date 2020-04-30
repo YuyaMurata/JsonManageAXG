@@ -34,7 +34,10 @@ public class AgeSMREvaluate extends EvaluateTemplate {
     private SyaryoObjectExtract exObj;
     
     public AgeSMREvaluate(Map<String, String> settings, SyaryoObjectExtract exObj) {
-        super.enable = settings.get("#EVALUATE").equals("ENABLE");
+        if(!settings.keySet().stream().filter(key -> key.charAt(0)!='#').findFirst().isPresent())
+            super.enable = false;
+        else
+            super.enable = settings.get("#EVALUATE").equals("ENABLE");
 
         super.setHeader("経年/SMR", Arrays.asList(new String[]{"ADMIT_D", "FOLD_D", "X", "FSTAT", "N"}));
         AGE_SMR_SETTING = settings;

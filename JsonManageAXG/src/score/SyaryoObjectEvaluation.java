@@ -73,8 +73,8 @@ public class SyaryoObjectEvaluation {
             long stop = System.currentTimeMillis();
 
             //クラスタリング
-            ClusteringESyaryo.cluster(evalMainte._eval.values());
-            ClusteringESyaryo.cluster(evalUse._eval.values());
+            ClusteringESyaryo.cluster(evalMainte);
+            ClusteringESyaryo.cluster(evalUse);
 
             //スコアリング
             try {
@@ -140,6 +140,7 @@ public class SyaryoObjectEvaluation {
     }
 
     private static void print(EvaluateTemplate eval, String file) throws AISTProcessException {
+        if(eval.enable)
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
             pw.println("SID,DATE,AGE,SMR," + eval._header.entrySet().stream()
                     .flatMap(h -> h.getValue().stream()
@@ -150,53 +151,4 @@ public class SyaryoObjectEvaluation {
                     .forEach(pw::println);
         }
     }
-
-    //メンテナンスのみ
-    /*private static void print(EvaluateTemplate evtemp, ESyaryoObject eval, MHeaderObject header) throws AISTProcessException {
-        String file = "file\\test_print_eval_" + eval.name + ".csv";
-        try (PrintWriter pw = CSVFileReadWrite.writerSJIS(file)) {
-            //評価結果
-            pw.println("評価結果");
-            pw.println("SID,DATE,AGE,SMR," + evtemp._header.entrySet().stream()
-                    .flatMap(h -> h.getValue().stream()
-                    .map(hv -> h.getKey() + "_" + hv))
-                    .collect(Collectors.joining(",")) + ",CID");
-            pw.println(eval.check());
-            pw.println();
-
-            //変換データ
-            pw.println("評価SMR系列");
-            pw.println("評価対象,インターバル");
-            eval.data.entrySet().stream().map(e -> e.getKey() + "," + String.join(",", e.getValue())).forEach(pw::println);
-            pw.println();
-
-            //評価利用サービス
-            pw.println("評価対象となったサービス群");
-            pw.println("評価対象,SID,作番," + String.join(",", header.getHeader("部品")) + ",日付,SMR");
-            eval.sv.entrySet().stream()
-                    .flatMap(e -> e.getValue().stream()
-                    .map(d -> e.getKey() + "," + d + "," + eval.a.getSBNToDate(d.split(",")[1], true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(d.split(",")[1], true))))
-                    .forEach(pw::println);
-            pw.println();
-
-            //評価に利用されなかったサービス
-            pw.println("評価に利用されなかったサービス");
-            pw.println("作番," + String.join(",", header.getHeader("部品")) + ",日付,SMR");
-            if (eval.a.syaryo.getData("部品") != null) {
-                eval.a.syaryo.getData("部品").entrySet().stream()
-                        .filter(e -> !eval.sv.values().stream()
-                        .flatMap(d -> d.stream().map(di -> di.split(",")[1]))
-                        .filter(d -> d.equals(e.getKey())).findFirst().isPresent())
-                        .map(e -> e.getKey() + "," + String.join(",", e.getValue()) + "," + eval.a.getSBNToDate(e.getKey(), true) + "," + eval.a.getDateToSMR(eval.a.getSBNToDate(e.getKey(), true)))
-                        .forEach(pw::println);
-            }
-        }
-
-        try {
-            //excelファイルの生成
-            DataConvertionUtil.csvToEXCEL(file, file.replace("csv", "xls"));
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }*/
 }

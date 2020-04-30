@@ -16,6 +16,7 @@ import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
+import score.item.EvaluateTemplate;
 
 /**
  *
@@ -25,14 +26,18 @@ public class ClusteringESyaryo {
 
     static int C = 9;
     static int N = 10000;
-    static RandomGenerator rg = new JDKRandomGenerator(1);
+    static RandomGenerator rg = new JDKRandomGenerator(Integer.MAX_VALUE);
     static KMeansPlusPlusClusterer<ESyaryoObject> cluster = new KMeansPlusPlusClusterer(C, N, new EuclideanDistance(), rg);
     //static DBSCANClusterer<ESyaryoObject> cluster = new DBSCANClusterer(0.02, 1, new EuclideanDistance());
 
-    public static void cluster(Collection<ESyaryoObject> data) {
+    public static void cluster(EvaluateTemplate data) {
+        if(!data.enable)
+            return ;
+        
+        System.out.println(data.itemName+" クラスタリング開始");
         long start = System.currentTimeMillis();
-
-        Collection<ESyaryoObject> evaldata = data.stream().filter(d -> !d.none()).collect(Collectors.toList());
+        
+        Collection<ESyaryoObject> evaldata = data._eval.values().stream().filter(d -> !d.none()).collect(Collectors.toList());
 
         List<CentroidCluster<ESyaryoObject>> results = new ArrayList<>();
         try {
@@ -61,7 +66,7 @@ public class ClusteringESyaryo {
 
     public static List<CentroidCluster<DataVector>> splitor(Collection<DataVector> data) {
         long start = System.currentTimeMillis();
-
+        
         List<CentroidCluster<DataVector>> results = null;
         try {
             results = spcluster.cluster(data);
@@ -70,7 +75,7 @@ public class ClusteringESyaryo {
         }
 
         long stop = System.currentTimeMillis();
-        System.out.println("3 spliting time = " + (stop - start) + "ms");
+        //System.out.println("3 spliting time = " + (stop - start) + "ms");
 
         return results;
     }

@@ -19,6 +19,10 @@ public class ExecutableThreadPool {
         pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors());
     }
     
+    public void setN(int n){
+        pool = new ForkJoinPool(n);
+    }
+    
     public static ExecutableThreadPool getInstance(){
         return instance;
     }

@@ -129,7 +129,7 @@ public class ScenarioAnalize {
                     e1.printStackTrace();
                 }
             });
-
+            
             //スコアの解析結果並び替える
             scoreShowResult = scoreShowResult.entrySet().stream()
                     .filter(sc -> Integer.valueOf(sc.getValue()[scIdx]) > 0) //評価されていない車両は除外

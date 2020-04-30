@@ -33,7 +33,10 @@ public class MainteEvaluate extends EvaluateTemplate {
     private SyaryoObjectExtract exObj;
 
     public MainteEvaluate(Map<String, String> settings, SyaryoObjectExtract exObj) {
-        super.enable = settings.get("#EVALUATE").equals("ENABLE");
+        if(!settings.keySet().stream().filter(key -> key.charAt(0)!='#').findFirst().isPresent())
+            super.enable = false;
+        else
+            super.enable = settings.get("#EVALUATE").equals("ENABLE");
         
         MAINTE_INTERVAL = settings.entrySet().stream()
                                 .filter(e -> e.getKey().charAt(0) != '#')
@@ -62,7 +65,7 @@ public class MainteEvaluate extends EvaluateTemplate {
     @Override
     public Map<String, List<String>> aggregate(MSyaryoAnalizer s, Map<String, List<String>> sv) {
         Map<String, List<String>> data = new HashMap();
-
+        
         //時系列情報の取得
         MAINTE_INTERVAL.entrySet().stream().forEach(e -> {
             TimeSeriesObject t = new TimeSeriesObject(s, super.dateSeq(s, sv.get(e.getKey())));
@@ -72,7 +75,7 @@ public class MainteEvaluate extends EvaluateTemplate {
 
             //len == 0 SMRがインターバル時間に届いていない場合、無条件で1と評価
             List<String> series = len != 0 ? IntStream.range(0, len).boxed().map(i -> "0").collect(Collectors.toList()) : Arrays.asList(new String[]{"1"});
-
+            
             t.series.stream()
                     .map(v -> v == 0 ? 1 : v) //0h交換での例外処理
                     .map(v -> (v % Integer.valueOf(e.getValue())) == 0 ? v - 1 : v) //インターバル時間で割り切れる場合の例外処理
@@ -86,7 +89,7 @@ public class MainteEvaluate extends EvaluateTemplate {
 
             data.put(e.getKey(), series);
         });
-
+        
         return data;
     }
 
@@ -104,7 +107,6 @@ public class MainteEvaluate extends EvaluateTemplate {
                         LinkedHashMap::new
                 )
                 );
-
         return norm;
     }
 
@@ -137,7 +139,7 @@ public class MainteEvaluate extends EvaluateTemplate {
                                 //.max().getAsDouble()))
                                 //.sorted().boxed().limit(cid.getValue().size()/2).reduce((a, b) -> b).orElse(null)))
                 .collect(Collectors.toList());
-
+        
         //スコアリング用にデータを3分割
         List<CentroidCluster<DataVector>> splitor = ClusteringESyaryo.splitor(cidavg);
         if(splitor==null) return ;

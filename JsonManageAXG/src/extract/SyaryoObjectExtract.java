@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
@@ -27,7 +26,7 @@ import obj.MSyaryoObject;
 import thread.ExecutableThreadPool;
 
 /**
- * 車両データの抽出 パフォーマンスチューニングを行う
+ * 車両データの抽出 
  *
  * @author ZZ17807
  */
@@ -78,11 +77,20 @@ public class SyaryoObjectExtract {
         //ユーザー定義ファイルのハッシュ値の取得
         this.userDefFileHash = FileMD5.hash(settingFile);
         this.settings = MapToJSON.toMapSJIS(settingFile);
-
+        
         errorCheck(settings);
+        
+        //システム設定定義
+        systemSettings();
 
         //車両分析器の作成
         setSyaryoAnalizer();
+    }
+    
+    private void systemSettings(){
+        List<String> thread = settings.get("#SYSTEM_THREAD");
+        if(thread != null)
+            ExecutableThreadPool.getInstance().setN(Integer.valueOf(thread.get(0)));
     }
 
     //車両IDの変換
@@ -105,6 +113,7 @@ public class SyaryoObjectExtract {
         //コードチェック
         settings.entrySet().stream()
                 .filter(f -> !f.getKey().contains("#SCENARIO"))
+                .filter(f -> !f.getKey().contains("#SYSTEM"))
                 .forEach(f -> {
                     f.getValue().stream()
                             .filter(fi -> !fi.contains(".csv"))

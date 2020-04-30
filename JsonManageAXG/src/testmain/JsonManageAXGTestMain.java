@@ -33,10 +33,10 @@ public class JsonManageAXGTestMain {
     //static String col = "SMALLTEST_DB";
 
     public static void main(String[] args) throws AISTProcessException {
-        cleansing();
+        //cleansing();
         //shuffle();
         //MSyaryoObjectFormatting.form(db, col);
-        //SyaryoObjectExtract objex = extract();
+        SyaryoObjectExtract objex = extract();
         //Map<String, String[]> score = scoring(objex);
         //scenario(score, objex);
     }
