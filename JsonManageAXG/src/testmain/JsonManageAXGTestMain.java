@@ -79,7 +79,7 @@ public class JsonManageAXGTestMain {
         SyaryoObjectExtract objex = new SyaryoObjectExtract(db, col);
 
         //ユーザー定義ファイルの設定
-        objex.setUserDefine("project\\" + col + "\\config\\user_define.json");
+        objex.setUserDefine(col + "\\config\\user_define.json");
 
         //データリスト
         //System.out.println(objex.getDataList());

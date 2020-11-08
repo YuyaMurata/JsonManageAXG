@@ -248,15 +248,24 @@ public class SyaryoObjectExtract {
 
             return ExecutableThreadPool.getInstance().getPool().submit(()
                     -> list.parallelStream()
-                            .map(l -> l.split(","))
+                            .map(l -> l.split(",", -1))
                             .map(l -> listHeader.stream()
                             .filter(h -> h.charAt(0) != '#')
-                            .map(h -> h.equals("SID") ? transSID(l[listHeader.indexOf(h)]) : h.split("\\.")[0] + "." + l[listHeader.indexOf(h)]) //車両IDの正規化
+                            .map(h -> {
+                                try{
+                                    return h.equals("SID") ? transSID(l[listHeader.indexOf(h)]) : h.split("\\.")[0] + "." + l[listHeader.indexOf(h)];
+                                }catch(Exception e){
+                                    System.err.println(h+":"+listHeader.indexOf(h));
+                                    System.err.println(String.join(",", l));
+                                    throw new ArrayIndexOutOfBoundsException();
+                                }
+                            }) //車両IDの正規化
                             .collect(Collectors.joining(",")))
                             .collect(Collectors.toList())).get();
         } catch (AISTProcessException | InterruptedException | ExecutionException ex) {
-            //ex.printStackTrace();
-            System.err.println(ex.getMessage());
+            System.err.println("******* "+path+" *******");         
+            ex.printStackTrace();
+            //System.err.println(ex.getMessage());
             return null;
         }
     }
@@ -279,7 +288,8 @@ public class SyaryoObjectExtract {
                             .map(di -> s.getName() + "," + key + "." + di.getKey()))
                             .collect(Collectors.toList())).get();
         } catch (InterruptedException | ExecutionException ex) {
-            System.err.println(ex.getMessage());
+            //System.err.println(ex.getMessage());
+            //ex.printStackTrace();
             return null;
         }
     }
@@ -460,8 +470,12 @@ public class SyaryoObjectExtract {
         return extDB.getKeyList();
     }
 
-    public CompressExtractionObject getAnalize(String sid) {
-        return (CompressExtractionObject) extDB.getObj(sid);
+    public MSyaryoAnalizer getAnalize(String sid) {
+        CompressExtractionObject comp = (CompressExtractionObject) extDB.getObj(sid);
+        if(comp != null)
+            return comp.toObj();
+        else
+            return null;
     }
 
     //抽出処理適用後の定義ファイルを取得

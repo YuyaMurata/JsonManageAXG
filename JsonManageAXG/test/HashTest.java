@@ -1,5 +1,7 @@
 
 import file.FileMD5;
+import java.util.TreeSet;
+import java.util.stream.IntStream;
 import javax.xml.bind.DatatypeConverter;
 
 /*
@@ -14,12 +16,14 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class HashTest {
     public static void main(String[] args) {
-        String a = FileMD5.hash("project\\komatsuDB_PC200\\config\\user_define.json");
-        String b = FileMD5.hash("project\\komatsuDB_PC200\\config\\user_define.json");
+        TreeSet<Integer> tree = new TreeSet<>();
+        IntStream.range(0, 10).map(i -> i*2).forEach(tree::add);
         
-        if(a.equals(b))
-            System.out.println("a("+String.valueOf(a)+") = b("+String.valueOf(b));
-        else
-            System.err.println("a("+String.valueOf(a)+") != b("+String.valueOf(b));
+        System.out.println(tree);
+        
+        System.out.println(tree.lower(1));
+        System.out.println(tree.higher(1));
+        System.out.println(tree.lower(0));
+        System.out.println(tree.higher(0));
     }
 }

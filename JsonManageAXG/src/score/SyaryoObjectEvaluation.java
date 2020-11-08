@@ -64,7 +64,7 @@ public class SyaryoObjectEvaluation {
                                     System.out.println("Scoring process :" + (10 * (sidsCounts.size() / tenP)) + "%");
                                 }
                             })
-                            .map(sid -> exObj.getAnalize(sid).toObj())
+                            .map(sid -> exObj.getAnalize(sid))
                             .forEach(s -> {
                                 evalMainte.add(s);
                                 evalUse.add(s);

@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.Collection;
 import java.util.Queue;
+import java.util.TreeSet;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -275,10 +276,6 @@ public class MSyaryoAnalizer implements Serializable {
         Integer smr = regression("date", Integer.valueOf(date));
 
         return smr;
-        //} catch (NumberFormatException ne) {
-        //    System.err.println("NumberFormatException:" + date);
-        //    return null;
-        //}
     }
 
     public Integer getDateToSVSMR(String date) {
@@ -304,8 +301,33 @@ public class MSyaryoAnalizer implements Serializable {
         if (type.equals("date")) {
             data = smrDate.values();
         }
+        
+        //
+        List<Integer> list = new ArrayList(data);
+        TreeSet<Integer> tree = new TreeSet(data);
+        int idx = tree.higher(p) == null ? data.size()-1 : list.indexOf(tree.higher(p));
 
-        for (Integer d : data) {
+        //Upper
+        List<Integer> up = new ArrayList<>();
+        while(((idx + up.size()) < data.size()) && (up.size() < cnt)){
+            up.add(list.get(idx+up.size()));
+        }
+        
+        //Lower
+        List<Integer> low = new ArrayList<>();
+        while(((idx - low.size()-1) > -1) && (low.size() < cnt)){
+            low.add(list.get(idx-low.size()-1));
+        }
+        
+        //System.out.println(low+""+up);
+        List<Integer> uplow = new ArrayList<>();
+        uplow.addAll(up);
+        uplow.addAll(low);
+        uplow = uplow.stream().sorted().collect(Collectors.toList());
+        //System.out.println(uplow);
+        
+        /*
+        for (Integer d : data) { 
             q.add(d);
             if (R < q.size()) {
                 q.poll();
@@ -318,11 +340,11 @@ public class MSyaryoAnalizer implements Serializable {
             if (cnt < 0) {
                 break;
             }
-        }
-
+        }*/
+        
         SimpleRegression reg = new SimpleRegression();
-        String stdate = type.equals("date") ? q.peek().toString() : getSMRToDate(q.peek()).toString();
-        q.stream().forEach(d -> {
+        String stdate = type.equals("date") ? uplow.get(0).toString() : getSMRToDate(uplow.get(0)).toString();
+        uplow.stream().forEach(d -> {
             Integer date = type.equals("date") ? d : getSMRToDate(d);
             Integer smr = type.equals("smr") ? d : getDateToSMR(d.toString());
             reg.addData(time(stdate, date.toString()), smr);
@@ -337,7 +359,7 @@ public class MSyaryoAnalizer implements Serializable {
         } else {
             v = reg.predict(time(stdate, p.toString()));
         }
-
+        
         return v.intValue();
     }
 
@@ -509,11 +531,12 @@ public class MSyaryoAnalizer implements Serializable {
     }
 
     //オールサポート対象期間か判定
-    private Boolean checkAS(String d) {
+    public Boolean checkAS(String d) {
         LocalDate date = LocalDate.parse(d, DateTimeFormatter.ofPattern("yyyyMMdd"));
+        
         for (String[] term : termAllSupport) {
-            LocalDate ts = LocalDate.parse(term[0]);
-            LocalDate tf = LocalDate.parse(term[1]);
+            LocalDate ts = LocalDate.parse(term[0], DateTimeFormatter.ofPattern("yyyyMMdd"));
+            LocalDate tf = LocalDate.parse(term[1], DateTimeFormatter.ofPattern("yyyyMMdd"));
             if (!(ts.isAfter(date) || tf.isBefore(date))) {
                 return true;
             }

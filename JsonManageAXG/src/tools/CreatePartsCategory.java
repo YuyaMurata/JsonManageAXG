@@ -29,9 +29,9 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public class CreatePartsCategory {
-    
-    static String categoryFile = "toolsettings\\PC200_部品_カテゴリ_20200427＿村田20200701.csv";
-    
+
+    static String categoryFile = "toolsettings\\category_parts_20201006.csv";
+
     private static Map<String, List<String[]>> getCategryToData() throws AISTProcessException, IOException {
         //カテゴリMap category - 品番,品名 
         Map<String, List<String[]>> category = new HashMap();
@@ -50,10 +50,10 @@ public class CreatePartsCategory {
                 category.get(key).add(hbhn);
             }
         }
-        
+
         return category;
     }
-    
+
     private static Map<String, String> getDataToCategry() throws AISTProcessException, IOException {
         //カテゴリMap 品番,品名 - category
         Map<String, String> category = new HashMap();
@@ -69,10 +69,10 @@ public class CreatePartsCategory {
                 category.put(hbhn, c);
             }
         }
-        
+
         return category;
     }
-    
+
     private static Map<String, Set<String>> getPNoToCategry() throws AISTProcessException, IOException {
         //カテゴリMap 品番 - category
         Map<String, Set<String>> category = new HashMap();
@@ -85,21 +85,21 @@ public class CreatePartsCategory {
                 String[] s = str.split(",", -1);
                 String c = s[h.indexOf("カテゴリ")] + "," + s[h.indexOf("サブカテゴリ")];
                 String hbhn = s[h.indexOf("部品.品番")];
-                
+
                 if (hbhn.length() < 5) {
                     continue;
                 }
-                
+
                 if (category.get(hbhn) == null) {
                     category.put(hbhn, new TreeSet<>());
                 }
                 category.get(hbhn).add(c);
             }
         }
-        
+
         return category;
     }
-    
+
     private static Map<String, Set<String>> getPNameToCategry() throws AISTProcessException, IOException {
         //カテゴリMap 品番 - category
         Map<String, Set<String>> category = new HashMap();
@@ -121,10 +121,10 @@ public class CreatePartsCategory {
                 category.get(hbhn).add(c);
             }
         }
-        
+
         return category;
     }
-    
+
     public static void main(String[] args) throws AISTProcessException, IOException {
         //データ取得
         MongoDBPOJOData db = MongoDBPOJOData.create();
@@ -132,19 +132,19 @@ public class CreatePartsCategory {
         categoryOutput(db);
         //wipCategoryOutput(db);
     }
-    
+
     private static void wipCategoryOutput(MongoDBPOJOData db) throws AISTProcessException, IOException {
         Map<String, String> category = getDataToCategry();
         Map<String, Set<String>> pnoCategory = getPNoToCategry();
         Map<String, Set<String>> pnameCategory = getPNameToCategry();
-        
+
         int hnbn = db.getHeader().getHeaderIdx("部品", "品番");
         int hnm = db.getHeader().getHeaderIdx("部品", "部品名称");
-        
+
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("PC200_部品_カテゴリ.csv")) {
             //header
             pw.println("SID,作番," + String.join(",", db.getHeader().getHeader("部品")) + ",カテゴリ,サブカテゴリ,候補");
-            
+
             db.getKeyList().parallelStream().map(sid -> (MSyaryoObject) db.getObj(sid))
                     .filter(s -> s.getData("部品") != null)
                     //.peek(s -> System.out.println(s.getName() + ":" + s.getCount(dkey)))
@@ -157,14 +157,14 @@ public class CreatePartsCategory {
                     }).forEach(pw::println);
         }
     }
-    
+
     private static String join(Map<String, String> category, Map<String, Set<String>> c2, Map<String, Set<String>> c3, String key) {
         if (category.get(key) != null) {
             return category.get(key);
         } else {
             Set<String> cand = new TreeSet<>();
             String c = ",";
-            
+
             Set<String> pno = c2.get(key.split(",", 2)[0]);
             if (pno != null) {
                 if (pno.size() == 1) {
@@ -174,7 +174,7 @@ public class CreatePartsCategory {
                     cand.addAll(pno);
                 }
             }
-            
+
             Set<String> pname = c3.get(key.split(",", 2)[1]);
             if (pname != null) {
                 if (pname.size() == 1) {
@@ -186,27 +186,39 @@ public class CreatePartsCategory {
                     }
                 }
             }
-            
+
             return c + "," + cand.stream().map(ci -> ci.replace(",", "-")).collect(Collectors.joining("_"));
         }
     }
-    
+
     private static void preCategoryData(Collection<String> c, MHeaderObject h) {
         c.stream().forEach(ci -> {
-            try (PrintWriter pw = CSVFileReadWrite.addwriter("toolsettings\\" + ci + ".csv")) {
-                pw.println("SID,部品.作番," + String.join(",", h.getHeader("部品")));
+            String filename = ci + ".csv";
+            filename = filename.replace("-.csv", ".csv");
+            try (PrintWriter pw = CSVFileReadWrite.addwriter("toolsettings\\" + filename)) {
+                List hlist = new ArrayList();
+                hlist.add("SID");
+                hlist.add("部品.作番");
+                hlist.addAll(h.getHeader("部品").stream()
+                            .map(hi -> {
+                                if(hi.contains("品番") || hi.contains("部品名称"))
+                                    return hi;
+                                else
+                                    return "#"+hi;
+                                        }).collect(Collectors.toList()));
+                pw.println(String.join(",", hlist));
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-        
+
         try (PrintWriter pw = CSVFileReadWrite.addwriter("toolsettings\\不明.csv")) {
-                pw.println("SID,部品.作番," + String.join(",", h.getHeader("部品")));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            pw.println("SID,部品.作番," + String.join(",", h.getHeader("部品")));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-    
+
     private static void categoryOutput(MongoDBPOJOData db) throws AISTProcessException, IOException {
         Map<String, List<String[]>> category = getCategryToData();
         preCategoryData(category.keySet(), db.getHeader());
@@ -228,7 +240,9 @@ public class CreatePartsCategory {
                         });
 
                         //カテゴリデータ
-                        try (PrintWriter pw = CSVFileReadWrite.addwriter("toolsettings\\" + c.getKey() + ".csv")) {
+                        String filename = c.getKey() + ".csv";
+                        filename = filename.replace("-.csv", ".csv");
+                        try (PrintWriter pw = CSVFileReadWrite.addwriter("toolsettings\\" + filename)) {
                             data.stream().forEach(pw::println);
                         } catch (Exception e) {
                             e.printStackTrace();

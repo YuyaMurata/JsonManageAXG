@@ -81,7 +81,7 @@ public class ScenarioBlock {
                 .collect(Collectors.toMap(
                         e -> e.getKey(),
                         e -> {
-                            MSyaryoAnalizer s = exObj.getAnalize(e.getKey()).toObj();
+                            MSyaryoAnalizer s = exObj.getAnalize(e.getKey());
                             List<String> dateSeq = e.getValue().stream()
                                     .map(d -> d.split(",")[1])
                                     .map(d -> (d.split("\\.")[0].equals("受注") || d.split("\\.")[0].equals("部品") || d.split("\\.")[0].equals("作業"))
