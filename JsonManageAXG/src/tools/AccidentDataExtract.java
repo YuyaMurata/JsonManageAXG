@@ -30,7 +30,7 @@ public class AccidentDataExtract {
         db.set("json", "KM_PC200_DB_P_Form", MSyaryoObject.class);
 
         MHeaderObject h = db.getHeader();
-
+        
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("PC200_ServiceData_Accident_202003.csv")) {
             pw.println("車両ID,作番,請求金額,概要,使用部品");
             db.getKeyList().stream()
