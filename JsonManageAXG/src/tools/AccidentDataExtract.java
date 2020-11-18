@@ -32,7 +32,7 @@ public class AccidentDataExtract {
         MHeaderObject h = db.getHeader();
         
         try (PrintWriter pw = CSVFileReadWrite.writerSJIS("PC200_ServiceData_Accident_202003.csv")) {
-            pw.println("車両ID,作番,請求金額,概要,使用部品");
+            pw.println("車両ID,作番,請求金額,概要,部品,作業");
             db.getKeyList().stream()
                     .map(sid -> (MSyaryoObject) db.getObj(sid))
                     .filter(s -> s.getData("受注") != null)
@@ -47,8 +47,14 @@ public class AccidentDataExtract {
                 .map(e -> {
                     List<String> order = e.getValue();
                     Map<String, List<String>> parts = a.getSBNParts(e.getKey());
+                    
                     List<String> pnoPName = parts.values().stream()
-                            .map(pv -> pv.get(h.getHeaderIdx("部品", "品番")) + " " + pv.get(h.getHeaderIdx("部品", "部品名称")))
+                            .map(pv -> pv.get(h.getHeaderIdx("部品", "品番")) + "(" + pv.get(h.getHeaderIdx("部品", "部品名称")) + ")")
+                            .collect(Collectors.toList());
+                    
+                    Map<String, List<String>> works = a.getSBNWork(e.getKey());
+                    List<String> wcdWName = works.values().stream()
+                            .map(wv -> wv.get(h.getHeaderIdx("作業", "作業コード")) + "(" + wv.get(h.getHeaderIdx("作業", "作業名称")) + ")")
                             .collect(Collectors.toList());
 
                     //データ作成
@@ -59,6 +65,7 @@ public class AccidentDataExtract {
                     data.add(e.getValue().get(h.getHeaderIdx("受注", "請求金額")));
                     data.add(e.getValue().get(h.getHeaderIdx("受注", "概要１")) + " " + e.getValue().get(h.getHeaderIdx("受注", "概要２")));
                     data.add(String.join("_", pnoPName));
+                    data.add(String.join("_", wcdWName));
 
                     return String.join(",", data);
                 }).collect(Collectors.toList());
