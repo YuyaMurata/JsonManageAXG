@@ -10,9 +10,11 @@ import analizer.MSyaryoAnalizer;
 import axg.shuffle.form.MSyaryoObjectFormatting;
 import axg.shuffle.form.util.FormInfoMap;
 import axg.shuffle.form.util.FormalizeUtils;
-import file.FileMD5;
 import file.ListToCSV;
 import file.MapToJSON;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
+import org.apache.commons.codec.digest.DigestUtils;
 import thread.ExecutableThreadPool;
 
 /**
@@ -74,8 +77,12 @@ public class SyaryoObjectExtract {
     public void setUserDefine(String settingFile) throws AISTProcessException {
         System.out.println("ユーザー定義ファイルの読み込み.");
 
-        //ユーザー定義ファイルのハッシュ値の取得
-        this.userDefFileHash = FileMD5.hash(settingFile);
+        try {
+            //ユーザー定義ファイルのハッシュ値の取得
+            this.userDefFileHash = DigestUtils.md5Hex(new FileInputStream(new File(settingFile)));
+        } catch (IOException ex) {
+            throw new AISTProcessException("ユーザー定義ファイルの読み込みエラー!");
+        }
         this.settings = MapToJSON.toMapSJIS(settingFile);
         
         errorCheck(settings);
