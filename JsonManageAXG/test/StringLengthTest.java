@@ -16,5 +16,7 @@ public class StringLengthTest {
         System.out.println("a="+a.getBytes().length);
         
         System.out.println("b="+b.getBytes().length);
+        
+        System.out.println("a_sub="+a.substring(0,2));
     }
 }

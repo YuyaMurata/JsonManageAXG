@@ -7,14 +7,19 @@ package tools;
 
 import analizer.MSyaryoAnalizer;
 import exception.AISTProcessException;
+import extract.SyaryoObjectExtract;
 import file.CSVFileReadWrite;
 import file.ListToCSV;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
+import obj.MHeaderObject;
 import obj.MSyaryoObject;
 
 /**
@@ -22,41 +27,31 @@ import obj.MSyaryoObject;
  * @author ZZ17807
  */
 public class AttachedSyaryoInfo {
-    public static MongoDBPOJOData db;
-    private static List<String> keyList;
     
     public static void main(String[] args) throws AISTProcessException {
-        db = MongoDBPOJOData.create();
-        db.set("json", "komatsuDB_PC200_Form", MSyaryoObject.class);
-        keyList = db.getKeyList();
+         String file = "toolsettings\\PC200-10--452000.csv";
+        List<String> csv = ListToCSV.toList(file);
+        System.out.println(csv);
         
-        //MSyaryoAnalizer.initialize(db.getHeader(), db.getObjMap());
+        //データ取得
+        SyaryoObjectExtract objex = new SyaryoObjectExtract("json", "KM_PC200_DB_P");
+        objex.setUserDefine("KM_PC200_DB_P\\config\\user_define_車両除外無し.json");
+        objex.getSummary();
+        MHeaderObject h = objex.getHeader();
         
         //add
-        addInfo("PC200_エンジンOV.csv", "AttachedInfo_PC200_エンジンOV.csv");
-    }
-    
-    private static void addInfo(String file, String out) throws AISTProcessException{
-        //日付の追加
-        //SMRの追加
-        
-        //SID+作番
-        Map<String, String> setting = new HashMap<>();
-        ListToCSV.toList(file).stream().forEach(s -> setting.put(s.split(",")[0]+","+s.split(",")[1].split("#")[0], s));
-        List<String> h = Arrays.asList(setting.get("SID,部品.作番").split(","));
-        setting.remove("SID,部品.作番");
-        
-        try(PrintWriter pw = CSVFileReadWrite.writerSJIS(out)){
-            pw.println("SID,作番,日付,SMR,SVSMR,"+String.join(",", h));
-            setting.entrySet().stream().forEach(e -> {
-                String sid = e.getKey().split(",")[0];
-                String sbn = e.getKey().split(",")[1].split("#")[0];
-                MSyaryoAnalizer s = new MSyaryoAnalizer((MSyaryoObject)db.getObj(sid));
-                String date = s.getSBNToDate(sbn, true);
-                Integer smr = s.getDateToSMR(date);
-                Integer svsmr = s.getDateToSVSMR(date);
-                pw.println(e.getKey().split("#")[0]+","+date+","+smr+","+svsmr+","+e.getValue());
-            });
-        }
+        csv.stream()
+                .filter(l -> objex.getAnalize(l.split(",")[1]) != null)
+                .forEach(l -> {
+                    String sid = l.split(",")[1];
+                    String sbn = l.split(",")[2].split("#")[0];
+                    
+                    MSyaryoAnalizer a = objex.getAnalize(sid);
+                    String date = a.getSBNToDate(sbn, Boolean.TRUE);
+                    
+                    Integer smr = a.getDateToSMR(date);
+                    
+                    System.out.println(sid+","+sbn+","+date+","+smr);
+                });
     }
 }
