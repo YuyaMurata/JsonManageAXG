@@ -5,22 +5,15 @@
  */
 package tools;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
 import analizer.MSyaryoAnalizer;
 import exception.AISTProcessException;
 import extract.SyaryoObjectExtract;
-import file.CSVFileReadWrite;
 import file.ListToCSV;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
-import obj.MSyaryoObject;
 
 /**
  *
@@ -29,13 +22,13 @@ import obj.MSyaryoObject;
 public class AttachedSyaryoInfo {
     
     public static void main(String[] args) throws AISTProcessException {
-         String file = "toolsettings\\PC200-10--452000.csv";
+        String file = "JsonManageAXG\\toolsettings\\PC200-10--452000.csv";
         List<String> csv = ListToCSV.toList(file);
-        System.out.println(csv);
+        //System.out.println(csv);
         
         //データ取得
         SyaryoObjectExtract objex = new SyaryoObjectExtract("json", "KM_PC200_DB_P");
-        objex.setUserDefine("KM_PC200_DB_P\\config\\user_define_車両除外無し.json");
+        objex.setUserDefine("JsonManageAXG\\project\\KM_PC200_DB_P\\config\\user_define_車両除外無し.json");
         objex.getSummary();
         MHeaderObject h = objex.getHeader();
         

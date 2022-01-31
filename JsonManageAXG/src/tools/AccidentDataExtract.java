@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import mongodb.MongoDBPOJOData;
 import obj.MHeaderObject;
 import obj.MSyaryoObject;
-import static tools.AttachedSyaryoInfo.db;
+//import static tools.AttachedSyaryoInfo.db;
 
 /**
  *
@@ -25,7 +25,7 @@ import static tools.AttachedSyaryoInfo.db;
 public class AccidentDataExtract {
 
     public static void main(String[] args) throws AISTProcessException {
-        //事故車両推定用に一通りのデータを抽出
+    /*    //事故車両推定用に一通りのデータを抽出
         db = MongoDBPOJOData.create();
         db.set("json", "KM_PC200_DB_P_Form", MSyaryoObject.class);
 
@@ -39,6 +39,8 @@ public class AccidentDataExtract {
                     .flatMap(s -> extractService(h, s).stream())
                     .forEach(pw::println);
         }
+        */
+        System.out.println("テスト");
     }
 
     private static List<String> extractService(MHeaderObject h, MSyaryoObject s) {
